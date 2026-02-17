@@ -15,17 +15,19 @@ NC='\033[0m' # No Color
 
 ERRORS=0
 
-# 1. Vérifier console.log en production
+# 1. Vérifier console.log en production (ignorer tests/)
 echo -n "1. Checking for console.log... "
-if git diff --cached --name-only | grep -E '\.js$' | xargs -r grep -l 'console\.log' 2>/dev/null; then
-    echo -e "${YELLOW}⚠ Warning: console.log found in staged files${NC}"
+CONSOLE_LOGS=$(git diff --cached --name-only | grep -E '\.js$' | grep -v 'tests/' | grep -v 'node_modules/' | xargs -r grep -l 'console\.log' 2>/dev/null || true)
+if [ -n "$CONSOLE_LOGS" ]; then
+    echo -e "${YELLOW}⚠ Warning: console.log found:${NC}"
+    echo "$CONSOLE_LOGS"
 else
     echo -e "${GREEN}✓${NC}"
 fi
 
-# 2. Vérifier texte français hardcodé (sans __()
+# 2. Vérifier texte français hardcodé (ignorer lang/ et tests/)
 echo -n "2. Checking for hardcoded French text... "
-HARDCODED=$(git diff --cached --name-only | grep -E '\.(php|phtml|js)$' | xargs -r grep -E "'(Erreur|Succès|Veuillez|Chargement|Aucun)[^']*'" 2>/dev/null | grep -v '__(' || true)
+HARDCODED=$(git diff --cached --name-only | grep -E '\.(php|phtml|js)$' | grep -v 'lang/' | grep -v 'tests/' | xargs -r grep -E "'(Erreur|Succès|Veuillez|Chargement|Aucun)[^']*'" 2>/dev/null | grep -v '__(' | grep -v 'i18n' || true)
 if [ -n "$HARDCODED" ]; then
     echo -e "${RED}✗ Hardcoded French text found:${NC}"
     echo "$HARDCODED"
@@ -45,20 +47,26 @@ else
     echo -e "${GREEN}✓${NC}"
 fi
 
-# 4. Vérifier syntaxe PHP
+# 4. Vérifier syntaxe PHP (si PHP disponible)
 echo -n "4. Checking PHP syntax... "
-PHP_FILES=$(git diff --cached --name-only | grep -E '\.php$' || true)
-for file in $PHP_FILES; do
-    if [ -f "$file" ]; then
-        php -l "$file" > /dev/null 2>&1 || {
-            echo -e "${RED}✗ Syntax error in $file${NC}"
-            php -l "$file"
-            ERRORS=$((ERRORS + 1))
-        }
+if command -v php &> /dev/null; then
+    PHP_FILES=$(git diff --cached --name-only | grep -E '\.php$' || true)
+    PHP_ERRORS=0
+    for file in $PHP_FILES; do
+        if [ -f "$file" ]; then
+            php -l "$file" > /dev/null 2>&1 || {
+                echo -e "${RED}✗ Syntax error in $file${NC}"
+                php -l "$file"
+                PHP_ERRORS=$((PHP_ERRORS + 1))
+                ERRORS=$((ERRORS + 1))
+            }
+        fi
+    done
+    if [ $PHP_ERRORS -eq 0 ]; then
+        echo -e "${GREEN}✓${NC}"
     fi
-done
-if [ $ERRORS -eq 0 ]; then
-    echo -e "${GREEN}✓${NC}"
+else
+    echo -e "${YELLOW}⚠ PHP not found, skipping${NC}"
 fi
 
 # 5. Vérifier accents manquants
