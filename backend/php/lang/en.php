@@ -16,6 +16,7 @@ return [
 
     // Navigation
     'nav' => [
+        'skip_to_content' => 'Skip to content',
         'home' => 'Home',
         'book' => 'Book a ride',
         'history' => 'History',

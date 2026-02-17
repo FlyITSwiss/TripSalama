@@ -1,4 +1,17 @@
 {
+    "app": {
+        "name": "TripSalama",
+        "tagline": "Voyagez en toute sérénité"
+    },
+    "nav": {
+        "skip_to_content": "Aller au contenu",
+        "home": "Accueil",
+        "book": "Réserver",
+        "history": "Historique",
+        "dashboard": "Tableau de bord",
+        "profile": "Profil",
+        "logout": "Déconnexion"
+    },
     "common": {
         "loading": "Chargement...",
         "save": "Enregistrer",

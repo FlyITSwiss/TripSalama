@@ -1,0 +1,305 @@
+<?php
+/**
+ * TripSalama - Page Profil Utilisateur
+ * @var array $userData
+ * @var array|null $vehicle
+ * @var array $stats
+ */
+$user = current_user();
+?>
+
+<div class="profile-page">
+    <!-- Header profil -->
+    <div class="profile-header">
+        <div class="profile-avatar">
+            <?php if (!empty($userData['avatar'])): ?>
+                <img src="<?= htmlspecialchars($userData['avatar']) ?>" alt="<?= htmlspecialchars($userData['first_name']) ?>">
+            <?php else: ?>
+                <div class="avatar-placeholder">
+                    <?= strtoupper(substr($userData['first_name'] ?? 'U', 0, 1)) ?>
+                </div>
+            <?php endif; ?>
+        </div>
+        <h1 class="profile-name"><?= htmlspecialchars($userData['first_name'] . ' ' . $userData['last_name']) ?></h1>
+        <p class="profile-role">
+            <?= $user['role'] === 'driver' ? __('auth.driver') : __('auth.passenger') ?>
+        </p>
+    </div>
+
+    <!-- Stats -->
+    <div class="profile-stats">
+        <div class="stat-item">
+            <span class="stat-value"><?= (int)($stats['completed'] ?? 0) ?></span>
+            <span class="stat-label"><?= __('history.total_rides') ?></span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value">
+                <?php
+                $rating = $userData['rating'] ?? 0;
+                echo $rating > 0 ? number_format($rating, 1) : '-';
+                ?>
+            </span>
+            <span class="stat-label"><?= __('profile.rating') ?></span>
+        </div>
+    </div>
+
+    <!-- Informations -->
+    <div class="profile-section">
+        <h2 class="section-title"><?= __('profile.title') ?></h2>
+
+        <div class="info-list">
+            <div class="info-item">
+                <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="4" width="20" height="16" rx="2"/>
+                    <path d="M22 6l-10 7L2 6"/>
+                </svg>
+                <div class="info-content">
+                    <span class="info-label"><?= __('auth.email') ?></span>
+                    <span class="info-value"><?= htmlspecialchars($userData['email']) ?></span>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                </svg>
+                <div class="info-content">
+                    <span class="info-label"><?= __('form.phone') ?></span>
+                    <span class="info-value"><?= htmlspecialchars($userData['phone'] ?? '-') ?></span>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <div class="info-content">
+                    <span class="info-label"><?= __('profile.member_since') ?></span>
+                    <span class="info-value">
+                        <?php
+                        $date = new DateTime($userData['created_at']);
+                        echo $date->format('d/m/Y');
+                        ?>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <?php if ($vehicle): ?>
+    <!-- Informations véhicule -->
+    <div class="profile-section">
+        <h2 class="section-title"><?= __('vehicle.title') ?></h2>
+
+        <div class="vehicle-card">
+            <div class="vehicle-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 17h14v-6h-4l-2-4H9l-2 4H5v6z"/>
+                    <circle cx="7.5" cy="17" r="2"/>
+                    <circle cx="16.5" cy="17" r="2"/>
+                </svg>
+            </div>
+            <div class="vehicle-info">
+                <span class="vehicle-name"><?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']) ?></span>
+                <span class="vehicle-details"><?= htmlspecialchars($vehicle['color'] . ' - ' . $vehicle['license_plate']) ?></span>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Actions -->
+    <div class="profile-actions">
+        <a href="<?= base_url('profile/edit') ?>" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            <?= __('profile.edit') ?>
+        </a>
+    </div>
+</div>
+
+<style>
+.profile-page {
+    padding-bottom: var(--space-34);
+}
+
+.profile-header {
+    text-align: center;
+    padding: var(--space-21);
+    background-color: var(--surface);
+    border-radius: var(--radius-xl);
+    margin-bottom: var(--space-21);
+}
+
+.profile-avatar {
+    width: 89px;
+    height: 89px;
+    margin: 0 auto var(--space-13);
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius-full);
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius-full);
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-3xl);
+    font-weight: var(--font-bold);
+}
+
+.profile-name {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    margin-bottom: var(--space-4);
+}
+
+.profile-role {
+    font-size: var(--text-sm);
+    color: var(--primary);
+    font-weight: var(--font-medium);
+}
+
+.profile-stats {
+    display: flex;
+    gap: var(--space-13);
+    margin-bottom: var(--space-21);
+}
+
+.stat-item {
+    flex: 1;
+    text-align: center;
+    padding: var(--space-13);
+    background-color: var(--surface);
+    border-radius: var(--radius-lg);
+}
+
+.stat-item .stat-value {
+    display: block;
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--text);
+}
+
+.stat-item .stat-label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.profile-section {
+    background-color: var(--surface);
+    border-radius: var(--radius-xl);
+    padding: var(--space-21);
+    margin-bottom: var(--space-21);
+}
+
+.section-title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    margin-bottom: var(--space-13);
+}
+
+.info-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-13);
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-13);
+}
+
+.info-icon {
+    width: 24px;
+    height: 24px;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.info-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.info-value {
+    font-size: var(--text-sm);
+    color: var(--text);
+}
+
+.vehicle-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-13);
+    padding: var(--space-13);
+    background-color: var(--background);
+    border-radius: var(--radius-lg);
+}
+
+.vehicle-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(var(--primary-rgb), 0.1);
+    border-radius: var(--radius-full);
+    color: var(--primary);
+}
+
+.vehicle-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.vehicle-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.vehicle-name {
+    font-weight: var(--font-semibold);
+    color: var(--text);
+}
+
+.vehicle-details {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+.profile-actions {
+    margin-top: var(--space-21);
+}
+
+.profile-actions .btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-8);
+}
+
+.profile-actions .btn svg {
+    width: 18px;
+    height: 18px;
+}
+</style>

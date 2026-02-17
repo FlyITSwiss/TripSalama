@@ -17,6 +17,7 @@ return [
 
     // Navigation
     'nav' => [
+        'skip_to_content' => 'Aller au contenu',
         'home' => 'Accueil',
         'book' => 'Réserver',
         'history' => 'Historique',

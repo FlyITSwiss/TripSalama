@@ -1,4 +1,17 @@
 {
+    "app": {
+        "name": "TripSalama",
+        "tagline": "Travel with peace of mind"
+    },
+    "nav": {
+        "skip_to_content": "Skip to content",
+        "home": "Home",
+        "book": "Book",
+        "history": "History",
+        "dashboard": "Dashboard",
+        "profile": "Profile",
+        "logout": "Logout"
+    },
     "common": {
         "loading": "Loading...",
         "save": "Save",
