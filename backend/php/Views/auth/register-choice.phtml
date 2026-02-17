@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="<?= $_SESSION['lang'] ?? 'fr' ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2D5A4A">
+    <?= csrf_meta() ?>
+
+    <title><?= __('auth.register') ?> - <?= __('app.name') ?></title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="<?= versioned_asset('css/tripsalama-core.css') ?>">
+    <link rel="stylesheet" href="<?= versioned_asset('css/tripsalama-components.css') ?>">
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-card">
+            <div class="auth-header">
+                <svg class="auth-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="45" fill="#2D5A4A"/>
+                    <path d="M50 25C36.2 25 25 36.2 25 50s11.2 25 25 25 25-11.2 25-25S63.8 25 50 25zm0 45c-11 0-20-9-20-20s9-20 20-20 20 9 20 20-9 20-20 20z" fill="#C9A962"/>
+                    <path d="M50 35c-8.3 0-15 6.7-15 15s6.7 15 15 15 15-6.7 15-15-6.7-15-15-15zm0 25c-5.5 0-10-4.5-10-10s4.5-10 10-10 10 4.5 10 10-4.5 10-10 10z" fill="#FFFFFF"/>
+                    <circle cx="50" cy="50" r="5" fill="#C9A962"/>
+                </svg>
+                <h1 class="auth-title"><?= __('auth.create_account') ?></h1>
+                <p class="auth-subtitle"><?= __('auth.register_as') ?></p>
+            </div>
+
+            <div class="auth-body">
+                <div class="role-selection" style="display: flex; flex-direction: column; gap: var(--space-13);">
+                    <a href="<?= base_url('register/passenger') ?>" class="role-option" style="text-decoration: none;">
+                        <svg class="role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <div style="text-align: center;">
+                            <div class="role-label" style="font-size: var(--text-lg); margin-bottom: var(--space-4);">
+                                <?= __('auth.register_passenger') ?>
+                            </div>
+                            <div style="font-size: var(--text-sm); color: var(--color-text-muted);">
+                                <?= __('booking.title') ?>
+                            </div>
+                        </div>
+                    </a>
+
+                    <a href="<?= base_url('register/driver') ?>" class="role-option" style="text-decoration: none;">
+                        <svg class="role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                            <line x1="9" y1="9" x2="9.01" y2="9"/>
+                            <line x1="15" y1="9" x2="15.01" y2="9"/>
+                        </svg>
+                        <div style="text-align: center;">
+                            <div class="role-label" style="font-size: var(--text-lg); margin-bottom: var(--space-4);">
+                                <?= __('auth.register_driver') ?>
+                            </div>
+                            <div style="font-size: var(--text-sm); color: var(--color-text-muted);">
+                                <?= __('driver.title') ?>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <div class="auth-footer">
+                <p><?= __('auth.have_account') ?></p>
+                <a href="<?= base_url('login') ?>" class="btn btn-outline btn-block">
+                    <?= __('auth.login') ?>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

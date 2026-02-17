@@ -1,0 +1,101 @@
+<div class="dashboard-header">
+    <div class="dashboard-greeting">
+        <?= __('auth.welcome_back') ?> <?= htmlspecialchars($user['first_name']) ?> !
+    </div>
+    <div class="dashboard-tagline"><?= __('app.tagline') ?></div>
+</div>
+
+<div class="dashboard-content">
+    <!-- Statistiques -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value"><?= $stats['total_rides'] ?></div>
+            <div class="stat-label"><?= __('history.total_rides') ?></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value"><?= $stats['this_month'] ?></div>
+            <div class="stat-label"><?= __('history.this_month') ?></div>
+        </div>
+    </div>
+
+    <?php if ($activeRide): ?>
+    <!-- Course en cours -->
+    <div class="card mb-21">
+        <div class="card-header">
+            <h3 class="card-title"><?= __('ride.title') ?></h3>
+            <span class="badge badge-<?= $activeRide['status'] === 'in_progress' ? 'success' : 'warning' ?>">
+                <?= __('ride.' . $activeRide['status']) ?>
+            </span>
+        </div>
+        <div class="card-body">
+            <div class="history-route">
+                <div class="history-address">
+                    <span class="history-address-dot pickup"></span>
+                    <span><?= htmlspecialchars($activeRide['pickup_address']) ?></span>
+                </div>
+                <div class="history-address">
+                    <span class="history-address-dot dropoff"></span>
+                    <span><?= htmlspecialchars($activeRide['dropoff_address']) ?></span>
+                </div>
+            </div>
+            <a href="<?= base_url('passenger/ride/' . $activeRide['id']) ?>" class="btn btn-primary btn-block">
+                <?= __('ride.title') ?>
+            </a>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Actions rapides -->
+    <h3 style="font-size: var(--text-lg); margin-bottom: var(--space-13);"><?= __('nav.home') ?></h3>
+
+    <div class="quick-actions">
+        <a href="<?= base_url('passenger/book') ?>" class="quick-action">
+            <div class="quick-action-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="16"/>
+                    <line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
+            </div>
+            <div class="quick-action-content">
+                <div class="quick-action-title"><?= __('booking.title') ?></div>
+                <div class="quick-action-desc"><?= __('booking.pickup_placeholder') ?></div>
+            </div>
+            <svg class="quick-action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                <polyline points="9 18 15 12 9 6"/>
+            </svg>
+        </a>
+
+        <a href="<?= base_url('passenger/history') ?>" class="quick-action">
+            <div class="quick-action-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12,6 12,12 16,14"/>
+                </svg>
+            </div>
+            <div class="quick-action-content">
+                <div class="quick-action-title"><?= __('history.title') ?></div>
+                <div class="quick-action-desc"><?= __('history.view_details') ?></div>
+            </div>
+            <svg class="quick-action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                <polyline points="9 18 15 12 9 6"/>
+            </svg>
+        </a>
+
+        <a href="<?= base_url('profile') ?>" class="quick-action">
+            <div class="quick-action-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+            </div>
+            <div class="quick-action-content">
+                <div class="quick-action-title"><?= __('profile.title') ?></div>
+                <div class="quick-action-desc"><?= __('profile.edit') ?></div>
+            </div>
+            <svg class="quick-action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                <polyline points="9 18 15 12 9 6"/>
+            </svg>
+        </a>
+    </div>
+</div>

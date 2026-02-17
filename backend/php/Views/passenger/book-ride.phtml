@@ -1,0 +1,88 @@
+<div class="booking-container">
+    <!-- Panneau de reservation -->
+    <div class="booking-panel">
+        <h1 class="booking-title"><?= __('booking.title') ?></h1>
+
+        <form id="bookingForm">
+            <!-- Point de depart -->
+            <div class="address-input-group">
+                <span class="address-marker pickup"></span>
+                <input type="text" id="pickupInput" class="form-input"
+                       placeholder="<?= __('booking.pickup_placeholder') ?>"
+                       autocomplete="off">
+                <input type="hidden" id="pickupLat" name="pickup_lat">
+                <input type="hidden" id="pickupLng" name="pickup_lng">
+                <input type="hidden" id="pickupAddress" name="pickup_address">
+                <div class="address-connector"></div>
+                <div id="pickupDropdown" class="autocomplete-dropdown hidden"></div>
+            </div>
+
+            <!-- Destination -->
+            <div class="address-input-group">
+                <span class="address-marker dropoff"></span>
+                <input type="text" id="dropoffInput" class="form-input"
+                       placeholder="<?= __('booking.dropoff_placeholder') ?>"
+                       autocomplete="off">
+                <input type="hidden" id="dropoffLat" name="dropoff_lat">
+                <input type="hidden" id="dropoffLng" name="dropoff_lng">
+                <input type="hidden" id="dropoffAddress" name="dropoff_address">
+                <div id="dropoffDropdown" class="autocomplete-dropdown hidden"></div>
+            </div>
+
+            <!-- Ma position -->
+            <button type="button" id="locateMeBtn" class="btn btn-ghost btn-block" style="margin-bottom: var(--space-21);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <?= __('booking.my_location') ?>
+            </button>
+
+            <!-- Estimation -->
+            <div id="estimationCard" class="estimation-card hidden">
+                <div class="estimation-row">
+                    <span class="estimation-label"><?= __('booking.distance') ?></span>
+                    <span class="estimation-value" id="estimatedDistance">-</span>
+                </div>
+                <div class="estimation-row">
+                    <span class="estimation-label"><?= __('booking.duration') ?></span>
+                    <span class="estimation-value" id="estimatedDuration">-</span>
+                </div>
+                <div class="estimation-row">
+                    <span class="estimation-label"><?= __('booking.price') ?></span>
+                    <span class="estimation-value estimation-price" id="estimatedPrice">-</span>
+                </div>
+            </div>
+
+            <!-- Bouton confirmer -->
+            <button type="submit" id="confirmBtn" class="btn btn-accent btn-block btn-lg hidden" style="margin-top: var(--space-21);">
+                <?= __('booking.confirm_ride') ?>
+            </button>
+        </form>
+    </div>
+
+    <!-- Carte -->
+    <div class="booking-map">
+        <div id="map" class="map-container">
+            <div class="map-loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Configuration pour le module booking
+    window.BookingConfig = {
+        apiUrl: AppConfig.apiPath,
+        csrfToken: AppConfig.csrfToken,
+        defaultCenter: [46.2044, 6.1432], // Geneve
+        defaultZoom: 13,
+        i18n: {
+            searching: <?= json_encode(__('ride.searching')) ?>,
+            noResults: <?= json_encode(__('booking.no_results')) ?>,
+            error: <?= json_encode(__('error.generic')) ?>,
+            geolocationError: <?= json_encode(__('error.geolocation')) ?>
+        }
+    };
+</script>

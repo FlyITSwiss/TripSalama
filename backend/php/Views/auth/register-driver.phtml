@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="<?= $_SESSION['lang'] ?? 'fr' ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2D5A4A">
+    <?= csrf_meta() ?>
+
+    <title><?= __('auth.register_driver') ?> - <?= __('app.name') ?></title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="<?= versioned_asset('css/tripsalama-core.css') ?>">
+    <link rel="stylesheet" href="<?= versioned_asset('css/tripsalama-components.css') ?>">
+
+    <script>
+        window.AppConfig = {
+            basePath: <?= json_encode(config('base_path', '')) ?>,
+            apiPath: <?= json_encode(config('base_path', '') . '/api') ?>,
+            lang: <?= json_encode($_SESSION['lang'] ?? 'fr') ?>,
+            csrfToken: <?= json_encode(csrf_token()) ?>
+        };
+    </script>
+</head>
+<body>
+    <div class="auth-page" style="padding: var(--space-13);">
+        <div class="auth-card" style="max-width: 500px;">
+            <div class="auth-header">
+                <a href="<?= base_url('register') ?>" class="btn btn-ghost" style="position: absolute; top: var(--space-13); left: var(--space-13);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <h1 class="auth-title"><?= __('auth.register_driver') ?></h1>
+                <p class="auth-subtitle"><?= __('auth.create_account') ?></p>
+            </div>
+
+            <?php if (has_flash()): ?>
+            <div style="padding: 0 var(--space-21);">
+                <?php foreach (get_flash() as $type => $messages): ?>
+                    <?php foreach ($messages as $message): ?>
+                    <div class="flash-message flash-<?= $type ?>" style="margin-bottom: var(--space-13);">
+                        <?= htmlspecialchars($message) ?>
+                    </div>
+                    <?php endforeach; ?>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
+            <form action="<?= base_url('register/driver') ?>" method="POST" class="auth-body" id="registerForm">
+                <?= csrf_field() ?>
+
+                <!-- Informations personnelles -->
+                <h3 style="font-size: var(--text-base); color: var(--color-text-secondary); margin-bottom: var(--space-13);">
+                    <?= __('profile.title') ?>
+                </h3>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-13);">
+                    <div class="form-group">
+                        <label for="first_name" class="form-label"><?= __('form.first_name') ?> *</label>
+                        <input type="text" id="first_name" name="first_name" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="last_name" class="form-label"><?= __('form.last_name') ?> *</label>
+                        <input type="text" id="last_name" name="last_name" class="form-input" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label"><?= __('auth.email') ?> *</label>
+                    <input type="email" id="email" name="email" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone" class="form-label"><?= __('form.phone') ?> *</label>
+                    <input type="tel" id="phone" name="phone" class="form-input" required placeholder="+41 79 123 45 67">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-13);">
+                    <div class="form-group">
+                        <label for="password" class="form-label"><?= __('auth.password') ?> *</label>
+                        <input type="password" id="password" name="password" class="form-input" required minlength="8">
+                    </div>
+                    <div class="form-group">
+                        <label for="password_confirm" class="form-label"><?= __('auth.password_confirm') ?> *</label>
+                        <input type="password" id="password_confirm" name="password_confirm" class="form-input" required>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Informations véhicule -->
+                <h3 style="font-size: var(--text-base); color: var(--color-text-secondary); margin-bottom: var(--space-13);">
+                    <?= __('vehicle.title') ?>
+                </h3>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-13);">
+                    <div class="form-group">
+                        <label for="vehicle_brand" class="form-label"><?= __('vehicle.brand') ?> *</label>
+                        <input type="text" id="vehicle_brand" name="vehicle_brand" class="form-input" required placeholder="Toyota, Volkswagen...">
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicle_model" class="form-label"><?= __('vehicle.model') ?> *</label>
+                        <input type="text" id="vehicle_model" name="vehicle_model" class="form-input" required placeholder="Corolla, Golf...">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-13);">
+                    <div class="form-group">
+                        <label for="vehicle_color" class="form-label"><?= __('vehicle.color') ?> *</label>
+                        <input type="text" id="vehicle_color" name="vehicle_color" class="form-input" required placeholder="Blanc, Noir, Gris...">
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicle_year" class="form-label"><?= __('vehicle.year') ?></label>
+                        <input type="number" id="vehicle_year" name="vehicle_year" class="form-input" min="2000" max="<?= date('Y') + 1 ?>" placeholder="2023">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="vehicle_license_plate" class="form-label"><?= __('vehicle.license_plate') ?> *</label>
+                    <input type="text" id="vehicle_license_plate" name="vehicle_license_plate" class="form-input" required placeholder="GE 123456">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-lg">
+                    <?= __('auth.register_button') ?>
+                </button>
+
+                <p style="font-size: var(--text-sm); color: var(--color-text-muted); text-align: center; margin-top: var(--space-13);">
+                    <?= __('profile.not_verified') ?>
+                </p>
+            </form>
+
+            <div class="auth-footer">
+                <p><?= __('auth.have_account') ?></p>
+                <a href="<?= base_url('login') ?>" class="btn btn-outline btn-block">
+                    <?= __('auth.login') ?>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('password_confirm').value;
+
+            if (password !== confirm) {
+                e.preventDefault();
+                alert(<?= json_encode(__('validation.password_mismatch')) ?>);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="<?= $_SESSION['lang'] ?? 'fr' ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= __('error.generic') ?> - <?= __('app.name') ?></title>
+    <link rel="stylesheet" href="<?= asset_url('css/tripsalama-core.css') ?>">
+    <style>
+        .error-page {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: var(--space-34);
+        }
+        .error-code {
+            font-size: var(--text-3xl);
+            font-weight: 700;
+            color: var(--color-danger);
+            margin-bottom: var(--space-13);
+        }
+        .error-message {
+            font-size: var(--text-xl);
+            color: var(--color-text-secondary);
+            margin-bottom: var(--space-34);
+        }
+    </style>
+</head>
+<body>
+    <div class="error-page">
+        <div>
+            <div class="error-code">500</div>
+            <div class="error-message"><?= __('error.generic') ?></div>
+            <a href="<?= base_url() ?>" class="btn btn-primary">
+                <?= __('nav.home') ?>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

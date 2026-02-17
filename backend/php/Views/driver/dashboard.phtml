@@ -1,0 +1,152 @@
+<div class="dashboard-header">
+    <div class="dashboard-greeting">
+        <?= __('auth.welcome_back') ?> <?= htmlspecialchars($user['first_name']) ?> !
+    </div>
+    <div class="dashboard-tagline"><?= __('driver.title') ?></div>
+</div>
+
+<div class="dashboard-content">
+    <!-- Toggle disponibilite -->
+    <div class="driver-status-toggle">
+        <div class="driver-status-info">
+            <div class="driver-status-icon <?= $status['is_available'] ? 'available' : 'unavailable' ?>" id="statusIcon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <?php if ($status['is_available']): ?>
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                    <?php else: ?>
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                    <?php endif; ?>
+                </svg>
+            </div>
+            <div>
+                <div class="driver-status-text" id="statusText">
+                    <?= $status['is_available'] ? __('driver.available') : __('driver.unavailable') ?>
+                </div>
+                <div class="driver-status-hint"><?= __('driver.toggle_status') ?></div>
+            </div>
+        </div>
+
+        <label class="toggle-switch">
+            <input type="checkbox" id="availabilityToggle" <?= $status['is_available'] ? 'checked' : '' ?>>
+            <span class="toggle-slider"></span>
+        </label>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value"><?= $stats['total_rides'] ?></div>
+            <div class="stat-label"><?= __('history.total_rides') ?></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value"><?= $stats['this_month'] ?></div>
+            <div class="stat-label"><?= __('history.this_month') ?></div>
+        </div>
+    </div>
+
+    <?php if ($activeRide): ?>
+    <!-- Course en cours -->
+    <div class="card mb-21">
+        <div class="card-header flex justify-between items-center">
+            <h3 class="card-title"><?= __('ride.title') ?></h3>
+            <span class="badge badge-success"><?= __('ride.' . $activeRide['status']) ?></span>
+        </div>
+        <div class="card-body">
+            <div class="history-route mb-13">
+                <div class="history-address">
+                    <span class="history-address-dot pickup"></span>
+                    <span><?= htmlspecialchars($activeRide['pickup_address']) ?></span>
+                </div>
+                <div class="history-address">
+                    <span class="history-address-dot dropoff"></span>
+                    <span><?= htmlspecialchars($activeRide['dropoff_address']) ?></span>
+                </div>
+            </div>
+            <p class="text-sm text-muted mb-13">
+                <?= __('auth.passenger') ?>: <?= htmlspecialchars($activeRide['passenger_first_name'] . ' ' . $activeRide['passenger_last_name']) ?>
+            </p>
+            <a href="<?= base_url('driver/navigation/' . $activeRide['id']) ?>" class="btn btn-primary btn-block">
+                <?= __('driver.go_to_destination') ?>
+            </a>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($status['is_available'] && !$activeRide): ?>
+    <!-- Courses en attente -->
+    <h3 style="font-size: var(--text-lg); margin-bottom: var(--space-13);"><?= __('driver.pending_rides') ?></h3>
+
+    <?php if (empty($pendingRides)): ?>
+    <div class="empty-state">
+        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12,6 12,12 16,14"/>
+        </svg>
+        <div class="empty-state-title"><?= __('driver.no_pending') ?></div>
+        <div class="empty-state-text"><?= __('ride.searching') ?></div>
+    </div>
+    <?php else: ?>
+    <div id="pendingRidesList">
+        <?php foreach ($pendingRides as $ride): ?>
+        <div class="ride-request-card" data-ride-id="<?= $ride['id'] ?>">
+            <div class="ride-request-header">
+                <span class="ride-request-price"><?= format_price((float)$ride['estimated_price']) ?></span>
+                <span class="ride-request-distance"><?= format_distance((float)$ride['estimated_distance_km']) ?></span>
+            </div>
+
+            <div class="ride-request-route">
+                <div class="history-address">
+                    <span class="history-address-dot pickup"></span>
+                    <span><?= htmlspecialchars(mb_substr($ride['pickup_address'], 0, 50)) ?>...</span>
+                </div>
+                <div class="history-address">
+                    <span class="history-address-dot dropoff"></span>
+                    <span><?= htmlspecialchars(mb_substr($ride['dropoff_address'], 0, 50)) ?>...</span>
+                </div>
+            </div>
+
+            <div class="ride-request-actions">
+                <button type="button" class="btn btn-outline reject-btn" data-ride-id="<?= $ride['id'] ?>">
+                    <?= __('driver.reject') ?>
+                </button>
+                <button type="button" class="btn btn-primary accept-btn" data-ride-id="<?= $ride['id'] ?>">
+                    <?= __('driver.accept') ?>
+                </button>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+    <?php endif; ?>
+
+    <?php if ($vehicle): ?>
+    <!-- Info vehicule -->
+    <div class="card mt-21">
+        <div class="card-header">
+            <h3 class="card-title"><?= __('vehicle.title') ?></h3>
+        </div>
+        <div class="card-body">
+            <p><strong><?= $vehicle['brand'] ?> <?= $vehicle['model'] ?></strong></p>
+            <p class="text-sm text-muted"><?= $vehicle['color'] ?> - <?= $vehicle['license_plate'] ?></p>
+        </div>
+    </div>
+    <?php endif; ?>
+</div>
+
+<script>
+    window.DriverConfig = {
+        apiUrl: AppConfig.apiPath,
+        csrfToken: AppConfig.csrfToken,
+        isAvailable: <?= $status['is_available'] ? 'true' : 'false' ?>,
+        vehicleId: <?= $vehicle ? (int)$vehicle['id'] : 'null' ?>,
+        i18n: {
+            available: <?= json_encode(__('driver.available')) ?>,
+            unavailable: <?= json_encode(__('driver.unavailable')) ?>,
+            accepted: <?= json_encode(__('msg.ride_accepted')) ?>,
+            error: <?= json_encode(__('error.generic')) ?>
+        }
+    };
+</script>

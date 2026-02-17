@@ -1,0 +1,102 @@
+<div class="navigation-page">
+    <!-- En-tête avec infos course -->
+    <div class="navigation-header">
+        <div class="ride-status-badge <?= $ride['status'] ?>">
+            <?= __('ride.' . $ride['status']) ?>
+        </div>
+        <div class="passenger-info">
+            <span class="passenger-name"><?= htmlspecialchars($ride['passenger_first_name'] . ' ' . $ride['passenger_last_name']) ?></span>
+        </div>
+    </div>
+
+    <!-- Carte plein écran -->
+    <div id="navigationMap" class="navigation-map"></div>
+
+    <!-- Panel d'actions flottant -->
+    <div class="navigation-panel">
+        <!-- Adresses -->
+        <div class="navigation-addresses">
+            <div class="nav-address pickup <?= $ride['status'] === 'accepted' ? 'active' : '' ?>">
+                <span class="nav-address-dot pickup"></span>
+                <div class="nav-address-content">
+                    <span class="nav-address-label"><?= __('ride.pickup') ?></span>
+                    <span class="nav-address-text"><?= htmlspecialchars($ride['pickup_address']) ?></span>
+                </div>
+            </div>
+            <div class="nav-address dropoff <?= $ride['status'] === 'in_progress' ? 'active' : '' ?>">
+                <span class="nav-address-dot dropoff"></span>
+                <div class="nav-address-content">
+                    <span class="nav-address-label"><?= __('ride.dropoff') ?></span>
+                    <span class="nav-address-text"><?= htmlspecialchars($ride['dropoff_address']) ?></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Infos temps/distance -->
+        <div class="navigation-stats">
+            <div class="nav-stat">
+                <span class="nav-stat-value" id="etaValue">--</span>
+                <span class="nav-stat-label"><?= __('ride.eta') ?></span>
+            </div>
+            <div class="nav-stat">
+                <span class="nav-stat-value" id="distanceValue">--</span>
+                <span class="nav-stat-label"><?= __('ride.distance') ?></span>
+            </div>
+            <div class="nav-stat">
+                <span class="nav-stat-value"><?= format_price((float)$ride['estimated_price']) ?></span>
+                <span class="nav-stat-label"><?= __('ride.price') ?></span>
+            </div>
+        </div>
+
+        <!-- Boutons d'action -->
+        <div class="navigation-actions">
+            <?php if ($ride['status'] === 'accepted'): ?>
+            <button type="button" class="btn btn-primary btn-block" id="arrivedBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <?= __('driver.arrived_pickup') ?>
+            </button>
+            <?php elseif ($ride['status'] === 'in_progress'): ?>
+            <button type="button" class="btn btn-success btn-block" id="completeBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <?= __('driver.complete_ride') ?>
+            </button>
+            <?php endif; ?>
+
+            <button type="button" class="btn btn-outline" id="cancelRideBtn">
+                <?= __('action.cancel') ?>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.NavigationConfig = {
+        rideId: <?= (int)$ride['id'] ?>,
+        status: <?= json_encode($ride['status']) ?>,
+        pickup: {
+            lat: <?= (float)$ride['pickup_lat'] ?>,
+            lng: <?= (float)$ride['pickup_lng'] ?>,
+            address: <?= json_encode($ride['pickup_address']) ?>
+        },
+        dropoff: {
+            lat: <?= (float)$ride['dropoff_lat'] ?>,
+            lng: <?= (float)$ride['dropoff_lng'] ?>,
+            address: <?= json_encode($ride['dropoff_address']) ?>
+        },
+        routePolyline: <?= json_encode($ride['route_polyline'] ?? null) ?>,
+        i18n: {
+            arrivedPickup: <?= json_encode(__('driver.arrived_pickup')) ?>,
+            startRide: <?= json_encode(__('driver.start_ride')) ?>,
+            completeRide: <?= json_encode(__('driver.complete_ride')) ?>,
+            rideCompleted: <?= json_encode(__('msg.ride_completed')) ?>,
+            confirmCancel: <?= json_encode(__('ride.confirm_cancel')) ?>,
+            error: <?= json_encode(__('error.generic')) ?>
+        }
+    };
+</script>

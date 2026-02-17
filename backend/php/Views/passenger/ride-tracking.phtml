@@ -1,0 +1,96 @@
+<!-- Barre de statut -->
+<div class="ride-status-bar">
+    <div class="ride-status">
+        <span class="status-dot <?= str_replace('_', '-', $ride['status']) ?>"></span>
+        <span class="status-text" id="statusText"><?= __('ride.' . $ride['status']) ?></span>
+    </div>
+    <div class="ride-eta" id="etaText">
+        <?php if ($ride['estimated_duration_min']): ?>
+        <?= __('ride.eta') ?>: <?= format_duration((int)$ride['estimated_duration_min']) ?>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- Carte -->
+<div style="height: calc(100vh - var(--size-header) - 55px - var(--size-mobile-nav)); position: relative;">
+    <div id="map" class="map-container">
+        <div class="map-loading">
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <!-- Mode simulation -->
+    <div class="simulation-bar">
+        <span class="simulation-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            <?= __('simulation.demo_mode') ?>
+        </span>
+        <div class="simulation-speed">
+            <button class="speed-btn active" data-speed="1">1x</button>
+            <button class="speed-btn" data-speed="2">2x</button>
+            <button class="speed-btn" data-speed="5">5x</button>
+        </div>
+    </div>
+
+    <?php if ($ride['driver_id']): ?>
+    <!-- Infos conductrice -->
+    <div class="driver-info-card" style="position: absolute; bottom: var(--space-89); left: var(--space-21); right: var(--space-21); margin: 0;">
+        <div class="driver-avatar">
+            <div class="avatar avatar-md">
+                <?php if ($ride['driver_avatar']): ?>
+                <img src="<?= base_url('uploads/avatars/' . $ride['driver_avatar']) ?>" alt="">
+                <?php else: ?>
+                <?= strtoupper(substr($ride['driver_first_name'], 0, 1)) ?>
+                <?php endif; ?>
+            </div>
+        </div>
+        <div class="driver-details">
+            <div class="driver-name"><?= htmlspecialchars($ride['driver_first_name'] . ' ' . $ride['driver_last_name']) ?></div>
+            <div class="driver-vehicle">
+                <?= htmlspecialchars($ride['vehicle_color'] . ' ' . $ride['vehicle_brand'] . ' ' . $ride['vehicle_model']) ?>
+                <br>
+                <strong><?= htmlspecialchars($ride['vehicle_plate']) ?></strong>
+            </div>
+        </div>
+        <div class="driver-actions">
+            <a href="tel:<?= htmlspecialchars($ride['driver_phone'] ?? '') ?>" class="btn-icon" title="Appeler">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                </svg>
+            </a>
+        </div>
+    </div>
+    <?php endif; ?>
+</div>
+
+<?php if ($ride['status'] === 'pending' || $ride['status'] === 'accepted'): ?>
+<!-- Bouton annuler -->
+<div style="padding: var(--space-21); background: var(--color-bg-card); border-top: 1px solid var(--color-border);">
+    <button id="cancelRideBtn" class="btn btn-danger btn-block">
+        <?= __('ride.cancel') ?>
+    </button>
+</div>
+<?php endif; ?>
+
+<script>
+    // Configuration pour le tracking
+    window.TrackingConfig = {
+        rideId: <?= (int)$ride['id'] ?>,
+        status: <?= json_encode($ride['status']) ?>,
+        pickup: { lat: <?= $ride['pickup_lat'] ?>, lng: <?= $ride['pickup_lng'] ?> },
+        dropoff: { lat: <?= $ride['dropoff_lat'] ?>, lng: <?= $ride['dropoff_lng'] ?> },
+        routePolyline: <?= json_encode($ride['route_polyline']) ?>,
+        apiUrl: AppConfig.apiPath,
+        csrfToken: AppConfig.csrfToken,
+        i18n: {
+            searching: <?= json_encode(__('ride.searching')) ?>,
+            driverArriving: <?= json_encode(__('ride.driver_arriving')) ?>,
+            inProgress: <?= json_encode(__('ride.in_progress')) ?>,
+            completed: <?= json_encode(__('ride.completed')) ?>,
+            eta: <?= json_encode(__('ride.eta')) ?>,
+            cancelConfirm: <?= json_encode(__('ride.cancel_confirm')) ?>
+        }
+    };
+</script>

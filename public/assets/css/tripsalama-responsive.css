@@ -1,0 +1,346 @@
+/**
+ * TripSalama - Responsive Styles
+ * Breakpoints φ: 320px, 518px, 838px, 1355px
+ */
+
+/* ============================================
+   MOBILE FIRST (< 320px)
+   ============================================ */
+/* Extra small devices - Base styles already in core */
+
+/* ============================================
+   SMALL DEVICES (>= 320px)
+   ============================================ */
+@media (min-width: 320px) {
+    .container {
+        padding: 0 var(--space-13);
+    }
+
+    .auth-body {
+        padding: var(--space-21);
+    }
+
+    .dashboard-content {
+        padding: var(--space-13);
+    }
+
+    .history-list {
+        padding: var(--space-13);
+    }
+}
+
+/* ============================================
+   MEDIUM DEVICES (>= 518px)
+   ============================================ */
+@media (min-width: 518px) {
+    .container {
+        padding: 0 var(--space-21);
+    }
+
+    /* Auth */
+    .auth-card {
+        max-width: 450px;
+    }
+
+    .auth-body {
+        padding: var(--space-21) var(--space-34) var(--space-34);
+    }
+
+    /* Dashboard */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-21);
+    }
+
+    .stat-card {
+        padding: var(--space-21);
+    }
+
+    /* History */
+    .history-item {
+        flex-direction: row;
+    }
+
+    /* Booking */
+    .booking-panel {
+        padding: var(--space-21);
+    }
+}
+
+/* ============================================
+   LARGE DEVICES (>= 838px)
+   ============================================ */
+@media (min-width: 838px) {
+    /* Layout */
+    .main-content {
+        padding-bottom: var(--space-55);
+    }
+
+    /* Header */
+    .main-nav {
+        display: flex;
+    }
+
+    .mobile-nav {
+        display: none;
+    }
+
+    /* Container */
+    .container {
+        padding: 0 var(--space-34);
+    }
+
+    /* Dashboard */
+    .dashboard-header {
+        padding: var(--space-34);
+    }
+
+    .dashboard-greeting {
+        font-size: var(--text-2xl);
+    }
+
+    .dashboard-content {
+        padding: var(--space-34);
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .quick-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .quick-action {
+        flex: 1 1 calc(50% - var(--space-13));
+        min-width: 300px;
+    }
+
+    /* Booking */
+    .booking-container {
+        flex-direction: row;
+        height: calc(100vh - var(--size-header));
+    }
+
+    .booking-panel {
+        width: 420px;
+        height: 100%;
+        overflow-y: auto;
+        border-right: var(--border-width) solid var(--color-border);
+    }
+
+    .booking-map {
+        flex: 1;
+    }
+
+    /* History */
+    .history-list {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    /* Driver Dashboard */
+    .driver-dashboard {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-21);
+    }
+
+    .driver-status-toggle {
+        grid-column: span 2;
+    }
+
+    /* Ride Tracking */
+    .tracking-container {
+        display: flex;
+        height: calc(100vh - var(--size-header));
+    }
+
+    .tracking-map {
+        flex: 1;
+    }
+
+    .tracking-panel {
+        width: 380px;
+        background: var(--color-bg-card);
+        border-left: var(--border-width) solid var(--color-border);
+        overflow-y: auto;
+    }
+}
+
+/* ============================================
+   EXTRA LARGE DEVICES (>= 1355px)
+   ============================================ */
+@media (min-width: 1355px) {
+    /* Container */
+    .container {
+        max-width: 1280px;
+    }
+
+    /* Dashboard */
+    .dashboard-content {
+        padding: var(--space-55);
+    }
+
+    .quick-action {
+        flex: 1 1 calc(33.333% - var(--space-21));
+    }
+
+    /* Booking */
+    .booking-panel {
+        width: 480px;
+        padding: var(--space-34);
+    }
+
+    /* Tracking */
+    .tracking-panel {
+        width: 420px;
+    }
+
+    /* Driver Dashboard */
+    .driver-dashboard {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: var(--space-34);
+    }
+}
+
+/* ============================================
+   HEIGHT BASED ADJUSTMENTS
+   ============================================ */
+@media (max-height: 600px) and (orientation: landscape) {
+    .auth-page {
+        padding: var(--space-13);
+    }
+
+    .auth-header {
+        padding: var(--space-13);
+    }
+
+    .auth-logo {
+        width: 55px;
+        height: 55px;
+        margin-bottom: var(--space-13);
+    }
+
+    .auth-title {
+        font-size: var(--text-xl);
+    }
+
+    .booking-map {
+        min-height: 200px;
+    }
+}
+
+/* ============================================
+   TOUCH OPTIMIZATIONS
+   ============================================ */
+@media (hover: none) and (pointer: coarse) {
+    /* Larger touch targets */
+    .btn {
+        min-height: 44px;
+    }
+
+    .form-input,
+    .form-select {
+        min-height: 44px;
+    }
+
+    .nav-link {
+        padding: var(--space-13);
+    }
+
+    .mobile-nav-item {
+        padding: var(--space-13);
+    }
+
+    /* Remove hover effects on touch */
+    .btn:hover {
+        transform: none;
+    }
+
+    .quick-action:hover {
+        transform: none;
+    }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+@media print {
+    .app-header,
+    .mobile-nav,
+    .flash-messages,
+    .btn,
+    .map-container {
+        display: none !important;
+    }
+
+    .main-content {
+        padding: 0;
+    }
+
+    body {
+        background: white;
+        color: black;
+    }
+
+    .card {
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+/* ============================================
+   HIGH CONTRAST
+   ============================================ */
+@media (prefers-contrast: high) {
+    :root {
+        --color-border: #000;
+        --color-text-muted: #555;
+    }
+
+    .btn-outline {
+        border-width: 3px;
+    }
+
+    .form-input:focus {
+        outline: 3px solid var(--color-primary);
+        outline-offset: 2px;
+    }
+}
+
+/* ============================================
+   DARK MODE PREFERENCE
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+    :root:not(.light-theme) {
+        --color-bg-primary: #1A1A1A;
+        --color-bg-secondary: #242424;
+        --color-bg-card: #2A2A2A;
+        --color-bg-elevated: #333333;
+        --color-text-primary: #FAFAFA;
+        --color-text-secondary: #BBBBBB;
+        --color-text-muted: #888888;
+        --color-border: #444444;
+        --color-border-light: #333333;
+    }
+}

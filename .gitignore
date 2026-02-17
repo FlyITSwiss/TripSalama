@@ -1,0 +1,66 @@
+# Environment
+.env
+.env.local
+.env.production
+!.env.example
+
+# Dependencies
+vendor/
+node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+storage/logs/*.log
+logs/
+*.log
+
+# Uploads (keep structure)
+public/uploads/*
+!public/uploads/.gitkeep
+!public/uploads/avatars/
+public/uploads/avatars/*
+!public/uploads/avatars/.gitkeep
+!public/uploads/documents/
+public/uploads/documents/*
+!public/uploads/documents/.gitkeep
+
+# Cache
+storage/cache/*
+!storage/cache/.gitkeep
+.cache/
+*.cache
+
+# Docker volumes data (local only)
+data/mysql/
+data/redis/
+
+# Tests
+tests/puppeteer/screenshots/*
+!tests/puppeteer/screenshots/.gitkeep
+coverage/
+
+# Secrets
+*.pem
+*.key
+*.crt
+secrets/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# PHPStan cache
+.phpstan.cache/

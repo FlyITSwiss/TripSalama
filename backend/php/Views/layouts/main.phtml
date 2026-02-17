@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="<?= $_SESSION['lang'] ?? 'fr' ?>" class="<?= $_SESSION['theme'] ?? '' ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2D5A4A">
+    <meta name="description" content="<?= __('app.tagline') ?>">
+    <?= csrf_meta() ?>
+
+    <title><?= $pageTitle ?? __('app.name') ?> - <?= __('app.name') ?></title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="<?= asset_url('images/logo.svg') ?>">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Leaflet CSS -->
+    <?php if (!empty($includeMap)): ?>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <?php endif; ?>
+
+    <!-- App CSS -->
+    <link rel="stylesheet" href="<?= versioned_asset('css/tripsalama-core.css') ?>">
+    <link rel="stylesheet" href="<?= versioned_asset('css/tripsalama-components.css') ?>">
+    <?php if (!empty($includeMap)): ?>
+    <link rel="stylesheet" href="<?= versioned_asset('css/tripsalama-map.css') ?>">
+    <?php endif; ?>
+    <link rel="stylesheet" href="<?= versioned_asset('css/tripsalama-responsive.css') ?>">
+
+    <!-- Page-specific CSS -->
+    <?php if (!empty($pageCss)): ?>
+    <?php foreach ((array)$pageCss as $css): ?>
+    <link rel="stylesheet" href="<?= versioned_asset('css/' . $css) ?>">
+    <?php endforeach; ?>
+    <?php endif; ?>
+
+    <!-- App Config -->
+    <script>
+        window.AppConfig = {
+            basePath: <?= json_encode(config('base_path', '')) ?>,
+            apiPath: <?= json_encode(config('base_path', '') . '/api') ?>,
+            lang: <?= json_encode($_SESSION['lang'] ?? 'fr') ?>,
+            csrfToken: <?= json_encode(csrf_token()) ?>,
+            debug: <?= json_encode(config('debug', false)) ?>
+        };
+    </script>
+</head>
+<body class="<?= $bodyClass ?? '' ?>">
+    <!-- Skip link -->
+    <a href="#main-content" class="skip-link"><?= __('nav.skip_to_content') ?? 'Aller au contenu' ?></a>
+
+    <?php if (is_authenticated()): ?>
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <a href="<?= base_url(has_role('driver') ? 'driver/dashboard' : 'passenger/dashboard') ?>" class="logo">
+                <img src="<?= asset_url('images/logo.svg') ?>" alt="<?= __('app.name') ?>" width="40" height="40">
+                <span class="logo-text"><?= __('app.name') ?></span>
+            </a>
+
+            <nav class="main-nav" aria-label="Navigation principale">
+                <?php if (has_role('passenger')): ?>
+                <a href="<?= base_url('passenger/book') ?>" class="nav-link <?= ($currentPage ?? '') === 'book' ? 'active' : '' ?>">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                    <span><?= __('nav.book') ?></span>
+                </a>
+                <a href="<?= base_url('passenger/history') ?>" class="nav-link <?= ($currentPage ?? '') === 'history' ? 'active' : '' ?>">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12,6 12,12 16,14"/>
+                    </svg>
+                    <span><?= __('nav.history') ?></span>
+                </a>
+                <?php endif; ?>
+
+                <?php if (has_role('driver')): ?>
+                <a href="<?= base_url('driver/dashboard') ?>" class="nav-link <?= ($currentPage ?? '') === 'dashboard' ? 'active' : '' ?>">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    <span><?= __('nav.dashboard') ?></span>
+                </a>
+                <?php endif; ?>
+
+                <a href="<?= base_url('profile') ?>" class="nav-link <?= ($currentPage ?? '') === 'profile' ? 'active' : '' ?>">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span><?= __('nav.profile') ?></span>
+                </a>
+            </nav>
+
+            <div class="header-actions">
+                <form action="<?= base_url('logout') ?>" method="POST" class="logout-form">
+                    <?= csrf_field() ?>
+                    <button type="submit" class="btn-icon" title="<?= __('nav.logout') ?>">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16,17 21,12 16,7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </header>
+    <?php endif; ?>
+
+    <!-- Flash Messages -->
+    <?php if (has_flash()): ?>
+    <div class="flash-messages">
+        <?php foreach (get_flash() as $type => $messages): ?>
+            <?php foreach ($messages as $message): ?>
+            <div class="flash-message flash-<?= $type ?>" role="alert">
+                <span><?= htmlspecialchars($message) ?></span>
+                <button type="button" class="flash-close" aria-label="Fermer">&times;</button>
+            </div>
+            <?php endforeach; ?>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+
+    <!-- Main Content -->
+    <main id="main-content" class="main-content">
+        <?= $content ?? '' ?>
+    </main>
+
+    <?php if (is_authenticated()): ?>
+    <!-- Mobile Navigation -->
+    <nav class="mobile-nav" aria-label="Navigation mobile">
+        <?php if (has_role('passenger')): ?>
+        <a href="<?= base_url('passenger/dashboard') ?>" class="mobile-nav-item <?= ($currentPage ?? '') === 'dashboard' ? 'active' : '' ?>">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            </svg>
+            <span><?= __('nav.home') ?></span>
+        </a>
+        <a href="<?= base_url('passenger/book') ?>" class="mobile-nav-item <?= ($currentPage ?? '') === 'book' ? 'active' : '' ?>">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="16"/>
+                <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+            <span><?= __('nav.book') ?></span>
+        </a>
+        <a href="<?= base_url('passenger/history') ?>" class="mobile-nav-item <?= ($currentPage ?? '') === 'history' ? 'active' : '' ?>">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12,6 12,12 16,14"/>
+            </svg>
+            <span><?= __('nav.history') ?></span>
+        </a>
+        <?php else: ?>
+        <a href="<?= base_url('driver/dashboard') ?>" class="mobile-nav-item <?= ($currentPage ?? '') === 'dashboard' ? 'active' : '' ?>">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            <span><?= __('nav.dashboard') ?></span>
+        </a>
+        <?php endif; ?>
+        <a href="<?= base_url('profile') ?>" class="mobile-nav-item <?= ($currentPage ?? '') === 'profile' ? 'active' : '' ?>">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span><?= __('nav.profile') ?></span>
+        </a>
+    </nav>
+    <?php endif; ?>
+
+    <!-- Leaflet JS -->
+    <?php if (!empty($includeMap)): ?>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <?php endif; ?>
+
+    <!-- Core JS -->
+    <script src="<?= versioned_asset('js/core/app-config.js') ?>"></script>
+    <script src="<?= versioned_asset('js/core/api-service.js') ?>"></script>
+    <script src="<?= versioned_asset('js/core/event-bus.js') ?>"></script>
+    <script src="<?= versioned_asset('js/core/state-manager.js') ?>"></script>
+    <script src="<?= versioned_asset('js/core/i18n.js') ?>"></script>
+
+    <!-- Components -->
+    <script src="<?= versioned_asset('js/components/toast-notification.js') ?>"></script>
+    <script src="<?= versioned_asset('js/components/modal.js') ?>"></script>
+
+    <!-- Page-specific JS -->
+    <?php if (!empty($pageJs)): ?>
+    <?php foreach ((array)$pageJs as $js): ?>
+    <script src="<?= versioned_asset('js/' . $js) ?>"></script>
+    <?php endforeach; ?>
+    <?php endif; ?>
+
+    <!-- Flash messages auto-close -->
+    <script>
+        document.querySelectorAll('.flash-close').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.parentElement.remove();
+            });
+        });
+        setTimeout(() => {
+            document.querySelectorAll('.flash-message').forEach(msg => msg.remove());
+        }, 5000);
+    </script>
+</body>
+</html>

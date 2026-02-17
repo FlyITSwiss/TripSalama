@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  tripsalama-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tripsalama-app
+    volumes:
+      - ../:/var/www/tripsalama
+      - ../public/uploads:/var/www/tripsalama/public/uploads
+    depends_on:
+      - tripsalama-db
+    networks:
+      - tripsalama-network
+
+  tripsalama-nginx:
+    image: nginx:alpine
+    container_name: tripsalama-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ../:/var/www/tripsalama
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - tripsalama-app
+    networks:
+      - tripsalama-network
+
+  tripsalama-db:
+    image: mysql:8.0
+    container_name: tripsalama-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root_secret
+      MYSQL_DATABASE: tripsalama
+      MYSQL_USER: tripsalama
+      MYSQL_PASSWORD: tripsalama_secret
+    ports:
+      - "3307:3306"
+    volumes:
+      - tripsalama-db-data:/var/lib/mysql
+      - ../database/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - tripsalama-network
+
+networks:
+  tripsalama-network:
+    driver: bridge
+
+volumes:
+  tripsalama-db-data:

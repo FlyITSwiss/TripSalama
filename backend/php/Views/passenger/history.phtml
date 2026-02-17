@@ -1,0 +1,58 @@
+<div class="history-list">
+    <h1 style="font-size: var(--text-xl); margin-bottom: var(--space-21);"><?= __('history.title') ?></h1>
+
+    <?php if (empty($rides)): ?>
+    <div class="empty-state">
+        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12,6 12,12 16,14"/>
+        </svg>
+        <div class="empty-state-title"><?= __('history.no_rides') ?></div>
+        <div class="empty-state-text"><?= __('booking.pickup_placeholder') ?></div>
+        <a href="<?= base_url('passenger/book') ?>" class="btn btn-primary">
+            <?= __('booking.title') ?>
+        </a>
+    </div>
+    <?php else: ?>
+
+    <?php foreach ($rides as $ride): ?>
+    <?php
+        $date = new DateTime($ride['created_at']);
+        $statusClass = match($ride['status']) {
+            'completed' => 'success',
+            'cancelled' => 'danger',
+            default => 'warning'
+        };
+    ?>
+    <div class="history-item">
+        <div class="history-date">
+            <span class="history-day"><?= $date->format('d') ?></span>
+            <span class="history-month"><?= strtoupper($date->format('M')) ?></span>
+        </div>
+
+        <div class="history-content">
+            <div class="history-route">
+                <div class="history-address">
+                    <span class="history-address-dot pickup"></span>
+                    <span><?= htmlspecialchars(mb_substr($ride['pickup_address'], 0, 40)) ?>...</span>
+                </div>
+                <div class="history-address">
+                    <span class="history-address-dot dropoff"></span>
+                    <span><?= htmlspecialchars(mb_substr($ride['dropoff_address'], 0, 40)) ?>...</span>
+                </div>
+            </div>
+
+            <div class="history-meta">
+                <span class="history-price">
+                    <?= $ride['final_price'] ? format_price((float)$ride['final_price']) : format_price((float)$ride['estimated_price']) ?>
+                </span>
+                <span class="badge badge-<?= $statusClass ?> history-badge">
+                    <?= __('ride.' . $ride['status']) ?>
+                </span>
+            </div>
+        </div>
+    </div>
+    <?php endforeach; ?>
+
+    <?php endif; ?>
+</div>
