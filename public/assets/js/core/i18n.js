@@ -1,241 +1,159 @@
 /**
- * TripSalama - Internationalization (i18n)
+ * TripSalama - Internationalisation (i18n)
  * Systeme de traduction pour le frontend
  */
 
-'use strict';
+(function() {
+    'use strict';
 
-const I18n = (function() {
-    // Traductions chargees
+    // Cache des traductions
     let translations = {};
     let currentLang = 'fr';
     let isLoaded = false;
 
     /**
-     * Charger les traductions pour une langue
-     * @param {string} lang - Code de langue (fr, en)
-     * @returns {Promise}
+     * i18n - Gestion des traductions
      */
-    async function load(lang = null) {
-        lang = lang || AppConfig.getLang();
-        currentLang = lang;
+    window.i18n = {
+        /**
+         * Initialiser le systeme i18n
+         * @param {string} lang - Langue a charger
+         * @returns {Promise<void>}
+         */
+        init: async function(lang = null) {
+            currentLang = lang || AppConfig.lang || 'fr';
 
-        try {
-            const url = AppConfig.assetUrl(`lang/${lang}.json`);
-            const response = await fetch(url);
+            try {
+                const url = AppConfig.assetUrl('lang/' + currentLang + '.json');
+                const response = await fetch(url);
 
-            if (!response.ok) {
-                throw new Error(`Failed to load translations: ${response.status}`);
+                if (!response.ok) {
+                    throw new Error('Fichier de langue non trouve');
+                }
+
+                translations = await response.json();
+                isLoaded = true;
+
+                AppConfig.log('i18n charge:', currentLang, Object.keys(translations).length, 'cles');
+
+            } catch (error) {
+                AppConfig.error('i18n loading error:', error.message);
+                translations = {};
+                isLoaded = true;
+            }
+        },
+
+        /**
+         * Obtenir une traduction
+         * @param {string} key - Cle de traduction (ex: "auth.login")
+         * @param {Object} params - Parametres de remplacement
+         * @returns {string} Texte traduit
+         */
+        t: function(key, params = {}) {
+            // Naviguer dans l'objet avec les cles imbriquees
+            const keys = key.split('.');
+            let value = translations;
+
+            for (const k of keys) {
+                if (value && typeof value === 'object' && k in value) {
+                    value = value[k];
+                } else {
+                    // Cle non trouvee, retourner la cle
+                    AppConfig.log('i18n: cle manquante:', key);
+                    return key;
+                }
             }
 
-            translations = await response.json();
-            isLoaded = true;
-
-            AppConfig.debug(`I18n: Loaded ${lang} translations`);
-            EventBus.emit('i18n:loaded', { lang });
-
-            return translations;
-        } catch (error) {
-            console.error('I18n: Error loading translations', error);
-            // Fallback: essayer de charger le francais
-            if (lang !== 'fr') {
-                return load('fr');
-            }
-            throw error;
-        }
-    }
-
-    /**
-     * Traduire une cle
-     * @param {string} key - Cle de traduction (ex: "auth.login")
-     * @param {Object} params - Parametres de remplacement
-     * @returns {string}
-     */
-    function t(key, params = {}) {
-        if (!isLoaded) {
-            console.warn('I18n: Translations not loaded yet');
-            return key;
-        }
-
-        // Parcourir la cle imbriquee
-        const keys = key.split('.');
-        let value = translations;
-
-        for (const k of keys) {
-            if (value && typeof value === 'object' && k in value) {
-                value = value[k];
-            } else {
-                AppConfig.debug(`I18n: Key not found "${key}"`);
+            if (typeof value !== 'string') {
                 return key;
             }
-        }
 
-        if (typeof value !== 'string') {
-            return key;
-        }
-
-        // Remplacer les parametres :param
-        Object.entries(params).forEach(([param, val]) => {
-            value = value.replace(new RegExp(`:${param}`, 'g'), String(val));
-        });
-
-        return value;
-    }
-
-    /**
-     * Verifier si une cle existe
-     * @param {string} key - Cle a verifier
-     * @returns {boolean}
-     */
-    function has(key) {
-        const keys = key.split('.');
-        let value = translations;
-
-        for (const k of keys) {
-            if (value && typeof value === 'object' && k in value) {
-                value = value[k];
-            } else {
-                return false;
+            // Remplacer les parametres :param
+            let result = value;
+            for (const [param, val] of Object.entries(params)) {
+                result = result.replace(new RegExp(':' + param, 'g'), String(val));
             }
+
+            return result;
+        },
+
+        /**
+         * Alias pour t()
+         */
+        get: function(key, params = {}) {
+            return this.t(key, params);
+        },
+
+        /**
+         * Verifier si une cle existe
+         * @param {string} key - Cle a verifier
+         * @returns {boolean}
+         */
+        has: function(key) {
+            const keys = key.split('.');
+            let value = translations;
+
+            for (const k of keys) {
+                if (value && typeof value === 'object' && k in value) {
+                    value = value[k];
+                } else {
+                    return false;
+                }
+            }
+
+            return typeof value === 'string';
+        },
+
+        /**
+         * Obtenir la langue courante
+         * @returns {string}
+         */
+        getLang: function() {
+            return currentLang;
+        },
+
+        /**
+         * Changer de langue
+         * @param {string} lang - Nouvelle langue
+         * @returns {Promise<void>}
+         */
+        setLang: async function(lang) {
+            if (lang !== currentLang) {
+                await this.init(lang);
+            }
+        },
+
+        /**
+         * Verifier si les traductions sont chargees
+         * @returns {boolean}
+         */
+        isReady: function() {
+            return isLoaded;
         }
-
-        return typeof value === 'string';
-    }
-
-    /**
-     * Obtenir la langue courante
-     * @returns {string}
-     */
-    function getLang() {
-        return currentLang;
-    }
-
-    /**
-     * Changer de langue
-     * @param {string} lang - Nouvelle langue
-     * @returns {Promise}
-     */
-    async function setLang(lang) {
-        if (lang === currentLang && isLoaded) {
-            return translations;
-        }
-        return load(lang);
-    }
-
-    /**
-     * Verifier si les traductions sont chargees
-     * @returns {boolean}
-     */
-    function loaded() {
-        return isLoaded;
-    }
-
-    /**
-     * Formater une date selon la locale
-     * @param {Date|string} date - Date a formater
-     * @param {Object} options - Options Intl.DateTimeFormat
-     * @returns {string}
-     */
-    function formatDate(date, options = {}) {
-        if (typeof date === 'string') {
-            date = new Date(date);
-        }
-
-        const defaultOptions = {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
-        };
-
-        const locale = currentLang === 'fr' ? 'fr-CH' : 'en-US';
-        return new Intl.DateTimeFormat(locale, { ...defaultOptions, ...options }).format(date);
-    }
-
-    /**
-     * Formater une heure selon la locale
-     * @param {Date|string} date - Date/heure a formater
-     * @returns {string}
-     */
-    function formatTime(date) {
-        if (typeof date === 'string') {
-            date = new Date(date);
-        }
-
-        const locale = currentLang === 'fr' ? 'fr-CH' : 'en-US';
-        return new Intl.DateTimeFormat(locale, {
-            hour: '2-digit',
-            minute: '2-digit'
-        }).format(date);
-    }
-
-    /**
-     * Formater un montant selon la locale
-     * @param {number} amount - Montant
-     * @param {string} currency - Devise (default: CHF)
-     * @returns {string}
-     */
-    function formatCurrency(amount, currency = 'CHF') {
-        const locale = currentLang === 'fr' ? 'fr-CH' : 'en-US';
-        return new Intl.NumberFormat(locale, {
-            style: 'currency',
-            currency: currency
-        }).format(amount);
-    }
-
-    /**
-     * Formater une distance
-     * @param {number} km - Distance en km
-     * @returns {string}
-     */
-    function formatDistance(km) {
-        if (km < 1) {
-            return Math.round(km * 1000) + ' m';
-        }
-        return km.toFixed(1).replace('.', currentLang === 'fr' ? ',' : '.') + ' km';
-    }
-
-    /**
-     * Formater une duree en minutes
-     * @param {number} minutes - Duree en minutes
-     * @returns {string}
-     */
-    function formatDuration(minutes) {
-        if (minutes < 60) {
-            return minutes + ' min';
-        }
-        const hours = Math.floor(minutes / 60);
-        const mins = minutes % 60;
-        return hours + 'h' + (mins > 0 ? String(mins).padStart(2, '0') : '');
-    }
-
-    // API publique
-    return {
-        load,
-        t,
-        has,
-        getLang,
-        setLang,
-        loaded,
-        formatDate,
-        formatTime,
-        formatCurrency,
-        formatDistance,
-        formatDuration
     };
+
+    /**
+     * Fonction globale de traduction (shortcut)
+     * @param {string} key - Cle de traduction
+     * @param {Object} params - Parametres
+     * @returns {string}
+     */
+    window.__ = function(key, params = {}) {
+        return i18n.t(key, params);
+    };
+
+    /**
+     * Fonction globale alias
+     */
+    window.t = window.__;
+
+    // Auto-initialiser si le DOM est pret
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            i18n.init();
+        });
+    } else {
+        i18n.init();
+    }
+
 })();
-
-// Fonction globale raccourcie
-function __(key, params = {}) {
-    return I18n.t(key, params);
-}
-
-// Rendre disponible globalement
-window.I18n = I18n;
-window.__ = __;
-
-// Charger les traductions au demarrage
-document.addEventListener('DOMContentLoaded', () => {
-    I18n.load().catch(error => {
-        console.error('Failed to load translations:', error);
-    });
-});

@@ -1,147 +1,178 @@
 /**
  * TripSalama - API Service
- * Service centralise pour les appels API avec CSRF automatique
+ * Service centralise pour les appels API avec gestion CSRF automatique
  */
 
-'use strict';
+(function() {
+    'use strict';
 
-const ApiService = (function() {
     /**
-     * Effectuer une requete HTTP
+     * ApiService - Gestion des appels API
      */
-    async function request(method, endpoint, data = null, options = {}) {
-        const url = AppConfig.apiUrl(endpoint);
+    window.ApiService = {
+        /**
+         * Effectuer une requete GET
+         * @param {string} endpoint - Endpoint API
+         * @param {Object} params - Parametres query string
+         * @returns {Promise<Object>}
+         */
+        get: async function(endpoint, params = {}) {
+            const url = this._buildUrl(endpoint, params);
+            return this._request(url, {
+                method: 'GET'
+            });
+        },
 
-        const fetchOptions = {
-            method: method.toUpperCase(),
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            credentials: 'same-origin',
-            ...options
-        };
+        /**
+         * Effectuer une requete POST
+         * @param {string} endpoint - Endpoint API
+         * @param {Object} data - Donnees a envoyer
+         * @returns {Promise<Object>}
+         */
+        post: async function(endpoint, data = {}) {
+            const url = this._buildUrl(endpoint);
+            return this._request(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': AppConfig.getCsrfToken()
+                },
+                body: JSON.stringify(data)
+            });
+        },
 
-        // Ajouter CSRF pour les methodes qui modifient les donnees
-        if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(fetchOptions.method)) {
-            fetchOptions.headers['X-CSRF-TOKEN'] = AppConfig.getCsrfToken();
-        }
+        /**
+         * Effectuer une requete PUT
+         * @param {string} endpoint - Endpoint API
+         * @param {Object} data - Donnees a envoyer
+         * @returns {Promise<Object>}
+         */
+        put: async function(endpoint, data = {}) {
+            const url = this._buildUrl(endpoint);
+            return this._request(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': AppConfig.getCsrfToken()
+                },
+                body: JSON.stringify(data)
+            });
+        },
 
-        // Gestion des donnees
-        if (data !== null) {
-            if (data instanceof FormData) {
-                // FormData: ne pas definir Content-Type (le navigateur le fait)
-                fetchOptions.body = data;
-            } else {
-                // JSON
-                fetchOptions.headers['Content-Type'] = 'application/json';
-                fetchOptions.body = JSON.stringify(data);
+        /**
+         * Effectuer une requete DELETE
+         * @param {string} endpoint - Endpoint API
+         * @param {Object} data - Donnees optionnelles
+         * @returns {Promise<Object>}
+         */
+        delete: async function(endpoint, data = {}) {
+            const url = this._buildUrl(endpoint);
+            const options = {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-Token': AppConfig.getCsrfToken()
+                }
+            };
+
+            if (Object.keys(data).length > 0) {
+                options.headers['Content-Type'] = 'application/json';
+                options.body = JSON.stringify(data);
             }
-        }
 
-        AppConfig.debug(`API ${method} ${url}`, data);
+            return this._request(url, options);
+        },
 
-        try {
-            const response = await fetch(url, fetchOptions);
+        /**
+         * Envoyer un formulaire avec fichiers (FormData)
+         * @param {string} endpoint - Endpoint API
+         * @param {FormData} formData - Donnees du formulaire
+         * @returns {Promise<Object>}
+         */
+        upload: async function(endpoint, formData) {
+            const url = this._buildUrl(endpoint);
 
-            // Parser la reponse JSON
-            let result;
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                result = await response.json();
-            } else {
-                result = { success: response.ok, data: await response.text() };
+            // Ajouter le token CSRF au FormData
+            formData.append('_csrf_token', AppConfig.getCsrfToken());
+
+            return this._request(url, {
+                method: 'POST',
+                body: formData
+                // Ne pas definir Content-Type, le navigateur le fait automatiquement
+            });
+        },
+
+        /**
+         * Construire l'URL complete
+         * @private
+         */
+        _buildUrl: function(endpoint, params = {}) {
+            let url = AppConfig.apiUrl(endpoint);
+
+            if (Object.keys(params).length > 0) {
+                const queryString = new URLSearchParams(params).toString();
+                url += '?' + queryString;
             }
 
-            AppConfig.debug(`API Response:`, result);
+            return url;
+        },
 
-            // Gestion des erreurs HTTP
-            if (!response.ok) {
-                const error = new Error(result.message || `HTTP ${response.status}`);
-                error.status = response.status;
-                error.response = result;
+        /**
+         * Effectuer la requete HTTP
+         * @private
+         */
+        _request: async function(url, options = {}) {
+            try {
+                // Options par defaut
+                const defaultOptions = {
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                };
+
+                // Fusionner les options
+                const mergedOptions = {
+                    ...defaultOptions,
+                    ...options,
+                    headers: {
+                        ...defaultOptions.headers,
+                        ...options.headers
+                    }
+                };
+
+                AppConfig.log('API Request:', options.method || 'GET', url);
+
+                const response = await fetch(url, mergedOptions);
+
+                // Parser la reponse JSON
+                let data;
+                const contentType = response.headers.get('Content-Type');
+
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    data = { message: await response.text() };
+                }
+
+                AppConfig.log('API Response:', response.status, data);
+
+                // Gerer les erreurs HTTP
+                if (!response.ok) {
+                    const error = new Error(data.message || data.error || 'Server error');
+                    error.status = response.status;
+                    error.data = data;
+                    throw error;
+                }
+
+                return data;
+
+            } catch (error) {
+                AppConfig.error('API Error:', error.message);
                 throw error;
             }
-
-            return result;
-        } catch (error) {
-            AppConfig.debug('API Error:', error);
-
-            // Erreur reseau
-            if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                error.message = window.__ ? __('error.network') : 'Network error';
-            }
-
-            throw error;
         }
-    }
-
-    /**
-     * GET request
-     */
-    function get(endpoint, params = {}) {
-        // Ajouter les parametres a l'URL
-        if (Object.keys(params).length > 0) {
-            const searchParams = new URLSearchParams(params);
-            endpoint = `${endpoint}?${searchParams.toString()}`;
-        }
-        return request('GET', endpoint);
-    }
-
-    /**
-     * POST request
-     */
-    function post(endpoint, data = {}) {
-        return request('POST', endpoint, data);
-    }
-
-    /**
-     * PUT request
-     */
-    function put(endpoint, data = {}) {
-        return request('PUT', endpoint, data);
-    }
-
-    /**
-     * DELETE request
-     */
-    function del(endpoint, data = {}) {
-        return request('DELETE', endpoint, data);
-    }
-
-    /**
-     * PATCH request
-     */
-    function patch(endpoint, data = {}) {
-        return request('PATCH', endpoint, data);
-    }
-
-    /**
-     * Upload de fichier
-     */
-    function upload(endpoint, file, fieldName = 'file', additionalData = {}) {
-        const formData = new FormData();
-        formData.append(fieldName, file);
-
-        // Ajouter les donnees supplementaires
-        Object.entries(additionalData).forEach(([key, value]) => {
-            formData.append(key, value);
-        });
-
-        return request('POST', endpoint, formData);
-    }
-
-    // API publique
-    return {
-        get,
-        post,
-        put,
-        delete: del,
-        patch,
-        upload,
-        request
     };
-})();
 
-// Rendre disponible globalement
-window.ApiService = ApiService;
+    AppConfig.log('ApiService initialise');
+
+})();

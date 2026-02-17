@@ -2,13 +2,13 @@
  * TripSalama - Configuration Puppeteer
  */
 
-const config = {
+module.exports = {
     // URL de base
     baseUrl: 'http://127.0.0.1:8080',
 
-    // Options Puppeteer
+    // Configuration Puppeteer
     puppeteer: {
-        headless: false,
+        headless: false,  // TOUJOURS visuel
         slowMo: 50,
         defaultViewport: {
             width: 1280,
@@ -22,64 +22,29 @@ const config = {
     },
 
     // Timeouts
-    timeouts: {
+    timeout: {
         navigation: 30000,
         element: 10000,
-        animation: 500
+        action: 5000
     },
 
-    // Utilisateurs de test (depuis demo_data.sql)
+    // Utilisateurs de test
     users: {
         passenger: {
             email: 'fatima@example.com',
-            password: 'Test1234!',
-            firstName: 'Fatima',
-            lastName: 'Benali'
+            password: 'Test1234!'
         },
         driver: {
             email: 'khadija@example.com',
-            password: 'Test1234!',
-            firstName: 'Khadija',
-            lastName: 'Amrani'
+            password: 'Test1234!'
         }
     },
 
-    // Selectors communs
-    selectors: {
-        // Auth
-        emailInput: '#email',
-        passwordInput: '#password',
-        submitBtn: 'button[type="submit"]',
-        loginForm: '#loginForm',
-        registerForm: '#registerForm',
+    // Helpers
+    sleep: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
 
-        // Navigation
-        navLinks: '.nav-link',
-        mobileNav: '.mobile-nav',
-        userMenu: '.user-menu',
-
-        // Dashboard passenger
-        bookRideBtn: '.book-ride-btn',
-        activeRideCard: '.active-ride-card',
-
-        // Booking
-        pickupInput: '#pickupAddress',
-        dropoffInput: '#dropoffAddress',
-        mapContainer: '#bookingMap',
-        confirmBookingBtn: '#confirmBooking',
-        autocompleteResults: '.autocomplete-results',
-
-        // Driver
-        availabilityToggle: '#availabilityToggle',
-        pendingRidesList: '#pendingRidesList',
-        acceptBtn: '.accept-btn',
-        rejectBtn: '.reject-btn',
-
-        // Common
-        toast: '.toast',
-        modal: '.modal',
-        loader: '.loader'
+    // URL helpers
+    url: function(path = '') {
+        return this.baseUrl + '/' + path.replace(/^\//, '');
     }
 };
-
-module.exports = config;

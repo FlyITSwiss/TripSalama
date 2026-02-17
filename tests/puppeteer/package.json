@@ -10,9 +10,8 @@
     "test:driver": "node test-driver-dashboard.js"
   },
   "dependencies": {
-    "puppeteer": "^21.0.0"
+    "puppeteer": "^21.11.0"
   },
-  "devDependencies": {},
   "author": "TripSalama",
   "license": "MIT"
 }
