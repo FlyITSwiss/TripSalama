@@ -149,16 +149,16 @@ jobs:
         run: |
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
             # Create .env for production
-            cat > ${{ env.REMOTE_PATH }}/.env << 'EOF'
+            cat > ${{ env.REMOTE_PATH }}/.env << EOF
           APP_ENV=production
           APP_DEBUG=false
-          BASE_PATH=${{ env.BASE_PATH }}
+          BASE_PATH=/internal/tripsalama
 
           DB_HOST=127.0.0.1
           DB_PORT=3306
-          DB_NAME=tripsalama
-          DB_USER=tripsalama
-          DB_PASSWORD=\${DB_PASSWORD:-changeme}
+          DB_DATABASE=tripsalama
+          DB_USERNAME=tripsalama
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
           EOF
 
             # Create .production marker
@@ -206,7 +206,20 @@ jobs:
         id: verify
         run: |
           sleep 3
+
+          # Show .env file (redact password)
+          echo "=== .env file (redacted) ==="
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "cat ${{ env.REMOTE_PATH }}/.env | sed 's/DB_PASSWORD=.*/DB_PASSWORD=***REDACTED***/'"
+
+          # Check HTTP response
           HTTP=$(ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1${{ env.BASE_PATH }}/login")
+          echo "HTTP Status: $HTTP"
+
+          # If error, show PHP error log
+          if [ "$HTTP" = "500" ]; then
+            echo "=== PHP Error Log (last 20 lines) ==="
+            ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "sudo tail -20 /var/log/php8.4-fpm.log 2>/dev/null || sudo tail -20 /var/log/nginx/error.log 2>/dev/null || echo 'No error logs found'"
+          fi
 
           if [ "$HTTP" = "200" ] || [ "$HTTP" = "302" ]; then
             echo "success=true" >> $GITHUB_OUTPUT
