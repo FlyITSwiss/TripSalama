@@ -10,7 +10,7 @@ env:
   VPS_USER: 'debian'
   REMOTE_PATH: '/var/www/tripsalama'
   BASE_PATH: '/internal/tripsalama'
-  PHP_VERSION: '8.2'
+  PHP_VERSION: '8.4'
 
 jobs:
   # ========================================
@@ -108,24 +108,23 @@ jobs:
             sudo chown -R debian:debian ${{ env.REMOTE_PATH }}
           "
 
+      - name: Create backend directory structure
+        run: |
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            mkdir -p ${{ env.REMOTE_PATH }}/backend/php
+          "
+
       - name: Deploy backend files
         run: |
           echo "Deploying backend..."
 
-          # Deploy backend/php directories
-          for dir in Controllers Models Views Services Helpers config lang; do
-            if [ -d "backend/php/$dir" ]; then
-              rsync -avz --delete \
-                -e "ssh" \
-                "backend/php/$dir/" \
-                "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:${{ env.REMOTE_PATH }}/$dir/"
-            fi
-          done
+          # Deploy entire backend/php directory with proper structure
+          rsync -avz --delete \
+            -e "ssh" \
+            "backend/php/" \
+            "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:${{ env.REMOTE_PATH }}/backend/php/"
 
-          # Deploy root PHP files
-          if [ -f "backend/php/helpers.php" ]; then
-            scp backend/php/helpers.php "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:${{ env.REMOTE_PATH }}/helpers.php"
-          fi
+          echo "Backend deployed with bootstrap.php"
 
       - name: Deploy public files
         run: |
@@ -184,7 +183,7 @@ jobs:
               index index.php;
 
               location ~ \.php$ {
-                  fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+                  fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
                   fastcgi_param SCRIPT_FILENAME $request_filename;
                   include fastcgi_params;
               }
