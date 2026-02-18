@@ -145,20 +145,43 @@ jobs:
               "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:${{ env.REMOTE_PATH }}/database/"
           fi
 
+      - name: Setup MySQL user and database
+        run: |
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} '
+            echo "=== Setting up MySQL for TripSalama ==="
+
+            # Create database if not exists
+            sudo mysql -e "CREATE DATABASE IF NOT EXISTS tripsalama CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+            # Create user with password (drop and recreate to ensure correct password)
+            sudo mysql -e "DROP USER IF EXISTS '"'"'tripsalama'"'"'@'"'"'localhost'"'"';"
+            sudo mysql -e "CREATE USER '"'"'tripsalama'"'"'@'"'"'localhost'"'"' IDENTIFIED BY '"'"'TripSalama2025!'"'"';"
+            sudo mysql -e "GRANT ALL PRIVILEGES ON tripsalama.* TO '"'"'tripsalama'"'"'@'"'"'localhost'"'"';"
+            sudo mysql -e "FLUSH PRIVILEGES;"
+
+            echo "MySQL user tripsalama created with privileges"
+
+            # Run migrations if they exist
+            if [ -f /var/www/tripsalama/database/migrations/006_identity_verification.sql ]; then
+              echo "Running identity verification migration..."
+              sudo mysql tripsalama < /var/www/tripsalama/database/migrations/006_identity_verification.sql 2>/dev/null || echo "Migration already applied or skipped"
+            fi
+          '
+
       - name: Create production config
         run: |
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
             # Create .env for production
-            cat > ${{ env.REMOTE_PATH }}/.env << EOF
+            cat > ${{ env.REMOTE_PATH }}/.env << 'EOF'
           APP_ENV=production
           APP_DEBUG=false
           BASE_PATH=/internal/tripsalama
 
-          DB_HOST=127.0.0.1
+          DB_HOST=localhost
           DB_PORT=3306
           DB_DATABASE=tripsalama
           DB_USERNAME=tripsalama
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_PASSWORD=TripSalama2025!
           EOF
 
             # Create .production marker
