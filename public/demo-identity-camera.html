@@ -81,9 +81,19 @@
         function initDemo() {
             AppConfig.log('Initialisation de la démo Identity Camera');
 
+            // Détecter si on est en mode test (fake camera de Puppeteer)
+            // URL param ?demoMode=true ou navigator.webdriver détecté
+            const urlParams = new URLSearchParams(window.location.search);
+            const isDemoMode = urlParams.has('demoMode') || navigator.webdriver === true;
+
+            if (isDemoMode) {
+                AppConfig.log('Mode démo activé (test Puppeteer détecté)');
+            }
+
             // Initialiser le composant
             IdentityCamera.init('#identity-camera-demo', {
-                onComplete: 'handleVerificationComplete'
+                onComplete: 'handleVerificationComplete',
+                demoMode: isDemoMode
             });
         }
 

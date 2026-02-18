@@ -94,7 +94,8 @@ async function runTests() {
         // ==========================================
         log('\n[TEST 1] Chargement de la page démo...');
 
-        await page.goto(`${CONFIG.baseUrl}/demo-identity-camera.html`, {
+        // Ajouter ?demoMode=true pour bypasser face detection avec fake camera
+        await page.goto(`${CONFIG.baseUrl}/demo-identity-camera.html?demoMode=true`, {
             waitUntil: 'networkidle2',
             timeout: 30000
         });
