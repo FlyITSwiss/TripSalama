@@ -39,59 +39,69 @@ jobs:
           scp database/migrations/${{ github.event.inputs.migration_file }} \
             ${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/
 
-      - name: Debug and Run migration
+      - name: Run migration via Docker or native MySQL
         run: |
-          # Debugger les variables .env disponibles sur le VPS
-          echo "=== Debugging .env variables on VPS ==="
-          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} '
-            cd /var/www/tripsalama
-            echo "Contents of .env (DB related, masked):"
-            if [ -f .env ]; then
-              grep -E "^(DB_|MYSQL_)" .env | sed "s/=.*/=***/"
-            else
-              echo "No .env file found!"
-              ls -la
-            fi
-          '
+          # Copier le fichier migration sur le VPS
+          echo "=== Running migration on VPS ==="
 
-          # Exécuter la migration avec les credentials du VPS
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} '
             cd /var/www/tripsalama
 
-            # Charger les variables d environnement
-            if [ -f .env ]; then
-              set -a
-              source .env
-              set +a
-            fi
+            # Verifier si Docker est utilise
+            if docker ps 2>/dev/null | grep -q tripsalama-db; then
+              echo "Using Docker MySQL container..."
 
-            # Debug: montrer les variables (masquees)
-            echo "DB_HOST=$DB_HOST"
-            echo "DB_USER=$DB_USER"
-            echo "DB_NAME=$DB_NAME"
-            echo "DB_PASSWORD length: ${#DB_PASSWORD}"
-            echo "MYSQL_PASSWORD length: ${#MYSQL_PASSWORD}"
+              # Executer via Docker
+              docker cp /tmp/${{ github.event.inputs.migration_file }} tripsalama-db:/tmp/migration.sql
+              docker exec tripsalama-db sh -c "mysql -u root -p\$MYSQL_ROOT_PASSWORD tripsalama < /tmp/migration.sql"
 
-            # Utiliser MYSQL_PASSWORD si DB_PASSWORD vide
-            FINAL_PASSWORD="${DB_PASSWORD:-${MYSQL_PASSWORD:-${MYSQL_ROOT_PASSWORD}}}"
+              if [ $? -eq 0 ]; then
+                echo "Migration completed successfully!"
 
-            echo "Running migration: ${{ github.event.inputs.migration_file }}"
-            echo "Using DB: ${DB_NAME:-tripsalama} on ${DB_HOST:-127.0.0.1} as ${DB_USER:-tripsalama}"
+                # Verifier
+                echo "Verifying new columns:"
+                docker exec tripsalama-db sh -c "mysql -u root -p\$MYSQL_ROOT_PASSWORD tripsalama -e \"DESCRIBE users;\"" | grep identity || echo "No identity columns"
 
-            # Executer la migration
-            if mysql -h "${DB_HOST:-127.0.0.1}" -u "${DB_USER:-tripsalama}" -p"$FINAL_PASSWORD" "${DB_NAME:-tripsalama}" < /tmp/${{ github.event.inputs.migration_file }}; then
-              echo "Migration completed successfully!"
-
-              # Verifier les nouvelles colonnes
-              echo "Verifying new columns in users table:"
-              mysql -h "${DB_HOST:-127.0.0.1}" -u "${DB_USER:-tripsalama}" -p"$FINAL_PASSWORD" "${DB_NAME:-tripsalama}" -e "DESCRIBE users;" | grep identity || echo "No identity columns yet"
-
-              # Verifier la nouvelle table
-              echo "Verifying identity_verifications table:"
-              mysql -h "${DB_HOST:-127.0.0.1}" -u "${DB_USER:-tripsalama}" -p"$FINAL_PASSWORD" "${DB_NAME:-tripsalama}" -e "SHOW TABLES LIKE '\''identity%'\'';"
+                echo "Verifying new table:"
+                docker exec tripsalama-db sh -c "mysql -u root -p\$MYSQL_ROOT_PASSWORD tripsalama -e \"SHOW TABLES LIKE '\''identity%'\'';\""
+              else
+                echo "Docker migration failed!"
+                exit 1
+              fi
             else
-              echo "Migration failed!"
-              exit 1
+              echo "Using native MySQL..."
+
+              # Charger .env
+              if [ -f .env ]; then
+                set -a
+                source .env
+                set +a
+              fi
+
+              # Creer fichier de config MySQL temporaire pour eviter problemes d echappement
+              echo "[client]" > /tmp/.my.cnf
+              echo "user=${DB_USER:-tripsalama}" >> /tmp/.my.cnf
+              echo "password=${DB_PASSWORD}" >> /tmp/.my.cnf
+              echo "host=${DB_HOST:-127.0.0.1}" >> /tmp/.my.cnf
+              chmod 600 /tmp/.my.cnf
+
+              echo "Running migration: ${{ github.event.inputs.migration_file }}"
+
+              if mysql --defaults-file=/tmp/.my.cnf ${DB_NAME:-tripsalama} < /tmp/${{ github.event.inputs.migration_file }}; then
+                echo "Migration completed successfully!"
+
+                echo "Verifying new columns:"
+                mysql --defaults-file=/tmp/.my.cnf ${DB_NAME:-tripsalama} -e "DESCRIBE users;" | grep identity || echo "No identity columns"
+
+                echo "Verifying new table:"
+                mysql --defaults-file=/tmp/.my.cnf ${DB_NAME:-tripsalama} -e "SHOW TABLES LIKE '\''identity%'\'';"
+
+                rm -f /tmp/.my.cnf
+              else
+                rm -f /tmp/.my.cnf
+                echo "Native MySQL migration failed!"
+                exit 1
+              fi
             fi
 
             # Nettoyer
