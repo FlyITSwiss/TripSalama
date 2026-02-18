@@ -12,13 +12,22 @@
 
     <!-- Configuration JavaScript -->
     <script>
-        window.AppConfig = {
-            basePath: '',
-            apiPath: '/api',
-            lang: 'fr',
-            csrfToken: 'demo-csrf-token-123',
-            debug: true
-        };
+        // Detect basePath from current URL (works on localhost and production)
+        (function() {
+            const path = window.location.pathname;
+            // Remove the filename to get the directory path
+            const basePath = path.substring(0, path.lastIndexOf('/')) || '';
+
+            window.AppConfig = {
+                basePath: basePath,
+                apiPath: '/api',
+                lang: 'fr',
+                csrfToken: 'demo-csrf-token-123',
+                debug: true
+            };
+
+            console.log('[TripSalama] BasePath detected:', basePath);
+        })();
     </script>
 </head>
 <body>
