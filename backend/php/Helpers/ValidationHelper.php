@@ -41,11 +41,12 @@ class ValidationHelper
 
     /**
      * Valider un numero de telephone
+     * Note: Validation desactivee temporairement
      */
     public static function isValidPhone(string $phone): bool
     {
-        // Format suisse ou international
-        return preg_match('/^\+?[0-9\s\-]{10,20}$/', $phone) === 1;
+        // Validation desactivee - accepte tout format
+        return true;
     }
 
     /**
