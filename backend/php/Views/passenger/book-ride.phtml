@@ -1,83 +1,425 @@
-<div class="booking-container">
-    <!-- Panneau de reservation -->
-    <div class="booking-panel">
-        <h1 class="booking-title"><?= __('booking.title') ?></h1>
+<?php
+/**
+ * TripSalama - Page Réservation
+ * Layout Mobile avec carte Uber-like
+ * Design System φ "Moroccan Luxury"
+ */
+?>
 
-        <form id="bookingForm">
-            <!-- Point de depart -->
-            <div class="address-input-group">
-                <span class="address-marker pickup"></span>
-                <input type="text" id="pickupInput" class="form-input"
-                       placeholder="<?= __('booking.pickup_placeholder') ?>"
-                       autocomplete="off">
-                <input type="hidden" id="pickupLat" name="pickup_lat">
-                <input type="hidden" id="pickupLng" name="pickup_lng">
-                <input type="hidden" id="pickupAddress" name="pickup_address">
-                <div class="address-connector"></div>
-                <div id="pickupDropdown" class="autocomplete-dropdown hidden"></div>
-            </div>
+<div class="booking-page">
+    <!-- Map Container -->
+    <div class="booking-map-container">
+        <div id="map" class="booking-map"></div>
 
-            <!-- Destination -->
-            <div class="address-input-group">
-                <span class="address-marker dropoff"></span>
-                <input type="text" id="dropoffInput" class="form-input"
-                       placeholder="<?= __('booking.dropoff_placeholder') ?>"
-                       autocomplete="off">
-                <input type="hidden" id="dropoffLat" name="dropoff_lat">
-                <input type="hidden" id="dropoffLng" name="dropoff_lng">
-                <input type="hidden" id="dropoffAddress" name="dropoff_address">
-                <div id="dropoffDropdown" class="autocomplete-dropdown hidden"></div>
-            </div>
+        <!-- Location Button -->
+        <button type="button" id="locateMeBtn" class="booking-locate-btn" title="<?= __('booking.my_location') ?>">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <circle cx="12" cy="12" r="3"/>
+                <line x1="12" y1="2" x2="12" y2="6"/>
+                <line x1="12" y1="18" x2="12" y2="22"/>
+                <line x1="2" y1="12" x2="6" y2="12"/>
+                <line x1="18" y1="12" x2="22" y2="12"/>
+            </svg>
+        </button>
+    </div>
 
-            <!-- Ma position -->
-            <button type="button" id="locateMeBtn" class="btn btn-ghost btn-block" style="margin-bottom: var(--space-21);">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
-                    <circle cx="12" cy="12" r="10"/>
-                    <circle cx="12" cy="12" r="3"/>
-                </svg>
-                <?= __('booking.my_location') ?>
-            </button>
-
-            <!-- Estimation -->
-            <div id="estimationCard" class="estimation-card hidden">
-                <div class="estimation-row">
-                    <span class="estimation-label"><?= __('booking.distance') ?></span>
-                    <span class="estimation-value" id="estimatedDistance">-</span>
+    <!-- Address Card -->
+    <div class="booking-card">
+        <form id="bookingForm" class="booking-form">
+            <!-- Pickup -->
+            <div class="booking-input-row">
+                <div class="booking-indicator">
+                    <span class="booking-dot pickup"></span>
+                    <span class="booking-line"></span>
                 </div>
-                <div class="estimation-row">
-                    <span class="estimation-label"><?= __('booking.duration') ?></span>
-                    <span class="estimation-value" id="estimatedDuration">-</span>
-                </div>
-                <div class="estimation-row">
-                    <span class="estimation-label"><?= __('booking.price') ?></span>
-                    <span class="estimation-value estimation-price" id="estimatedPrice">-</span>
+                <div class="booking-input-wrapper">
+                    <input type="text" id="pickupInput" class="booking-input"
+                           placeholder="<?= __('booking.pickup_placeholder') ?>"
+                           autocomplete="off">
+                    <input type="hidden" id="pickupLat" name="pickup_lat">
+                    <input type="hidden" id="pickupLng" name="pickup_lng">
+                    <input type="hidden" id="pickupAddress" name="pickup_address">
+                    <div id="pickupDropdown" class="booking-dropdown hidden"></div>
                 </div>
             </div>
 
-            <!-- Bouton confirmer -->
-            <button type="submit" id="confirmBtn" class="btn btn-accent btn-block btn-lg hidden" style="margin-top: var(--space-21);">
-                <?= __('booking.confirm_ride') ?>
-            </button>
+            <!-- Dropoff -->
+            <div class="booking-input-row">
+                <div class="booking-indicator">
+                    <span class="booking-dot dropoff"></span>
+                </div>
+                <div class="booking-input-wrapper">
+                    <input type="text" id="dropoffInput" class="booking-input"
+                           placeholder="<?= __('booking.dropoff_placeholder') ?>"
+                           autocomplete="off">
+                    <input type="hidden" id="dropoffLat" name="dropoff_lat">
+                    <input type="hidden" id="dropoffLng" name="dropoff_lng">
+                    <input type="hidden" id="dropoffAddress" name="dropoff_address">
+                    <div id="dropoffDropdown" class="booking-dropdown hidden"></div>
+                </div>
+            </div>
         </form>
     </div>
 
-    <!-- Carte -->
-    <div class="booking-map">
-        <div id="map" class="map-container">
-            <div class="map-loading">
-                <div class="spinner"></div>
+    <!-- Estimation Card (hidden by default) -->
+    <div id="estimationCard" class="booking-card booking-estimation hidden">
+        <div class="estimation-grid">
+            <div class="estimation-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                </svg>
+                <div>
+                    <span class="estimation-label"><?= __('booking.distance') ?></span>
+                    <span class="estimation-value" id="estimatedDistance">-</span>
+                </div>
+            </div>
+            <div class="estimation-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <div>
+                    <span class="estimation-label"><?= __('booking.duration') ?></span>
+                    <span class="estimation-value" id="estimatedDuration">-</span>
+                </div>
             </div>
         </div>
+        <div class="estimation-price">
+            <span class="price-label"><?= __('booking.price') ?></span>
+            <span class="price-value" id="estimatedPrice">-</span>
+        </div>
     </div>
+
+    <!-- Confirm Button -->
+    <button type="submit" form="bookingForm" id="confirmBtn" class="btn btn-accent btn-lg btn-block booking-confirm hidden">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <?= __('booking.confirm_ride') ?>
+    </button>
+
+    <!-- Quick Location Button -->
+    <button type="button" id="quickLocateBtn" class="btn btn-secondary btn-lg btn-block booking-quick-locate">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <?= __('booking.my_location') ?>
+    </button>
 </div>
+
+<style>
+/* ============================================
+   BOOKING PAGE - MOBILE CONTAINER LAYOUT
+   ============================================ */
+
+.booking-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding-bottom: var(--space-5);
+}
+
+/* Map Container - Aspect Ratio φ */
+.booking-map-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1.2; /* Golden ratio inspired */
+    border-radius: var(--radius-2xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    background: var(--stone-200);
+}
+
+.booking-map {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* Leaflet Controls */
+.booking-map .leaflet-control-zoom {
+    border: none !important;
+    box-shadow: var(--shadow-md) !important;
+    border-radius: var(--radius-lg) !important;
+    overflow: hidden;
+    margin: var(--space-3) !important;
+}
+
+.booking-map .leaflet-control-zoom a {
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+    font-size: 16px !important;
+    color: var(--color-text) !important;
+    background: var(--color-surface) !important;
+    border: none !important;
+}
+
+.booking-map .leaflet-control-zoom a:hover {
+    background: var(--stone-100) !important;
+    color: var(--color-primary) !important;
+}
+
+/* Location Button on Map */
+.booking-locate-btn {
+    position: absolute;
+    bottom: var(--space-4);
+    right: var(--space-4);
+    z-index: 1000;
+    width: 48px;
+    height: 48px;
+    background: var(--color-surface);
+    border: none;
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+    cursor: pointer;
+    transition: var(--transition-all);
+}
+
+.booking-locate-btn:hover {
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    transform: scale(1.08);
+    box-shadow: var(--shadow-lg);
+}
+
+.booking-locate-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Address Card */
+.booking-card {
+    background: var(--color-surface);
+    border-radius: var(--radius-xl);
+    padding: var(--space-4);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--color-border);
+}
+
+.booking-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.booking-input-row {
+    display: flex;
+    align-items: stretch;
+    gap: var(--space-3);
+}
+
+.booking-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-3) 0;
+    width: 24px;
+    flex-shrink: 0;
+}
+
+.booking-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+}
+
+.booking-dot.pickup {
+    background: var(--success);
+    box-shadow: 0 0 0 3px var(--success-soft);
+}
+
+.booking-dot.dropoff {
+    background: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.2);
+}
+
+.booking-line {
+    flex: 1;
+    width: 2px;
+    margin: var(--space-2) 0;
+    background: repeating-linear-gradient(
+        to bottom,
+        var(--stone-300) 0,
+        var(--stone-300) 4px,
+        transparent 4px,
+        transparent 8px
+    );
+}
+
+.booking-input-wrapper {
+    flex: 1;
+    position: relative;
+}
+
+.booking-input {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    color: var(--color-text);
+    background: var(--stone-50);
+    border: 2px solid transparent;
+    border-radius: var(--radius-lg);
+    transition: var(--transition-all);
+}
+
+.booking-input:focus {
+    outline: none;
+    background: var(--color-surface);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-soft);
+}
+
+.booking-input::placeholder {
+    color: var(--color-text-muted);
+}
+
+/* Dropdown */
+.booking-dropdown {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    left: 0;
+    right: 0;
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1001;
+}
+
+.booking-dropdown-item {
+    padding: var(--space-3) var(--space-4);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    cursor: pointer;
+    transition: var(--transition-colors);
+}
+
+.booking-dropdown-item:hover {
+    background: var(--stone-50);
+}
+
+/* Estimation Card */
+.booking-estimation {
+    animation: fadeInUp var(--duration-normal) var(--ease-out-expo);
+}
+
+.estimation-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.estimation-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--stone-50);
+    border-radius: var(--radius-lg);
+}
+
+.estimation-item svg {
+    width: 24px;
+    height: 24px;
+    color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.estimation-item > div {
+    display: flex;
+    flex-direction: column;
+}
+
+.estimation-label {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.estimation-value {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+}
+
+.estimation-price {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-4);
+    background: linear-gradient(135deg, var(--emerald-50) 0%, var(--gold-50) 100%);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-primary-soft);
+}
+
+.price-label {
+    font-size: var(--text-base);
+    color: var(--color-text-secondary);
+}
+
+.price-value {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-accent);
+}
+
+/* Buttons */
+.booking-confirm {
+    animation: fadeInUp var(--duration-normal) var(--ease-out-expo);
+}
+
+.booking-quick-locate {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+}
+
+.booking-quick-locate svg {
+    width: 22px;
+    height: 22px;
+}
+
+/* Animation */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
 
 <script>
     // Configuration pour le module booking
     window.BookingConfig = {
         apiUrl: AppConfig.apiPath,
         csrfToken: AppConfig.csrfToken,
-        defaultCenter: [46.2044, 6.1432], // Geneve
-        defaultZoom: 13,
+        defaultCenter: [33.5731, -7.5898], // Casablanca, Morocco
+        defaultZoom: 14,
         i18n: {
             searching: <?= json_encode(__('ride.searching')) ?>,
             noResults: <?= json_encode(__('booking.no_results')) ?>,
@@ -85,4 +427,9 @@
             geolocationError: <?= json_encode(__('error.geolocation')) ?>
         }
     };
+
+    // Quick locate button syncs with main locate button
+    document.getElementById('quickLocateBtn')?.addEventListener('click', () => {
+        document.getElementById('locateMeBtn')?.click();
+    });
 </script>

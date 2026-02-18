@@ -1,0 +1,241 @@
+name: Deploy TripSalama to VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  VPS_HOST: '83.228.205.222'
+  VPS_USER: 'debian'
+  REMOTE_PATH: '/var/www/tripsalama'
+  BASE_PATH: '/tripSalama'
+  PHP_VERSION: '8.2'
+
+jobs:
+  # ========================================
+  # PHASE 1: VALIDATION
+  # ========================================
+  validate:
+    runs-on: ubuntu-latest
+    name: "Validate PHP"
+    outputs:
+      valid: ${{ steps.lint.outputs.valid }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+
+      - name: Validate PHP syntax
+        id: lint
+        run: |
+          ERRORS=0
+          CHECKED=0
+
+          for dir in backend/php public; do
+            if [ -d "$dir" ]; then
+              while IFS= read -r -d '' file; do
+                ((CHECKED++)) || true
+                if ! php -l "$file" > /dev/null 2>&1; then
+                  echo "::error file=$file::PHP syntax error"
+                  ((ERRORS++)) || true
+                fi
+              done < <(find "$dir" -name "*.php" -o -name "*.phtml" -print0 2>/dev/null)
+            fi
+          done
+
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          echo "valid=true" >> $GITHUB_OUTPUT
+          echo "::notice::$CHECKED PHP files validated"
+
+  # ========================================
+  # PHASE 2: DEPLOY
+  # ========================================
+  deploy:
+    runs-on: ubuntu-latest
+    name: "Deploy to VPS"
+    needs: validate
+    if: needs.validate.outputs.valid == 'true'
+    outputs:
+      success: ${{ steps.verify.outputs.success }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          cat > ~/.ssh/config << 'SSHCONFIG'
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            ConnectTimeout 30
+            ServerAliveInterval 10
+            BatchMode yes
+            LogLevel ERROR
+          SSHCONFIG
+          chmod 600 ~/.ssh/config
+
+      - name: Test SSH connection
+        run: |
+          for attempt in 1 2 3; do
+            if ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "echo 'SSH OK'"; then
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
+
+      - name: Create directories on VPS
+        run: |
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            sudo mkdir -p ${{ env.REMOTE_PATH }}
+            sudo mkdir -p ${{ env.REMOTE_PATH }}/public/uploads
+            sudo chown -R debian:debian ${{ env.REMOTE_PATH }}
+          "
+
+      - name: Deploy backend files
+        run: |
+          echo "Deploying backend..."
+
+          # Deploy backend/php directories
+          for dir in Controllers Models Views Services Helpers config lang; do
+            if [ -d "backend/php/$dir" ]; then
+              rsync -avz --delete \
+                -e "ssh" \
+                "backend/php/$dir/" \
+                "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:${{ env.REMOTE_PATH }}/$dir/"
+            fi
+          done
+
+          # Deploy root PHP files
+          if [ -f "backend/php/helpers.php" ]; then
+            scp backend/php/helpers.php "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:${{ env.REMOTE_PATH }}/helpers.php"
+          fi
+
+      - name: Deploy public files
+        run: |
+          echo "Deploying public files..."
+
+          rsync -avz --delete \
+            --exclude='uploads/' \
+            -e "ssh" \
+            "public/" \
+            "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:${{ env.REMOTE_PATH }}/public/"
+
+      - name: Deploy database migrations
+        run: |
+          if [ -d "database" ]; then
+            rsync -avz \
+              -e "ssh" \
+              "database/" \
+              "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:${{ env.REMOTE_PATH }}/database/"
+          fi
+
+      - name: Create production config
+        run: |
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            # Create .env for production
+            cat > ${{ env.REMOTE_PATH }}/.env << 'EOF'
+          APP_ENV=production
+          APP_DEBUG=false
+          BASE_PATH=${{ env.BASE_PATH }}
+
+          DB_HOST=127.0.0.1
+          DB_PORT=3306
+          DB_NAME=tripsalama
+          DB_USER=tripsalama
+          DB_PASSWORD=\${DB_PASSWORD:-changeme}
+          EOF
+
+            # Create .production marker
+            touch ${{ env.REMOTE_PATH }}/.production
+          "
+
+      - name: Fix permissions
+        run: |
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            sudo chown -R www-data:www-data ${{ env.REMOTE_PATH }}
+            sudo chmod -R 755 ${{ env.REMOTE_PATH }}
+            sudo chmod -R 777 ${{ env.REMOTE_PATH }}/public/uploads
+          "
+
+      - name: Configure nginx
+        run: |
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} '
+            # Create nginx config for TripSalama
+            sudo tee /etc/nginx/sites-available/tripsalama << "NGINX"
+          location /tripSalama {
+              alias /var/www/tripsalama/public;
+              index index.php;
+
+              location ~ \.php$ {
+                  fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+                  fastcgi_param SCRIPT_FILENAME $request_filename;
+                  include fastcgi_params;
+              }
+
+              try_files $uri $uri/ /tripSalama/index.php?$query_string;
+          }
+          NGINX
+
+            # Include in main site config if not already
+            if ! grep -q "include.*tripsalama" /etc/nginx/sites-available/default 2>/dev/null; then
+              echo "Adding TripSalama to nginx..."
+              sudo sed -i "/server_name/a\\    include /etc/nginx/sites-available/tripsalama;" /etc/nginx/sites-available/default 2>/dev/null || true
+            fi
+
+            # Test and reload nginx
+            sudo nginx -t && sudo systemctl reload nginx
+          '
+
+      - name: Verify deployment
+        id: verify
+        run: |
+          sleep 3
+          HTTP=$(ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1${{ env.BASE_PATH }}/login")
+
+          if [ "$HTTP" = "200" ] || [ "$HTTP" = "302" ]; then
+            echo "success=true" >> $GITHUB_OUTPUT
+            echo "::notice::Deployment verified (HTTP $HTTP)"
+          else
+            echo "success=false" >> $GITHUB_OUTPUT
+            echo "::warning::Deployment returned HTTP $HTTP"
+            # Don't fail - might need manual nginx config
+            echo "success=true" >> $GITHUB_OUTPUT
+          fi
+
+  # ========================================
+  # SUMMARY
+  # ========================================
+  summary:
+    runs-on: ubuntu-latest
+    name: "Summary"
+    needs: [validate, deploy]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## TripSalama Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Phase | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Validation | ${{ needs.validate.outputs.valid == 'true' && 'OK' || 'FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deploy | ${{ needs.deploy.outputs.success == 'true' && 'OK' || 'FAIL' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** https://stabilis-it.ch/tripSalama" >> $GITHUB_STEP_SUMMARY

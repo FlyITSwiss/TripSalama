@@ -1,140 +1,459 @@
-<div class="dashboard-header">
-    <div class="dashboard-greeting">
-        <?= __('auth.welcome_back') ?> <?= htmlspecialchars($user['first_name']) ?> !
-    </div>
-    <div class="dashboard-tagline"><?= __('driver.title') ?></div>
-</div>
+<?php
+/**
+ * TripSalama - Dashboard Conductrice
+ * Design System φ "Moroccan Luxury"
+ */
+?>
 
-<div class="dashboard-content">
-    <!-- Toggle disponibilite -->
-    <div class="driver-status-toggle">
-        <div class="driver-status-info">
-            <div class="driver-status-icon <?= $status['is_available'] ? 'available' : 'unavailable' ?>" id="statusIcon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <?php if ($status['is_available']): ?>
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                    <polyline points="22 4 12 14.01 9 11.01"/>
-                    <?php else: ?>
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="15" y1="9" x2="9" y2="15"/>
-                    <line x1="9" y1="9" x2="15" y2="15"/>
-                    <?php endif; ?>
-                </svg>
+<!-- Welcome Card with Status -->
+<section class="welcome-card section" style="animation-delay: 0.05s;">
+    <div class="welcome-content">
+        <p class="welcome-eyebrow"><?= __('auth.welcome_back') ?></p>
+        <h1 class="welcome-title"><?= htmlspecialchars($user['first_name']) ?> !</h1>
+        <p class="welcome-subtitle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path d="M5 17h14v-6h-4l-2-4H9l-2 4H5v6z"/>
+                <circle cx="7.5" cy="17" r="2"/>
+                <circle cx="16.5" cy="17" r="2"/>
+            </svg>
+            <?= __('driver.title') ?>
+        </p>
+    </div>
+</section>
+
+<!-- Driver Status Toggle -->
+<section class="card section" style="animation-delay: 0.1s;">
+    <div class="card-body-compact">
+        <div class="driver-status-row">
+            <div class="driver-status-info">
+                <div class="driver-status-icon <?= $status['is_available'] ? 'available' : 'unavailable' ?>" id="statusIcon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <?php if ($status['is_available']): ?>
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                        <?php else: ?>
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="15" y1="9" x2="9" y2="15"/>
+                        <line x1="9" y1="9" x2="15" y2="15"/>
+                        <?php endif; ?>
+                    </svg>
+                </div>
+                <div>
+                    <div class="driver-status-text" id="statusText">
+                        <?= $status['is_available'] ? __('driver.available') : __('driver.unavailable') ?>
+                    </div>
+                    <div class="driver-status-hint"><?= __('driver.toggle_status') ?></div>
+                </div>
+            </div>
+
+            <label class="toggle-switch">
+                <input type="checkbox" id="availabilityToggle" <?= $status['is_available'] ? 'checked' : '' ?>>
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Grid -->
+<section class="stats-grid section-tight">
+    <div class="stat-card">
+        <div class="stat-value"><?= $stats['total_rides'] ?? 0 ?></div>
+        <div class="stat-label"><?= __('history.total_rides') ?></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value"><?= $stats['this_month'] ?? 0 ?></div>
+        <div class="stat-label"><?= __('history.this_month') ?></div>
+    </div>
+</section>
+
+<?php if ($activeRide): ?>
+<!-- Active Ride Card -->
+<section class="card section" style="animation-delay: 0.15s;">
+    <div class="card-header flex justify-between items-center">
+        <h3 class="text-title"><?= __('ride.title') ?></h3>
+        <span class="badge badge-<?= $activeRide['status'] === 'in_progress' ? 'success' : 'warning' ?>">
+            <?= __('ride.' . $activeRide['status']) ?>
+        </span>
+    </div>
+    <div class="card-body-compact">
+        <div class="ride-route mb-4">
+            <div class="ride-address">
+                <span class="address-dot pickup" style="position: static;"></span>
+                <span class="text-body"><?= htmlspecialchars($activeRide['pickup_address']) ?></span>
+            </div>
+            <div class="ride-address">
+                <span class="address-dot dropoff" style="position: static;"></span>
+                <span class="text-body"><?= htmlspecialchars($activeRide['dropoff_address']) ?></span>
+            </div>
+        </div>
+
+        <div class="ride-passenger mb-4">
+            <div class="ride-passenger-avatar">
+                <?= strtoupper(substr($activeRide['passenger_first_name'] ?? 'P', 0, 1)) ?>
             </div>
             <div>
-                <div class="driver-status-text" id="statusText">
-                    <?= $status['is_available'] ? __('driver.available') : __('driver.unavailable') ?>
+                <div class="text-body font-semibold">
+                    <?= htmlspecialchars($activeRide['passenger_first_name'] . ' ' . $activeRide['passenger_last_name']) ?>
                 </div>
-                <div class="driver-status-hint"><?= __('driver.toggle_status') ?></div>
+                <div class="text-caption"><?= __('auth.passenger') ?></div>
             </div>
         </div>
 
-        <label class="toggle-switch">
-            <input type="checkbox" id="availabilityToggle" <?= $status['is_available'] ? 'checked' : '' ?>>
-            <span class="toggle-slider"></span>
-        </label>
+        <a href="<?= base_url('driver/navigation/' . $activeRide['id']) ?>" class="btn btn-accent btn-block">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+            </svg>
+            <?= __('driver.go_to_destination') ?>
+        </a>
     </div>
+</section>
+<?php endif; ?>
 
-    <!-- Statistiques -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-value"><?= $stats['total_rides'] ?></div>
-            <div class="stat-label"><?= __('history.total_rides') ?></div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value"><?= $stats['this_month'] ?></div>
-            <div class="stat-label"><?= __('history.this_month') ?></div>
-        </div>
-    </div>
-
-    <?php if ($activeRide): ?>
-    <!-- Course en cours -->
-    <div class="card mb-21">
-        <div class="card-header flex justify-between items-center">
-            <h3 class="card-title"><?= __('ride.title') ?></h3>
-            <span class="badge badge-success"><?= __('ride.' . $activeRide['status']) ?></span>
-        </div>
-        <div class="card-body">
-            <div class="history-route mb-13">
-                <div class="history-address">
-                    <span class="history-address-dot pickup"></span>
-                    <span><?= htmlspecialchars($activeRide['pickup_address']) ?></span>
-                </div>
-                <div class="history-address">
-                    <span class="history-address-dot dropoff"></span>
-                    <span><?= htmlspecialchars($activeRide['dropoff_address']) ?></span>
-                </div>
-            </div>
-            <p class="text-sm text-muted mb-13">
-                <?= __('auth.passenger') ?>: <?= htmlspecialchars($activeRide['passenger_first_name'] . ' ' . $activeRide['passenger_last_name']) ?>
-            </p>
-            <a href="<?= base_url('driver/navigation/' . $activeRide['id']) ?>" class="btn btn-primary btn-block">
-                <?= __('driver.go_to_destination') ?>
-            </a>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <?php if ($status['is_available'] && !$activeRide): ?>
-    <!-- Courses en attente -->
-    <h3 style="font-size: var(--text-lg); margin-bottom: var(--space-13);"><?= __('driver.pending_rides') ?></h3>
+<?php if ($status['is_available'] && !$activeRide): ?>
+<!-- Pending Rides Section -->
+<section class="section">
+    <h2 class="text-overline mb-3"><?= __('driver.pending_rides') ?></h2>
 
     <?php if (empty($pendingRides)): ?>
-    <div class="empty-state">
-        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12,6 12,12 16,14"/>
-        </svg>
+    <div class="empty-state card">
+        <div class="empty-state-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12,6 12,12 16,14"/>
+            </svg>
+        </div>
         <div class="empty-state-title"><?= __('driver.no_pending') ?></div>
         <div class="empty-state-text"><?= __('ride.searching') ?></div>
     </div>
     <?php else: ?>
-    <div id="pendingRidesList">
+    <div id="pendingRidesList" class="ride-requests-list">
         <?php foreach ($pendingRides as $ride): ?>
-        <div class="ride-request-card" data-ride-id="<?= $ride['id'] ?>">
-            <div class="ride-request-header">
-                <span class="ride-request-price"><?= format_price((float)$ride['estimated_price']) ?></span>
-                <span class="ride-request-distance"><?= format_distance((float)$ride['estimated_distance_km']) ?></span>
-            </div>
-
-            <div class="ride-request-route">
-                <div class="history-address">
-                    <span class="history-address-dot pickup"></span>
-                    <span><?= htmlspecialchars(mb_substr($ride['pickup_address'], 0, 50)) ?>...</span>
+        <div class="ride-request-card card" data-ride-id="<?= $ride['id'] ?>">
+            <div class="card-body-compact">
+                <div class="ride-request-header">
+                    <span class="ride-request-price"><?= format_price((float)$ride['estimated_price']) ?></span>
+                    <span class="ride-request-distance"><?= format_distance((float)$ride['estimated_distance_km']) ?></span>
                 </div>
-                <div class="history-address">
-                    <span class="history-address-dot dropoff"></span>
-                    <span><?= htmlspecialchars(mb_substr($ride['dropoff_address'], 0, 50)) ?>...</span>
-                </div>
-            </div>
 
-            <div class="ride-request-actions">
-                <button type="button" class="btn btn-outline reject-btn" data-ride-id="<?= $ride['id'] ?>">
-                    <?= __('driver.reject') ?>
-                </button>
-                <button type="button" class="btn btn-primary accept-btn" data-ride-id="<?= $ride['id'] ?>">
-                    <?= __('driver.accept') ?>
-                </button>
+                <div class="ride-route">
+                    <div class="ride-address">
+                        <span class="address-dot pickup" style="position: static;"></span>
+                        <span class="text-body text-truncate"><?= htmlspecialchars(mb_substr($ride['pickup_address'], 0, 40)) ?>...</span>
+                    </div>
+                    <div class="ride-address">
+                        <span class="address-dot dropoff" style="position: static;"></span>
+                        <span class="text-body text-truncate"><?= htmlspecialchars(mb_substr($ride['dropoff_address'], 0, 40)) ?>...</span>
+                    </div>
+                </div>
+
+                <div class="ride-request-actions">
+                    <button type="button" class="btn btn-secondary reject-btn" data-ride-id="<?= $ride['id'] ?>">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                        <?= __('driver.reject') ?>
+                    </button>
+                    <button type="button" class="btn btn-accent accept-btn" data-ride-id="<?= $ride['id'] ?>">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        <?= __('driver.accept') ?>
+                    </button>
+                </div>
             </div>
         </div>
         <?php endforeach; ?>
     </div>
     <?php endif; ?>
-    <?php endif; ?>
+</section>
+<?php endif; ?>
 
-    <?php if ($vehicle): ?>
-    <!-- Info vehicule -->
-    <div class="card mt-21">
-        <div class="card-header">
-            <h3 class="card-title"><?= __('vehicle.title') ?></h3>
-        </div>
-        <div class="card-body">
-            <p><strong><?= $vehicle['brand'] ?> <?= $vehicle['model'] ?></strong></p>
-            <p class="text-sm text-muted"><?= $vehicle['color'] ?> - <?= $vehicle['license_plate'] ?></p>
+<?php if ($vehicle): ?>
+<!-- Vehicle Card -->
+<section class="card section" style="animation-delay: 0.2s;">
+    <div class="card-body-compact">
+        <h2 class="text-title mb-4"><?= __('vehicle.title') ?></h2>
+
+        <div class="flex items-center gap-4">
+            <div class="action-icon" style="background: linear-gradient(135deg, var(--color-accent-soft) 0%, var(--gold-100) 100%); color: var(--color-accent);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 17h14v-6h-4l-2-4H9l-2 4H5v6z"/>
+                    <circle cx="7.5" cy="17" r="2"/>
+                    <circle cx="16.5" cy="17" r="2"/>
+                </svg>
+            </div>
+            <div>
+                <div class="text-body font-semibold"><?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']) ?></div>
+                <div class="text-caption"><?= htmlspecialchars($vehicle['color'] . ' - ' . $vehicle['license_plate']) ?></div>
+            </div>
         </div>
     </div>
-    <?php endif; ?>
-</div>
+</section>
+<?php endif; ?>
+
+<!-- Quick Actions -->
+<section class="section">
+    <h2 class="text-overline mb-3"><?= __('nav.home') ?></h2>
+
+    <div class="action-list">
+        <a href="<?= base_url('driver/history') ?>" class="action-item">
+            <div class="action-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12,6 12,12 16,14"/>
+                </svg>
+            </div>
+            <div class="action-content">
+                <div class="action-title"><?= __('history.title') ?></div>
+                <div class="action-subtitle"><?= __('history.view_details') ?></div>
+            </div>
+            <svg class="action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"/>
+            </svg>
+        </a>
+
+        <a href="<?= base_url('profile') ?>" class="action-item">
+            <div class="action-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+            </div>
+            <div class="action-content">
+                <div class="action-title"><?= __('profile.title') ?></div>
+                <div class="action-subtitle"><?= __('profile.edit') ?></div>
+            </div>
+            <svg class="action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"/>
+            </svg>
+        </a>
+    </div>
+</section>
+
+<style>
+/* Driver-specific styles using Design System φ */
+.driver-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+.driver-status-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.driver-status-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-all);
+}
+
+.driver-status-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.driver-status-icon.available {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.driver-status-icon.unavailable {
+    background: var(--error-soft);
+    color: var(--error);
+}
+
+.driver-status-text {
+    font-family: var(--font-display);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+}
+
+.driver-status-hint {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 56px;
+    height: 30px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: var(--stone-300);
+    transition: var(--transition-all);
+    border-radius: var(--radius-full);
+}
+
+.toggle-slider::before {
+    position: absolute;
+    content: "";
+    height: 24px;
+    width: 24px;
+    left: 3px;
+    bottom: 3px;
+    background: var(--color-surface);
+    transition: var(--transition-all);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-md);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: var(--success);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(26px);
+}
+
+/* Ride Route */
+.ride-route {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3) 0;
+}
+
+.ride-address {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+/* Ride Passenger */
+.ride-passenger {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--stone-100);
+    border-radius: var(--radius-lg);
+}
+
+.ride-passenger-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--emerald-600) 100%);
+    color: var(--color-text-inverse);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--text-base);
+}
+
+/* Ride Request Card */
+.ride-requests-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.ride-request-card {
+    animation: fadeInUp var(--duration-normal) var(--ease-out-expo);
+}
+
+.ride-request-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-3);
+}
+
+.ride-request-price {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-accent);
+}
+
+.ride-request-distance {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    background: var(--stone-100);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+}
+
+.ride-request-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: var(--space-6);
+}
+
+.empty-state-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto var(--space-4);
+    background: var(--stone-100);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+}
+
+.empty-state-icon svg {
+    width: 32px;
+    height: 32px;
+}
+
+.empty-state-title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+    margin-bottom: var(--space-2);
+}
+
+.empty-state-text {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+}
+
+/* Text utilities */
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+}
+
+.font-semibold {
+    font-weight: var(--font-weight-semibold);
+}
+</style>
 
 <script>
     window.DriverConfig = {

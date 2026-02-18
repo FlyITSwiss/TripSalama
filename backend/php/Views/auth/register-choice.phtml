@@ -3,74 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#2D5A4A">
+    <meta name="theme-color" content="#1B4D3E">
+    <meta name="description" content="<?= __('app.tagline') ?>">
     <?= csrf_meta() ?>
 
     <title><?= __('auth.register') ?> - <?= __('app.name') ?></title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="<?= asset_url('images/logo.svg') ?>">
 
-    <link rel="stylesheet" href="<?= versioned_asset('css/tripsalama-core.css') ?>">
-    <link rel="stylesheet" href="<?= versioned_asset('css/tripsalama-components.css') ?>">
+    <!-- Design System CSS (includes Google Fonts) -->
+    <link rel="stylesheet" href="<?= versioned_asset('css/tripsalama-design-system.css') ?>">
 </head>
-<body>
+<body class="auth-body">
     <div class="auth-page">
+        <!-- Moroccan Pattern Background -->
+        <div class="auth-pattern"></div>
+
         <div class="auth-card">
+            <!-- Logo & Header -->
             <div class="auth-header">
-                <svg class="auth-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="50" cy="50" r="45" fill="#2D5A4A"/>
-                    <path d="M50 25C36.2 25 25 36.2 25 50s11.2 25 25 25 25-11.2 25-25S63.8 25 50 25zm0 45c-11 0-20-9-20-20s9-20 20-20 20 9 20 20-9 20-20 20z" fill="#C9A962"/>
-                    <path d="M50 35c-8.3 0-15 6.7-15 15s6.7 15 15 15 15-6.7 15-15-6.7-15-15-15zm0 25c-5.5 0-10-4.5-10-10s4.5-10 10-10 10 4.5 10 10-4.5 10-10 10z" fill="#FFFFFF"/>
-                    <circle cx="50" cy="50" r="5" fill="#C9A962"/>
-                </svg>
+                <div class="auth-logo">
+                    <div class="logo-icon">T</div>
+                </div>
                 <h1 class="auth-title"><?= __('auth.create_account') ?></h1>
                 <p class="auth-subtitle"><?= __('auth.register_as') ?></p>
             </div>
 
-            <div class="auth-body">
-                <div class="role-selection" style="display: flex; flex-direction: column; gap: var(--space-13);">
-                    <a href="<?= base_url('register/passenger') ?>" class="role-option" style="text-decoration: none;">
-                        <svg class="role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
-                        </svg>
-                        <div style="text-align: center;">
-                            <div class="role-label" style="font-size: var(--text-lg); margin-bottom: var(--space-4);">
-                                <?= __('auth.register_passenger') ?>
-                            </div>
-                            <div style="font-size: var(--text-sm); color: var(--color-text-muted);">
-                                <?= __('booking.title') ?>
-                            </div>
+            <!-- Role Selection -->
+            <div class="auth-form">
+                <div class="role-selection">
+                    <a href="<?= base_url('register/passenger') ?>" class="role-card">
+                        <div class="role-icon passenger">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
                         </div>
+                        <div class="role-content">
+                            <h3 class="role-title"><?= __('auth.register_passenger') ?></h3>
+                            <p class="role-description"><?= __('booking.title') ?></p>
+                        </div>
+                        <svg class="role-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
                     </a>
 
-                    <a href="<?= base_url('register/driver') ?>" class="role-option" style="text-decoration: none;">
-                        <svg class="role-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-                            <line x1="9" y1="9" x2="9.01" y2="9"/>
-                            <line x1="15" y1="9" x2="15.01" y2="9"/>
-                        </svg>
-                        <div style="text-align: center;">
-                            <div class="role-label" style="font-size: var(--text-lg); margin-bottom: var(--space-4);">
-                                <?= __('auth.register_driver') ?>
-                            </div>
-                            <div style="font-size: var(--text-sm); color: var(--color-text-muted);">
-                                <?= __('driver.title') ?>
-                            </div>
+                    <a href="<?= base_url('register/driver') ?>" class="role-card">
+                        <div class="role-icon driver">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 17h14v-6h-4l-2-4H9l-2 4H5v6z"/>
+                                <circle cx="7.5" cy="17" r="2"/>
+                                <circle cx="16.5" cy="17" r="2"/>
+                            </svg>
                         </div>
+                        <div class="role-content">
+                            <h3 class="role-title"><?= __('auth.register_driver') ?></h3>
+                            <p class="role-description"><?= __('driver.title') ?></p>
+                        </div>
+                        <svg class="role-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
                     </a>
                 </div>
             </div>
 
+            <!-- Footer -->
             <div class="auth-footer">
-                <p><?= __('auth.have_account') ?></p>
-                <a href="<?= base_url('login') ?>" class="btn btn-outline btn-block">
+                <p class="auth-footer-text"><?= __('auth.have_account') ?></p>
+                <a href="<?= base_url('login') ?>" class="btn btn-secondary btn-block">
                     <?= __('auth.login') ?>
                 </a>
             </div>
+        </div>
+
+        <!-- Decorative Element -->
+        <div class="auth-decoration">
+            <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="100" cy="100" r="80" stroke="currentColor" stroke-width="0.5" opacity="0.3"/>
+                <circle cx="100" cy="100" r="60" stroke="currentColor" stroke-width="0.5" opacity="0.2"/>
+                <circle cx="100" cy="100" r="40" stroke="currentColor" stroke-width="0.5" opacity="0.1"/>
+            </svg>
         </div>
     </div>
 </body>

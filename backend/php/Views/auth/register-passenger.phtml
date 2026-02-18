@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#2D5A4A">
+    <meta name="theme-color" content="#1B4D3E">
+    <meta name="description" content="<?= __('app.tagline') ?>">
     <?= csrf_meta() ?>
 
     <title><?= __('auth.register_passenger') ?> - <?= __('app.name') ?></title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="<?= asset_url('images/logo.svg') ?>">
 
-    <link rel="stylesheet" href="<?= versioned_asset('css/tripsalama-core.css') ?>">
-    <link rel="stylesheet" href="<?= versioned_asset('css/tripsalama-components.css') ?>">
+    <!-- Design System CSS (includes Google Fonts) -->
+    <link rel="stylesheet" href="<?= versioned_asset('css/tripsalama-design-system.css') ?>">
 
     <script>
         window.AppConfig = {
@@ -24,35 +23,60 @@
         };
     </script>
 </head>
-<body>
+<body class="auth-body">
     <div class="auth-page">
+        <!-- Moroccan Pattern Background -->
+        <div class="auth-pattern"></div>
+
         <div class="auth-card">
+            <!-- Back Button & Header -->
             <div class="auth-header">
-                <a href="<?= base_url('register') ?>" class="btn btn-ghost" style="position: absolute; top: var(--space-13); left: var(--space-13);">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                <a href="<?= base_url('register') ?>" class="auth-back-btn" aria-label="Retour">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M19 12H5M12 19l-7-7 7-7"/>
                     </svg>
                 </a>
+                <div class="auth-logo">
+                    <div class="logo-icon passenger">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                </div>
                 <h1 class="auth-title"><?= __('auth.register_passenger') ?></h1>
                 <p class="auth-subtitle"><?= __('auth.create_account') ?></p>
             </div>
 
+            <!-- Flash Messages -->
             <?php if (has_flash()): ?>
-            <div style="padding: 0 var(--space-21);">
+            <div class="auth-flash">
                 <?php foreach (get_flash() as $type => $messages): ?>
                     <?php foreach ($messages as $message): ?>
-                    <div class="flash-message flash-<?= $type ?>" style="margin-bottom: var(--space-13);">
-                        <?= htmlspecialchars($message) ?>
+                    <div class="flash flash-<?= $type ?>">
+                        <svg class="flash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <?php if ($type === 'error'): ?>
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="15" y1="9" x2="9" y2="15"/>
+                            <line x1="9" y1="9" x2="15" y2="15"/>
+                            <?php else: ?>
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            <?php endif; ?>
+                        </svg>
+                        <span class="flash-content"><?= htmlspecialchars($message) ?></span>
                     </div>
                     <?php endforeach; ?>
                 <?php endforeach; ?>
             </div>
             <?php endif; ?>
 
-            <form action="<?= base_url('register/passenger') ?>" method="POST" class="auth-body" id="registerForm">
+            <!-- Register Form -->
+            <form action="<?= base_url('register/passenger') ?>" method="POST" class="auth-form" id="registerForm">
                 <?= csrf_field() ?>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-13);">
+                <div class="form-row">
                     <div class="form-group">
                         <label for="first_name" class="form-label"><?= __('form.first_name') ?> *</label>
                         <input type="text" id="first_name" name="first_name" class="form-input" required>
@@ -65,40 +89,111 @@
 
                 <div class="form-group">
                     <label for="email" class="form-label"><?= __('auth.email') ?> *</label>
-                    <input type="email" id="email" name="email" class="form-input" required>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="4" width="20" height="16" rx="2"/>
+                            <path d="M22 6l-10 7L2 6"/>
+                        </svg>
+                        <input type="email" id="email" name="email" class="form-input" required>
+                    </div>
                 </div>
 
                 <div class="form-group">
                     <label for="phone" class="form-label"><?= __('form.phone') ?></label>
-                    <input type="tel" id="phone" name="phone" class="form-input" placeholder="+41 79 123 45 67">
+                    <div class="input-wrapper">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                        </svg>
+                        <input type="tel" id="phone" name="phone" class="form-input" placeholder="+212 6XX XXX XXX">
+                    </div>
                 </div>
 
                 <div class="form-group">
                     <label for="password" class="form-label"><?= __('auth.password') ?> *</label>
-                    <input type="password" id="password" name="password" class="form-input" required minlength="8">
-                    <div class="form-hint"><?= __('validation.password_min_length') ?></div>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <input type="password" id="password" name="password" class="form-input" required minlength="8">
+                        <button type="button" class="input-toggle-password" aria-label="Afficher mot de passe">
+                            <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg class="eye-closed hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                                <line x1="1" y1="1" x2="23" y2="23"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="form-hint"><?= __('validation.password_min_length') ?></p>
                 </div>
 
                 <div class="form-group">
                     <label for="password_confirm" class="form-label"><?= __('auth.password_confirm') ?> *</label>
-                    <input type="password" id="password_confirm" name="password_confirm" class="form-input" required>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            <polyline points="9 15 11 17 15 13"/>
+                        </svg>
+                        <input type="password" id="password_confirm" name="password_confirm" class="form-input" required>
+                    </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-block btn-lg">
+                <button type="submit" class="btn btn-accent btn-lg btn-block">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="8.5" cy="7" r="4"/>
+                        <line x1="20" y1="8" x2="20" y2="14"/>
+                        <line x1="23" y1="11" x2="17" y2="11"/>
+                    </svg>
                     <?= __('auth.register_button') ?>
                 </button>
             </form>
 
+            <!-- Footer -->
             <div class="auth-footer">
-                <p><?= __('auth.have_account') ?></p>
-                <a href="<?= base_url('login') ?>" class="btn btn-outline btn-block">
+                <p class="auth-footer-text"><?= __('auth.have_account') ?></p>
+                <a href="<?= base_url('login') ?>" class="btn btn-secondary btn-block">
                     <?= __('auth.login') ?>
                 </a>
             </div>
         </div>
+
+        <!-- Decorative Element -->
+        <div class="auth-decoration">
+            <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="100" cy="100" r="80" stroke="currentColor" stroke-width="0.5" opacity="0.3"/>
+                <circle cx="100" cy="100" r="60" stroke="currentColor" stroke-width="0.5" opacity="0.2"/>
+                <circle cx="100" cy="100" r="40" stroke="currentColor" stroke-width="0.5" opacity="0.1"/>
+            </svg>
+        </div>
     </div>
 
+    <script src="<?= versioned_asset('js/core/app-config.js') ?>"></script>
     <script>
+        // Toggle password visibility
+        document.querySelectorAll('.input-toggle-password').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const input = btn.parentElement.querySelector('input');
+                const eyeOpen = btn.querySelector('.eye-open');
+                const eyeClosed = btn.querySelector('.eye-closed');
+
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    eyeOpen.classList.add('hidden');
+                    eyeClosed.classList.remove('hidden');
+                } else {
+                    input.type = 'password';
+                    eyeOpen.classList.remove('hidden');
+                    eyeClosed.classList.add('hidden');
+                }
+            });
+        });
+
+        // Form validation
         document.getElementById('registerForm').addEventListener('submit', function(e) {
             const password = document.getElementById('password').value;
             const confirm = document.getElementById('password_confirm').value;
