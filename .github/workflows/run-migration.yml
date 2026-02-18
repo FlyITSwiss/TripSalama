@@ -41,33 +41,47 @@ jobs:
 
       - name: Run migration
         run: |
-          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
-            # Lire les credentials depuis .env
-            source ${{ env.REMOTE_PATH }}/.env 2>/dev/null || true
+          # Lire les credentials depuis le fichier .env du VPS
+          DB_CREDS=$(ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "cat ${{ env.REMOTE_PATH }}/.env 2>/dev/null | grep -E '^DB_' || echo ''")
+          echo "Credentials found on VPS"
 
-            # Exécuter la migration
-            echo 'Running migration: ${{ github.event.inputs.migration_file }}'
-            mysql -h \${DB_HOST:-127.0.0.1} -u \${DB_USER:-tripsalama} -p\${DB_PASS} \${DB_NAME:-tripsalama} < /tmp/${{ github.event.inputs.migration_file }}
+          # Exécuter la migration avec les credentials du VPS
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} '
+            cd ${{ env.REMOTE_PATH }}
 
-            # Vérifier le résultat
-            if [ \$? -eq 0 ]; then
-              echo 'Migration completed successfully!'
+            # Charger les variables d environnement
+            if [ -f .env ]; then
+              export $(grep -E "^DB_" .env | xargs)
+            fi
 
-              # Vérifier les nouvelles colonnes
-              echo 'Verifying new columns in users table:'
-              mysql -h \${DB_HOST:-127.0.0.1} -u \${DB_USER:-tripsalama} -p\${DB_PASS} \${DB_NAME:-tripsalama} -e \"DESCRIBE users;\" | grep identity
+            # Fallback si variables pas definies
+            DB_HOST=${DB_HOST:-127.0.0.1}
+            DB_USER=${DB_USER:-tripsalama}
+            DB_NAME=${DB_NAME:-tripsalama}
+            DB_PASSWORD=${DB_PASSWORD:-$DB_PASS}
 
-              # Vérifier la nouvelle table
-              echo 'Verifying identity_verifications table:'
-              mysql -h \${DB_HOST:-127.0.0.1} -u \${DB_USER:-tripsalama} -p\${DB_PASS} \${DB_NAME:-tripsalama} -e \"DESCRIBE identity_verifications;\"
+            echo "Running migration: ${{ github.event.inputs.migration_file }}"
+            echo "Using DB: $DB_NAME on $DB_HOST as $DB_USER"
+
+            # Executer la migration
+            if mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < /tmp/${{ github.event.inputs.migration_file }}; then
+              echo "Migration completed successfully!"
+
+              # Verifier les nouvelles colonnes
+              echo "Verifying new columns in users table:"
+              mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "DESCRIBE users;" | grep identity || echo "No identity columns yet"
+
+              # Verifier la nouvelle table
+              echo "Verifying identity_verifications table:"
+              mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SHOW TABLES LIKE '\''identity%'\'';"
             else
-              echo 'Migration failed!'
+              echo "Migration failed!"
               exit 1
             fi
 
             # Nettoyer
             rm -f /tmp/${{ github.event.inputs.migration_file }}
-          "
+          '
 
       - name: Create uploads directory
         run: |
