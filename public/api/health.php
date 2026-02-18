@@ -20,7 +20,6 @@ $checks = [
 
 try {
     // Test 1: Bootstrap
-    require_once __DIR__ . '/../index.php' ? false : true;
     $bootstrapFile = dirname(__DIR__, 2) . '/backend/php/bootstrap.php';
 
     if (file_exists($bootstrapFile)) {
