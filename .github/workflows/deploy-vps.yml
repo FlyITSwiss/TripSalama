@@ -9,7 +9,7 @@ env:
   VPS_HOST: '83.228.205.222'
   VPS_USER: 'debian'
   REMOTE_PATH: '/var/www/tripsalama'
-  BASE_PATH: '/tripSalama'
+  BASE_PATH: '/internal/tripsalama'
   PHP_VERSION: '8.2'
 
 jobs:
@@ -179,7 +179,7 @@ jobs:
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} '
             # Create nginx config for TripSalama
             sudo tee /etc/nginx/sites-available/tripsalama << "NGINX"
-          location /tripSalama {
+          location /internal/tripsalama {
               alias /var/www/tripsalama/public;
               index index.php;
 
@@ -189,7 +189,7 @@ jobs:
                   include fastcgi_params;
               }
 
-              try_files $uri $uri/ /tripSalama/index.php?$query_string;
+              try_files $uri $uri/ /internal/tripsalama/index.php?$query_string;
           }
           NGINX
 
@@ -238,4 +238,4 @@ jobs:
           echo "| Validation | ${{ needs.validate.outputs.valid == 'true' && 'OK' || 'FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Deploy | ${{ needs.deploy.outputs.success == 'true' && 'OK' || 'FAIL' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**URL:** https://stabilis-it.ch/tripSalama" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** https://stabilis-it.ch/internal/tripsalama" >> $GITHUB_STEP_SUMMARY
