@@ -84,6 +84,7 @@ return [
         'duration' => 'Estimated duration',
         'distance' => 'Distance',
         'my_location' => 'My current location',
+        'no_results' => 'No results found',
     ],
 
     // Ride
@@ -137,6 +138,9 @@ return [
     'profile' => [
         'title' => 'My profile',
         'edit' => 'Edit my profile',
+        'edit_description' => 'Update your personal information',
+        'personal_info' => 'Personal information',
+        'email_readonly' => 'Email address cannot be changed',
         'avatar' => 'Profile picture',
         'change_avatar' => 'Change photo',
         'member_since' => 'Member since',

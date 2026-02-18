@@ -1,0 +1,135 @@
+<?php
+/**
+ * TripSalama - Page Modification Profil
+ * Design System φ "Moroccan Luxury"
+ * @var array $userData
+ * @var array|null $vehicle
+ */
+$user = current_user();
+?>
+
+<!-- Header -->
+<section class="section">
+    <a href="<?= base_url('profile') ?>" class="btn btn-icon mb-4">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+    </a>
+    <h1 class="text-title-lg"><?= __('profile.edit') ?></h1>
+    <p class="text-caption mt-2"><?= __('profile.edit_description') ?></p>
+</section>
+
+<!-- Flash Messages -->
+<?php if (has_flash()): ?>
+<section class="section-tight">
+    <?php foreach (get_flash() as $type => $messages): ?>
+        <?php foreach ($messages as $message): ?>
+        <div class="flash flash-<?= $type ?>">
+            <svg class="flash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <?php if ($type === 'error'): ?>
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+                <?php else: ?>
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="9 12 12 15 16 10"/>
+                <?php endif; ?>
+            </svg>
+            <span><?= htmlspecialchars($message) ?></span>
+        </div>
+        <?php endforeach; ?>
+    <?php endforeach; ?>
+</section>
+<?php endif; ?>
+
+<!-- Edit Form -->
+<form action="<?= base_url('profile/update') ?>" method="POST" class="section">
+    <?= csrf_field() ?>
+
+    <div class="card">
+        <div class="card-body">
+            <h2 class="text-title mb-4"><?= __('profile.personal_info') ?></h2>
+
+            <div class="form-group">
+                <label for="first_name" class="form-label"><?= __('form.first_name') ?> *</label>
+                <input type="text" id="first_name" name="first_name" class="form-input"
+                       value="<?= htmlspecialchars($userData['first_name'] ?? '') ?>" required>
+            </div>
+
+            <div class="form-group">
+                <label for="last_name" class="form-label"><?= __('form.last_name') ?> *</label>
+                <input type="text" id="last_name" name="last_name" class="form-input"
+                       value="<?= htmlspecialchars($userData['last_name'] ?? '') ?>" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email" class="form-label"><?= __('auth.email') ?></label>
+                <input type="email" id="email" class="form-input" disabled
+                       value="<?= htmlspecialchars($userData['email'] ?? '') ?>">
+                <p class="form-hint"><?= __('profile.email_readonly') ?></p>
+            </div>
+
+            <div class="form-group">
+                <label for="phone" class="form-label"><?= __('form.phone') ?></label>
+                <input type="tel" id="phone" name="phone" class="form-input"
+                       value="<?= htmlspecialchars($userData['phone'] ?? '') ?>"
+                       placeholder="+212 6XX XXX XXX">
+            </div>
+        </div>
+    </div>
+
+    <?php if ($vehicle): ?>
+    <!-- Vehicle Section for Drivers -->
+    <div class="card mt-4">
+        <div class="card-body">
+            <h2 class="text-title mb-4"><?= __('vehicle.title') ?></h2>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="vehicle_brand" class="form-label"><?= __('vehicle.brand') ?></label>
+                    <input type="text" id="vehicle_brand" name="vehicle_brand" class="form-input"
+                           value="<?= htmlspecialchars($vehicle['brand'] ?? '') ?>">
+                </div>
+                <div class="form-group">
+                    <label for="vehicle_model" class="form-label"><?= __('vehicle.model') ?></label>
+                    <input type="text" id="vehicle_model" name="vehicle_model" class="form-input"
+                           value="<?= htmlspecialchars($vehicle['model'] ?? '') ?>">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="vehicle_color" class="form-label"><?= __('vehicle.color') ?></label>
+                    <input type="text" id="vehicle_color" name="vehicle_color" class="form-input"
+                           value="<?= htmlspecialchars($vehicle['color'] ?? '') ?>">
+                </div>
+                <div class="form-group">
+                    <label for="vehicle_license_plate" class="form-label"><?= __('vehicle.license_plate') ?></label>
+                    <input type="text" id="vehicle_license_plate" name="vehicle_license_plate" class="form-input"
+                           value="<?= htmlspecialchars($vehicle['license_plate'] ?? '') ?>">
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Submit Button -->
+    <div class="mt-5">
+        <button type="submit" class="btn btn-accent btn-lg btn-block">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            <?= __('form.save') ?>
+        </button>
+    </div>
+</form>
+
+<style>
+/* Edit Profile specific styles */
+.form-hint {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-top: var(--space-2);
+}
+</style>

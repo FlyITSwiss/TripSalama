@@ -85,6 +85,7 @@ return [
         'duration' => 'Durée estimée',
         'distance' => 'Distance',
         'my_location' => 'Ma position actuelle',
+        'no_results' => 'Aucun résultat trouvé',
     ],
 
     // Course
@@ -138,6 +139,9 @@ return [
     'profile' => [
         'title' => 'Mon profil',
         'edit' => 'Modifier mon profil',
+        'edit_description' => 'Mettez à jour vos informations personnelles',
+        'personal_info' => 'Informations personnelles',
+        'email_readonly' => 'L\'adresse email ne peut pas être modifiée',
         'avatar' => 'Photo de profil',
         'change_avatar' => 'Changer ma photo',
         'member_since' => 'Membre depuis',
