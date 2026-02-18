@@ -1,0 +1,87 @@
+name: Run Database Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      migration_file:
+        description: 'Migration file to run (e.g., 006_identity_verification.sql)'
+        required: true
+        default: '006_identity_verification.sql'
+
+env:
+  VPS_HOST: '83.228.205.222'
+  VPS_USER: 'debian'
+  REMOTE_PATH: '/var/www/tripsalama'
+
+jobs:
+  run-migration:
+    runs-on: ubuntu-latest
+    name: "Run Migration on VPS"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          cat > ~/.ssh/config << 'SSHCONFIG'
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+          SSHCONFIG
+          chmod 600 ~/.ssh/config
+
+      - name: Upload migration file
+        run: |
+          scp database/migrations/${{ github.event.inputs.migration_file }} \
+            ${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/
+
+      - name: Run migration
+        run: |
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            # Lire les credentials depuis .env
+            source ${{ env.REMOTE_PATH }}/.env 2>/dev/null || true
+
+            # Exécuter la migration
+            echo 'Running migration: ${{ github.event.inputs.migration_file }}'
+            mysql -h \${DB_HOST:-127.0.0.1} -u \${DB_USER:-tripsalama} -p\${DB_PASS} \${DB_NAME:-tripsalama} < /tmp/${{ github.event.inputs.migration_file }}
+
+            # Vérifier le résultat
+            if [ \$? -eq 0 ]; then
+              echo 'Migration completed successfully!'
+
+              # Vérifier les nouvelles colonnes
+              echo 'Verifying new columns in users table:'
+              mysql -h \${DB_HOST:-127.0.0.1} -u \${DB_USER:-tripsalama} -p\${DB_PASS} \${DB_NAME:-tripsalama} -e \"DESCRIBE users;\" | grep identity
+
+              # Vérifier la nouvelle table
+              echo 'Verifying identity_verifications table:'
+              mysql -h \${DB_HOST:-127.0.0.1} -u \${DB_USER:-tripsalama} -p\${DB_PASS} \${DB_NAME:-tripsalama} -e \"DESCRIBE identity_verifications;\"
+            else
+              echo 'Migration failed!'
+              exit 1
+            fi
+
+            # Nettoyer
+            rm -f /tmp/${{ github.event.inputs.migration_file }}
+          "
+
+      - name: Create uploads directory
+        run: |
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            mkdir -p ${{ env.REMOTE_PATH }}/public/uploads/verifications
+            chmod 755 ${{ env.REMOTE_PATH }}/public/uploads/verifications
+            echo 'Uploads directory created'
+          "
+
+      - name: Summary
+        run: |
+          echo "## Migration Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Migration File | ${{ github.event.inputs.migration_file }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | Completed |" >> $GITHUB_STEP_SUMMARY
