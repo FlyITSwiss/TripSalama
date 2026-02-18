@@ -185,6 +185,31 @@ class AuthController
     }
 
     /**
+     * Afficher la page de vérification d'identité
+     */
+    public function showIdentityVerification(): void
+    {
+        // Vérifier que l'utilisateur est connecté
+        if (!is_authenticated()) {
+            redirect_to('login');
+            return;
+        }
+
+        $user = current_user();
+
+        // Vérifier si déjà vérifié
+        if ($user['identity_verification_status'] === 'verified') {
+            $this->redirectToDashboard();
+            return;
+        }
+
+        $this->render('auth/identity-verification', [
+            'pageTitle' => __('verification.title'),
+            'user' => $user,
+        ]);
+    }
+
+    /**
      * Deconnexion
      */
     public function logout(): void

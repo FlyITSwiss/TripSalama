@@ -7,7 +7,9 @@
     "test:smoke": "node smoke-tests.js",
     "test:auth": "node test-auth.js",
     "test:booking": "node test-booking-flow.js",
-    "test:driver": "node test-driver-dashboard.js"
+    "test:driver": "node test-driver-dashboard.js",
+    "test:identity": "node test-identity-verification.js",
+    "check:identity": "node check-identity-setup.js"
   },
   "dependencies": {
     "puppeteer": "^21.11.0"

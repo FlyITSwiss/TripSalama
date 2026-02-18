@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="demo-csrf-token-123">
+    <title>Demo - Identity Camera | TripSalama</title>
+
+    <!-- Design System CSS -->
+    <link rel="stylesheet" href="./assets/css/tripsalama-design-system.css">
+    <link rel="stylesheet" href="./assets/css/components/identity-camera.css">
+
+    <!-- Configuration JavaScript -->
+    <script>
+        window.AppConfig = {
+            basePath: '',
+            apiPath: '/api',
+            lang: 'fr',
+            csrfToken: 'demo-csrf-token-123',
+            debug: true
+        };
+    </script>
+</head>
+<body>
+    <!-- Skip link pour accessibilité -->
+    <a href="#main-content" class="skip-link">Aller au contenu</a>
+
+    <!-- Header -->
+    <div class="app-header">
+        <div class="header-inner">
+            <a href="/" class="logo">
+                <div class="logo-icon">TS</div>
+                <span class="logo-text">Trip<span>Salama</span></span>
+            </a>
+            <div class="header-nav">
+                <button class="header-nav-btn" onclick="window.location.href='/'">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main id="main-content" class="main-content">
+        <div class="section text-center mb-5">
+            <h1 class="text-headline">Démonstration</h1>
+            <p class="text-subtitle">Composant de vérification d'identité avec détection de visage</p>
+        </div>
+
+        <!-- Container pour le composant Identity Camera -->
+        <div id="identity-camera-demo"></div>
+    </main>
+
+    <!-- Core Services -->
+    <script src="./assets/js/core/app-config.js"></script>
+    <script src="./assets/js/core/i18n.js"></script>
+    <script src="./assets/js/core/api-service.js"></script>
+
+    <!-- Face API Loader -->
+    <script src="./assets/vendor/face-api/face-api-loader.js"></script>
+
+    <!-- Identity Camera Module -->
+    <script src="./assets/js/modules/identity-camera.js"></script>
+
+    <!-- Demo Script -->
+    <script>
+        // Attendre que i18n soit chargé
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Attendre que i18n soit prêt
+            const waitForI18n = setInterval(() => {
+                if (window.i18n && window.i18n.isReady()) {
+                    clearInterval(waitForI18n);
+                    initDemo();
+                }
+            }, 100);
+        });
+
+        function initDemo() {
+            AppConfig.log('Initialisation de la démo Identity Camera');
+
+            // Initialiser le composant
+            IdentityCamera.init('#identity-camera-demo', {
+                onComplete: 'handleVerificationComplete'
+            });
+        }
+
+        // Callback après vérification complète
+        function handleVerificationComplete(result) {
+            AppConfig.log('Vérification terminée:', result);
+
+            // Dans un vrai scénario, rediriger ou afficher la prochaine étape
+            setTimeout(() => {
+                if (confirm('Vérification terminée ! Voulez-vous recommencer la démonstration ?')) {
+                    IdentityCamera.destroy();
+                    IdentityCamera.init('#identity-camera-demo', {
+                        onComplete: 'handleVerificationComplete'
+                    });
+                }
+            }, 2000);
+        }
+
+        // Mock API endpoint pour la démo
+        // Dans un environnement réel, ceci serait géré par le serveur
+        const originalPost = ApiService.upload;
+        ApiService.upload = async function(endpoint, formData) {
+            AppConfig.log('Mock API Call:', endpoint);
+
+            // Simuler un délai réseau
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // Simuler une réponse réussie
+            return {
+                success: true,
+                message: 'Vérification effectuée avec succès (mode démo)',
+                data: {
+                    verified: true,
+                    timestamp: new Date().toISOString()
+                }
+            };
+        };
+    </script>
+
+    <style>
+        /* Styles additionnels pour la page de démo */
+        body {
+            padding-bottom: 0;
+        }
+
+        .main-content {
+            max-width: var(--container-sm);
+            margin: 0 auto;
+            padding: var(--space-5) var(--space-4);
+        }
+
+        @media (max-width: 518px) {
+            .main-content {
+                padding: var(--space-4) var(--space-3);
+            }
+        }
+    </style>
+</body>
+</html>

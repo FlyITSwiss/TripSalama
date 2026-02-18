@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="<?= $_SESSION['lang'] ?? 'fr' ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1B4D3E">
+    <meta name="description" content="<?= __('verification.subtitle') ?>">
+    <?= csrf_meta() ?>
+
+    <title><?= __('verification.title') ?> - <?= __('app.name') ?></title>
+
+    <link rel="icon" type="image/svg+xml" href="<?= asset_url('images/logo.svg') ?>">
+    <link rel="stylesheet" href="<?= versioned_asset('css/tripsalama-design-system.css') ?>">
+
+    <script>
+        window.AppConfig = {
+            basePath: <?= json_encode(config('base_path', '')) ?>,
+            apiPath: <?= json_encode(config('base_path', '') . '/api') ?>,
+            lang: <?= json_encode($_SESSION['lang'] ?? 'fr') ?>,
+            csrfToken: <?= json_encode(csrf_token()) ?>
+        };
+    </script>
+
+    <style>
+        .verification-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-21);
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .verification-pattern {
+            position: absolute;
+            inset: 0;
+            opacity: 0.05;
+            background-image: radial-gradient(circle at 25% 25%, var(--accent) 2%, transparent 2%),
+                              radial-gradient(circle at 75% 75%, var(--accent) 2%, transparent 2%);
+            background-size: var(--space-55) var(--space-55);
+            background-position: 0 0, var(--space-34) var(--space-34);
+        }
+
+        .verification-card {
+            position: relative;
+            z-index: 1;
+            background: var(--surface);
+            border-radius: var(--space-21);
+            box-shadow: 0 var(--space-13) var(--space-55) rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: var(--space-34);
+        }
+
+        .verification-header {
+            text-align: center;
+            margin-bottom: var(--space-34);
+        }
+
+        .verification-logo {
+            width: var(--space-89);
+            height: var(--space-89);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto var(--space-21);
+            font-size: var(--space-34);
+            font-weight: bold;
+            color: var(--surface);
+        }
+
+        .verification-title {
+            font-size: var(--space-34);
+            font-weight: 700;
+            color: var(--text);
+            margin: 0 0 var(--space-8);
+        }
+
+        .verification-subtitle {
+            font-size: var(--space-13);
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .camera-container {
+            position: relative;
+            background: var(--background);
+            border-radius: var(--space-13);
+            overflow: hidden;
+            margin-bottom: var(--space-21);
+        }
+
+        #video, #canvas {
+            width: 100%;
+            display: block;
+        }
+
+        #canvas {
+            display: none;
+        }
+
+        .camera-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            font-size: var(--space-13);
+        }
+
+        .face-guide {
+            position: absolute;
+            inset: var(--space-55);
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .tips-box {
+            background: var(--background);
+            border-radius: var(--space-13);
+            padding: var(--space-21);
+            margin-bottom: var(--space-21);
+        }
+
+        .tips-title {
+            font-size: var(--space-13);
+            font-weight: 600;
+            color: var(--text);
+            margin: 0 0 var(--space-13);
+        }
+
+        .tips-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .tips-list li {
+            padding: var(--space-8) 0 var(--space-8) var(--space-34);
+            position: relative;
+            color: var(--text-muted);
+            font-size: var(--space-13);
+        }
+
+        .tips-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .consent-box {
+            background: var(--background);
+            border-radius: var(--space-13);
+            padding: var(--space-21);
+            margin-bottom: var(--space-21);
+        }
+
+        .consent-label {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-13);
+            cursor: pointer;
+        }
+
+        .consent-checkbox {
+            flex-shrink: 0;
+            margin-top: var(--space-4);
+        }
+
+        .privacy-notice {
+            font-size: var(--space-13);
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: var(--space-13);
+            padding: var(--space-13);
+            background: var(--background);
+            border-radius: var(--space-8);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: var(--space-13);
+            margin-top: var(--space-21);
+        }
+
+        .btn-group .btn {
+            flex: 1;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .status-message {
+            padding: var(--space-13);
+            border-radius: var(--space-8);
+            margin-bottom: var(--space-21);
+            text-align: center;
+        }
+
+        .status-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .status-error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        @media (max-width: 518px) {
+            .verification-card {
+                padding: var(--space-21);
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="verification-page">
+        <div class="verification-pattern"></div>
+
+        <div class="verification-card">
+            <div class="verification-header">
+                <div class="verification-logo">T</div>
+                <h1 class="verification-title"><?= __('verification.title') ?></h1>
+                <p class="verification-subtitle"><?= __('verification.subtitle') ?></p>
+            </div>
+
+            <div id="statusMessage" class="status-message hidden"></div>
+
+            <div class="tips-box">
+                <h3 class="tips-title"><?= __('verification.tips_title') ?></h3>
+                <ul class="tips-list">
+                    <li><?= __('verification.tip_face_visible') ?></li>
+                    <li><?= __('verification.tip_good_lighting') ?></li>
+                    <li><?= __('verification.tip_no_sunglasses') ?></li>
+                    <li><?= __('verification.tip_neutral_expression') ?></li>
+                </ul>
+            </div>
+
+            <div class="camera-container" id="cameraContainer">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas"></canvas>
+                <div class="camera-overlay" id="cameraOverlay">
+                    <p><?= __('verification.camera_permission') ?></p>
+                </div>
+                <div class="face-guide hidden" id="faceGuide"></div>
+            </div>
+
+            <div class="consent-box">
+                <label class="consent-label">
+                    <input type="checkbox" id="consentCheckbox" class="consent-checkbox">
+                    <span><?= __('verification.consent_text') ?></span>
+                </label>
+            </div>
+
+            <div class="privacy-notice">
+                <?= __('verification.privacy_notice') ?>
+            </div>
+
+            <div class="btn-group">
+                <button type="button" id="btnTakePhoto" class="btn btn-accent btn-lg" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                    <?= __('verification.take_photo') ?>
+                </button>
+                <button type="button" id="btnRetake" class="btn btn-secondary btn-lg hidden">
+                    <?= __('verification.retake') ?>
+                </button>
+                <button type="button" id="btnSubmit" class="btn btn-accent btn-lg hidden">
+                    <?= __('verification.submit') ?>
+                </button>
+            </div>
+
+            <div class="btn-group">
+                <a href="<?= base_url($user['role'] === 'driver' ? 'driver/dashboard' : 'passenger/dashboard') ?>"
+                   class="btn btn-secondary btn-lg">
+                    <?= __('verification.skip_for_now') ?>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="<?= versioned_asset('js/core/app-config.js') ?>"></script>
+    <script src="<?= versioned_asset('js/core/api-service.js') ?>"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
+
+    <script>
+        const i18n = {
+            cameraPermission: <?= json_encode(__('verification.camera_permission')) ?>,
+            cameraDenied: <?= json_encode(__('verification.camera_denied')) ?>,
+            cameraNotFound: <?= json_encode(__('verification.camera_not_found')) ?>,
+            processing: <?= json_encode(__('verification.processing')) ?>,
+            success: <?= json_encode(__('verification.success')) ?>,
+            successMessage: <?= json_encode(__('verification.success_message')) ?>,
+            failed: <?= json_encode(__('verification.failed')) ?>,
+            failedMessage: <?= json_encode(__('verification.failed_message')) ?>,
+            pendingReview: <?= json_encode(__('verification.pending_review')) ?>,
+            pendingMessage: <?= json_encode(__('verification.pending_message')) ?>,
+            consentRequired: <?= json_encode(__('verification.consent_required')) ?>,
+            errorGeneric: <?= json_encode(__('error.generic')) ?>
+        };
+
+        let stream = null;
+        let capturedImage = null;
+        let faceApiLoaded = false;
+
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const cameraOverlay = document.getElementById('cameraOverlay');
+        const faceGuide = document.getElementById('faceGuide');
+        const btnTakePhoto = document.getElementById('btnTakePhoto');
+        const btnRetake = document.getElementById('btnRetake');
+        const btnSubmit = document.getElementById('btnSubmit');
+        const consentCheckbox = document.getElementById('consentCheckbox');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // Initialiser la caméra
+        async function initCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: 640, height: 480 }
+                });
+
+                video.srcObject = stream;
+                cameraOverlay.classList.add('hidden');
+                faceGuide.classList.remove('hidden');
+
+            } catch (error) {
+                showStatus('error', error.name === 'NotAllowedError' ? i18n.cameraDenied : i18n.cameraNotFound);
+            }
+        }
+
+        // Consent checkbox
+        consentCheckbox.addEventListener('change', () => {
+            btnTakePhoto.disabled = !consentCheckbox.checked;
+        });
+
+        // Prendre une photo
+        btnTakePhoto.addEventListener('click', () => {
+            if (!consentCheckbox.checked) {
+                showStatus('error', i18n.consentRequired);
+                return;
+            }
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+
+            capturedImage = canvas.toDataURL('image/jpeg', 0.9);
+
+            video.classList.add('hidden');
+            canvas.classList.remove('hidden');
+            faceGuide.classList.add('hidden');
+
+            btnTakePhoto.classList.add('hidden');
+            btnRetake.classList.remove('hidden');
+            btnSubmit.classList.remove('hidden');
+        });
+
+        // Reprendre
+        btnRetake.addEventListener('click', () => {
+            video.classList.remove('hidden');
+            canvas.classList.add('hidden');
+            faceGuide.classList.remove('hidden');
+
+            btnTakePhoto.classList.remove('hidden');
+            btnRetake.classList.add('hidden');
+            btnSubmit.classList.add('hidden');
+
+            capturedImage = null;
+        });
+
+        // Soumettre
+        btnSubmit.addEventListener('click', async () => {
+            if (!capturedImage) return;
+
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = i18n.processing;
+
+            try {
+                const response = await fetch(AppConfig.apiPath + '/verification?action=submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': AppConfig.csrfToken
+                    },
+                    body: JSON.stringify({
+                        image: capturedImage,
+                        ai_confidence: null,
+                        ai_result: null,
+                        _csrf_token: AppConfig.csrfToken
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const status = result.data.status;
+
+                    if (status === 'verified') {
+                        showStatus('success', i18n.successMessage);
+                        setTimeout(() => {
+                            window.location.href = AppConfig.basePath + (<?= json_encode($user['role']) ?> === 'driver' ? '/driver/dashboard' : '/passenger/dashboard');
+                        }, 2000);
+                    } else if (status === 'manual_review') {
+                        showStatus('pending', i18n.pendingMessage);
+                        setTimeout(() => {
+                            window.location.href = AppConfig.basePath + (<?= json_encode($user['role']) ?> === 'driver' ? '/driver/dashboard' : '/passenger/dashboard');
+                        }, 3000);
+                    } else {
+                        showStatus('error', i18n.failedMessage);
+                        btnSubmit.disabled = false;
+                        btnSubmit.textContent = <?= json_encode(__('verification.submit')) ?>;
+                    }
+                } else {
+                    showStatus('error', result.message || i18n.errorGeneric);
+                    btnSubmit.disabled = false;
+                    btnSubmit.textContent = <?= json_encode(__('verification.submit')) ?>;
+                }
+
+            } catch (error) {
+                showStatus('error', i18n.errorGeneric);
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = <?= json_encode(__('verification.submit')) ?>;
+            }
+        });
+
+        function showStatus(type, message) {
+            statusMessage.textContent = message;
+            statusMessage.className = 'status-message status-' + type;
+            statusMessage.classList.remove('hidden');
+        }
+
+        // Initialiser
+        initCamera();
+    </script>
+</body>
+</html>

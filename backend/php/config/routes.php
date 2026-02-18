@@ -19,6 +19,7 @@ return [
     'POST /register/passenger' => ['AuthController', 'processRegisterPassenger'],
     'POST /register/driver' => ['AuthController', 'processRegisterDriver'],
     'POST /logout' => ['AuthController', 'logout'],
+    'GET /identity-verification' => ['AuthController', 'showIdentityVerification', 'auth' => true],
 
     // Dashboard passagere (auth required)
     'GET /passenger/dashboard' => ['PassengerController', 'dashboard', 'auth' => true, 'role' => 'passenger'],

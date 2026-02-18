@@ -218,6 +218,36 @@ return [
         'very_fast' => 'Très rapide',
     ],
 
+    // Vérification d'identité
+    'verification' => [
+        'title' => 'Vérification d\'identité',
+        'subtitle' => 'Pour votre sécurité, nous vérifions que vous êtes bien une femme',
+        'camera_permission' => 'Autoriser l\'accès à la caméra',
+        'camera_denied' => 'Accès à la caméra refusé',
+        'camera_not_found' => 'Aucune caméra détectée',
+        'take_photo' => 'Prendre une photo',
+        'retake' => 'Reprendre',
+        'submit' => 'Valider ma photo',
+        'processing' => 'Analyse en cours...',
+        'success' => 'Vérification réussie !',
+        'success_message' => 'Bienvenue dans la communauté TripSalama',
+        'failed' => 'Vérification échouée',
+        'failed_message' => 'Nous n\'avons pas pu vérifier votre identité automatiquement',
+        'pending_review' => 'En attente de vérification',
+        'pending_message' => 'Notre équipe examine votre demande sous 24h',
+        'tips_title' => 'Conseils pour une bonne photo',
+        'tip_face_visible' => 'Visage bien visible et centré',
+        'tip_good_lighting' => 'Bon éclairage, évitez le contre-jour',
+        'tip_no_sunglasses' => 'Retirez lunettes de soleil et chapeau',
+        'tip_neutral_expression' => 'Expression neutre ou souriante',
+        'privacy_notice' => 'Votre photo est analysée localement et n\'est pas envoyée à des serveurs tiers.',
+        'consent_text' => 'J\'accepte que ma photo soit utilisée pour vérifier mon identité',
+        'consent_required' => 'Vous devez accepter pour continuer',
+        'manual_review_info' => 'Notre équipe examine votre demande sous 24h',
+        'skip_for_now' => 'Passer pour l\'instant',
+        'continue' => 'Continuer',
+    ],
+
     // Footer
     'footer' => [
         'copyright' => '© 2025 TripSalama. Tous droits réservés.',
