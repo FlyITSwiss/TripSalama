@@ -39,74 +39,62 @@ jobs:
           scp database/migrations/${{ github.event.inputs.migration_file }} \
             ${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/
 
-      - name: Run migration via Docker or native MySQL
+      - name: Run migration via sudo MySQL
         run: |
-          # Copier le fichier migration sur le VPS
           echo "=== Running migration on VPS ==="
 
-          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} '
-            cd /var/www/tripsalama
+          # Essayer avec sudo mysql (debian auth socket)
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            echo 'Attempting migration with sudo mysql...'
 
-            # Verifier si Docker est utilise
-            if docker ps 2>/dev/null | grep -q tripsalama-db; then
-              echo "Using Docker MySQL container..."
+            # Methode 1: sudo mysql (auth socket)
+            if sudo mysql tripsalama < /tmp/${{ github.event.inputs.migration_file }} 2>/dev/null; then
+              echo 'Migration completed successfully via sudo!'
 
-              # Executer via Docker
-              docker cp /tmp/${{ github.event.inputs.migration_file }} tripsalama-db:/tmp/migration.sql
-              docker exec tripsalama-db sh -c "mysql -u root -p\$MYSQL_ROOT_PASSWORD tripsalama < /tmp/migration.sql"
+              echo 'Verifying new columns:'
+              sudo mysql tripsalama -e 'DESCRIBE users;' | grep identity || echo 'No identity columns'
 
-              if [ $? -eq 0 ]; then
-                echo "Migration completed successfully!"
-
-                # Verifier
-                echo "Verifying new columns:"
-                docker exec tripsalama-db sh -c "mysql -u root -p\$MYSQL_ROOT_PASSWORD tripsalama -e \"DESCRIBE users;\"" | grep identity || echo "No identity columns"
-
-                echo "Verifying new table:"
-                docker exec tripsalama-db sh -c "mysql -u root -p\$MYSQL_ROOT_PASSWORD tripsalama -e \"SHOW TABLES LIKE '\''identity%'\'';\""
-              else
-                echo "Docker migration failed!"
-                exit 1
-              fi
+              echo 'Verifying new table:'
+              sudo mysql tripsalama -e \"SHOW TABLES LIKE 'identity%';\"
             else
-              echo "Using native MySQL..."
+              echo 'sudo mysql failed, trying with debian-sys-maint...'
 
-              # Charger .env
-              if [ -f .env ]; then
-                set -a
-                source .env
-                set +a
-              fi
+              # Methode 2: debian-sys-maint user
+              if [ -f /etc/mysql/debian.cnf ]; then
+                if sudo mysql --defaults-file=/etc/mysql/debian.cnf tripsalama < /tmp/${{ github.event.inputs.migration_file }}; then
+                  echo 'Migration completed via debian-sys-maint!'
 
-              # Creer fichier de config MySQL temporaire pour eviter problemes d echappement
-              echo "[client]" > /tmp/.my.cnf
-              echo "user=${DB_USER:-tripsalama}" >> /tmp/.my.cnf
-              echo "password=${DB_PASSWORD}" >> /tmp/.my.cnf
-              echo "host=${DB_HOST:-127.0.0.1}" >> /tmp/.my.cnf
-              chmod 600 /tmp/.my.cnf
+                  echo 'Verifying:'
+                  sudo mysql --defaults-file=/etc/mysql/debian.cnf tripsalama -e 'DESCRIBE users;' | grep identity
+                  sudo mysql --defaults-file=/etc/mysql/debian.cnf tripsalama -e \"SHOW TABLES LIKE 'identity%';\"
+                else
+                  echo 'debian-sys-maint failed too!'
 
-              echo "Running migration: ${{ github.event.inputs.migration_file }}"
-
-              if mysql --defaults-file=/tmp/.my.cnf ${DB_NAME:-tripsalama} < /tmp/${{ github.event.inputs.migration_file }}; then
-                echo "Migration completed successfully!"
-
-                echo "Verifying new columns:"
-                mysql --defaults-file=/tmp/.my.cnf ${DB_NAME:-tripsalama} -e "DESCRIBE users;" | grep identity || echo "No identity columns"
-
-                echo "Verifying new table:"
-                mysql --defaults-file=/tmp/.my.cnf ${DB_NAME:-tripsalama} -e "SHOW TABLES LIKE '\''identity%'\'';"
-
-                rm -f /tmp/.my.cnf
+                  # Methode 3: root sans mot de passe
+                  echo 'Trying root without password...'
+                  if sudo mysql -u root tripsalama < /tmp/${{ github.event.inputs.migration_file }}; then
+                    echo 'Migration completed via root!'
+                    sudo mysql -u root tripsalama -e 'DESCRIBE users;' | grep identity
+                  else
+                    echo 'All methods failed!'
+                    echo 'Please run manually: sudo mysql tripsalama < /var/www/tripsalama/database/migrations/${{ github.event.inputs.migration_file }}'
+                    exit 1
+                  fi
+                fi
               else
-                rm -f /tmp/.my.cnf
-                echo "Native MySQL migration failed!"
-                exit 1
+                echo 'No debian.cnf found, trying root...'
+                if sudo mysql -u root tripsalama < /tmp/${{ github.event.inputs.migration_file }}; then
+                  echo 'Migration completed via root!'
+                else
+                  echo 'Migration failed! Run manually on VPS.'
+                  exit 1
+                fi
               fi
             fi
 
             # Nettoyer
             rm -f /tmp/${{ github.event.inputs.migration_file }}
-          '
+          "
 
       - name: Create uploads directory
         run: |
