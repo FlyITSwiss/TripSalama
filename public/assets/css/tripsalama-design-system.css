@@ -2010,6 +2010,35 @@ p {
     padding-top: var(--space-6);
 }
 
+/* Auth Mobile Fixes */
+@media (max-width: 480px) {
+    .auth-page {
+        padding: 0;
+        align-items: stretch;
+    }
+
+    .auth-card {
+        min-height: 100vh;
+        border-radius: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .auth-header {
+        padding-top: var(--space-8);
+    }
+
+    .auth-form {
+        flex: 1;
+    }
+}
+
+/* Auth subtitle more visible */
+.auth-subtitle {
+    color: var(--color-text-secondary);
+    opacity: 0.8;
+}
+
 /* Form Row (2 columns) */
 .form-row {
     display: grid;
