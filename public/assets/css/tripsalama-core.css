@@ -1710,9 +1710,17 @@ body {
 
 /* Responsive - Mobile */
 @media (max-width: 518px) {
+    /* Fix conteneur parent - supprime padding et max-width */
+    .main-content {
+        padding: 0 !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
+
     .history-container {
-        padding: 0; /* Aucun padding sur mobile */
+        padding: 0;
         max-width: 100%;
+        width: 100%;
     }
 
     .history-header {
@@ -1728,11 +1736,11 @@ body {
 
     .history-list {
         padding: 0;
-        gap: 1px; /* Séparateur fin entre les cartes */
+        gap: 1px;
     }
 
     .history-card {
-        border-radius: 0; /* Pas de radius sur mobile */
+        border-radius: 0;
         box-shadow: none;
         border-bottom: 1px solid var(--color-border);
     }
