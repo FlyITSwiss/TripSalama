@@ -199,20 +199,33 @@ jobs:
       - name: Configure nginx
         run: |
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} '
-            # Create nginx config for TripSalama
+            # Create nginx config for TripSalama - Fixed alias + PHP handling
             sudo tee /etc/nginx/sites-available/tripsalama << "NGINX"
-          # All routes go through index.php (API routes handled by PHP router)
+          # TripSalama - Fixed configuration for alias + PHP
           location /internal/tripsalama {
               alias /var/www/tripsalama/public;
               index index.php;
 
-              location ~ \.php$ {
-                  fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
-                  fastcgi_param SCRIPT_FILENAME $request_filename;
-                  include fastcgi_params;
-              }
+              # Important: Try files then fallback to index.php
+              try_files $uri $uri/ @tripsalama_router;
+          }
 
-              try_files $uri $uri/ /internal/tripsalama/index.php?$query_string;
+          # PHP handler for TripSalama (with correct SCRIPT_FILENAME for alias)
+          location ~ ^/internal/tripsalama/(.+\.php)$ {
+              alias /var/www/tripsalama/public/$1;
+              fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
+              fastcgi_index index.php;
+              fastcgi_param SCRIPT_FILENAME /var/www/tripsalama/public/$1;
+              include fastcgi_params;
+          }
+
+          # Fallback router - all non-file requests go to index.php
+          location @tripsalama_router {
+              fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
+              fastcgi_index index.php;
+              fastcgi_param SCRIPT_FILENAME /var/www/tripsalama/public/index.php;
+              fastcgi_param QUERY_STRING $query_string;
+              include fastcgi_params;
           }
           NGINX
 
