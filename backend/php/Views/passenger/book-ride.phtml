@@ -6,7 +6,15 @@
 ?>
 
 <style>
-    /* Full Screen Map Layout - Account for bottom nav */
+    /* Reset parent padding for full screen experience */
+    .page:has(.booking-page),
+    .main-content:has(.booking-page) {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+    }
+
+    /* Full Screen Map Layout - Account for bottom nav + safe area */
     .booking-page {
         position: fixed;
         top: 0;
@@ -14,7 +22,9 @@
         transform: translateX(-50%);
         width: 100%;
         max-width: 420px;
-        height: calc(100vh - var(--nav-height));
+        /* Height = viewport - nav height - safe area inset (iPhone notch) */
+        height: calc(100vh - var(--nav-height, 64px) - env(safe-area-inset-bottom, 0px));
+        height: calc(100dvh - var(--nav-height, 64px) - env(safe-area-inset-bottom, 0px));
         overflow: hidden;
     }
 
@@ -94,7 +104,7 @@
     /* Location Button - above bottom sheet */
     .booking-locate-btn {
         position: absolute;
-        bottom: 260px;
+        bottom: calc(50% + var(--space-8));
         right: var(--space-4);
         width: 48px;
         height: 48px;
