@@ -112,18 +112,23 @@ try {
         case 'complete':
             if ($method !== 'PUT') errorResponse('Method not allowed', 405);
             requireAuth();
-            requireRole('driver');
             requireCsrf();
 
             $data = getRequestData();
             $rideId = (int)($data['ride_id'] ?? 0);
 
             $ride = $rideModel->findById($rideId);
-            if ($ride) {
-                // Copier le prix estime vers le prix final
-                $stmt = $db->prepare('UPDATE rides SET final_price = estimated_price WHERE id = :id');
-                $stmt->execute(['id' => $rideId]);
+            if (!$ride) errorResponse(__('error.not_found'), 404);
+
+            // Verifier que l'utilisateur est la conductrice OU la passagere de cette course
+            $userId = (int)current_user()['id'];
+            if ((int)$ride['driver_id'] !== $userId && (int)$ride['passenger_id'] !== $userId) {
+                errorResponse(__('error.forbidden'), 403);
             }
+
+            // Copier le prix estime vers le prix final
+            $stmt = $db->prepare('UPDATE rides SET final_price = estimated_price WHERE id = :id');
+            $stmt->execute(['id' => $rideId]);
 
             $rideModel->updateStatus($rideId, 'completed');
             successResponse(null, __('msg.ride_completed'));

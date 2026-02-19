@@ -577,13 +577,16 @@
     inset: 0;
     z-index: 2000;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     padding: var(--space-4);
+    padding-top: var(--space-8);
+    padding-bottom: var(--space-8);
     background: rgba(0,0,0,0.8);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     animation: fadeIn 0.3s ease;
+    overflow-y: auto;
 }
 
 .demo-modal.hidden {
@@ -598,11 +601,15 @@
 .modal-content {
     width: 100%;
     max-width: 360px;
+    max-height: calc(100vh - var(--space-16));
+    overflow-y: auto;
     background: var(--color-surface);
     border-radius: var(--radius-2xl);
     padding: var(--space-6);
+    padding-bottom: var(--space-8);
     text-align: center;
     animation: slideUp 0.4s var(--ease-out-expo);
+    margin: auto;
 }
 
 @keyframes slideUp {
@@ -1167,7 +1174,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Phase: Arrival
-    function showArrival() {
+    async function showArrival() {
         console.log('[Demo] *** SHOWING ARRIVAL MODAL ***');
         currentPhase = 'arrived';
         const tripDuration = Math.max(1, Math.round((Date.now() - tripStartTime) / 1000 / 60)) || config.estimatedDuration;
@@ -1176,6 +1183,17 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('finalDuration').textContent = tripDuration;
         document.getElementById('finalPrice').textContent = config.estimatedPrice.toFixed(2);
         document.getElementById('tripSummary').textContent = '<?= __("demo.trip_summary") ?>'.replace(':duration', tripDuration);
+
+        // Marquer la course comme terminée en base de données (si ride réel avec ID > 0)
+        const rideId = <?= (int)($ride['id'] ?? 0) ?>;
+        if (rideId > 0 && typeof ApiService !== 'undefined') {
+            try {
+                await ApiService.put('rides/complete', { ride_id: rideId });
+                console.log('[Demo] Ride marked as completed in database');
+            } catch (e) {
+                console.warn('[Demo] Could not mark ride as completed:', e.message);
+            }
+        }
 
         elements.arrivalModal.classList.remove('hidden');
     }
@@ -1249,8 +1267,23 @@ document.addEventListener('DOMContentLoaded', function() {
         this.disabled = true;
         this.innerHTML = '<span class="spinner"></span>';
 
-        // Simulate API call (in real app, use ApiService.post)
-        await new Promise(r => setTimeout(r, 1000));
+        // Sauvegarder la notation en base de données (si ride réel avec ID > 0)
+        const rideId = <?= (int)($ride['id'] ?? 0) ?>;
+        if (rideId > 0 && typeof ApiService !== 'undefined') {
+            try {
+                await ApiService.post('rides/rate', {
+                    ride_id: rideId,
+                    rating: selectedRating,
+                    comment: comment
+                });
+                console.log('[Demo] Rating submitted to database');
+            } catch (e) {
+                console.warn('[Demo] Could not submit rating:', e.message);
+            }
+        } else {
+            // Simulation pour démo sans vraie course
+            await new Promise(r => setTimeout(r, 500));
+        }
 
         elements.ratingModal.classList.add('hidden');
         elements.thankYouModal.classList.remove('hidden');
