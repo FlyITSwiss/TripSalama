@@ -69,6 +69,7 @@ return [
         'model' => 'Modèle',
         'color' => 'Couleur',
         'license_plate' => 'Plaque d\'immatriculation',
+        'plate' => 'Immatriculation',
         'year' => 'Année',
     ],
 
@@ -137,9 +138,12 @@ return [
         'subtitle' => 'Retrouvez toutes vos courses passées',
         'no_rides' => 'Aucune course pour le moment',
         'no_rides_subtitle' => 'Vos courses apparaîtront ici après votre premier trajet',
+        'no_rides_text' => 'Réservez votre première course pour commencer',
         'view_details' => 'Voir les détails',
         'total_rides' => 'Total des courses',
+        'completed' => 'Terminées',
         'completed_rides' => 'Courses terminées',
+        'total_spent' => 'Total dépensé',
         'this_month' => 'Ce mois',
         'start_booking' => 'Réserver ma première course',
         'pickup_label' => 'Départ',
@@ -153,9 +157,14 @@ return [
     // Profil
     'profile' => [
         'title' => 'Mon profil',
-        'edit' => 'Modifier mon profil',
+        'edit' => 'Modifier',
+        'edit_info' => 'Modifier mes informations',
         'edit_description' => 'Mettez à jour vos informations personnelles',
         'personal_info' => 'Informations personnelles',
+        'full_name' => 'Nom complet',
+        'settings' => 'Paramètres',
+        'security' => 'Sécurité',
+        'change_password' => 'Changer le mot de passe',
         'email_readonly' => 'L\'adresse email ne peut pas être modifiée',
         'avatar' => 'Photo de profil',
         'change_avatar' => 'Changer ma photo',
@@ -164,6 +173,8 @@ return [
         'not_verified' => 'En attente de vérification',
         'total_rides' => 'Courses effectuées',
         'rating' => 'Note moyenne',
+        'passenger' => 'Passagère',
+        'driver' => 'Conductrice',
     ],
 
     // Messages
