@@ -23,6 +23,12 @@ if (!empty($basePath) && strpos($requestPath, $basePath) === 0) {
 }
 $requestPath = $requestPath ?: '/';
 
+// Route API requests to api/index.php
+if (preg_match('#^/api(/.*)?$#', $requestPath)) {
+    require __DIR__ . '/api/index.php';
+    exit;
+}
+
 // Methode HTTP
 $requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
