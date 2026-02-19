@@ -507,6 +507,7 @@ p {
 /* Main content area */
 .main-content {
     padding: var(--space-4);
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
 }
 
 /* Section spacing */
