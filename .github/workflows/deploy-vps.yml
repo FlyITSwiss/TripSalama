@@ -166,6 +166,11 @@ jobs:
               echo "Running identity verification migration..."
               sudo mysql tripsalama < /var/www/tripsalama/database/migrations/006_identity_verification.sql 2>/dev/null || echo "Migration already applied or skipped"
             fi
+
+            # Mark all pending/in_progress rides as completed
+            echo "=== Cleaning up rides ==="
+            sudo mysql tripsalama -e "UPDATE rides SET status = '"'"'completed'"'"', completed_at = NOW() WHERE status IN ('"'"'pending'"'"', '"'"'accepted'"'"', '"'"'driver_arriving'"'"', '"'"'in_progress'"'"');"
+            echo "All pending rides marked as completed"
           '
 
       - name: Create production config

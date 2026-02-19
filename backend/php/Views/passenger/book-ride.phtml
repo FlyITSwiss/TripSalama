@@ -6,7 +6,7 @@
 ?>
 
 <style>
-    /* Full Screen Map Layout */
+    /* Full Screen Map Layout - Account for bottom nav */
     .booking-page {
         position: fixed;
         top: 0;
@@ -14,7 +14,7 @@
         transform: translateX(-50%);
         width: 100%;
         max-width: 420px;
-        height: 100vh;
+        height: calc(100vh - var(--nav-height));
         overflow: hidden;
     }
 
@@ -91,10 +91,10 @@
         height: 24px;
     }
 
-    /* Location Button */
+    /* Location Button - above bottom sheet */
     .booking-locate-btn {
         position: absolute;
-        bottom: 280px;
+        bottom: 260px;
         right: var(--space-4);
         width: 48px;
         height: 48px;
@@ -136,7 +136,7 @@
         50% { transform: scale(1.1); opacity: 0.7; }
     }
 
-    /* Bottom Sheet */
+    /* Bottom Sheet - fits above bottom nav */
     .booking-sheet {
         position: absolute;
         bottom: 0;
@@ -147,8 +147,10 @@
         box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
         z-index: 1001;
         padding: var(--space-4);
-        padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
+        padding-bottom: var(--space-4);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-height: 50%;
+        overflow-y: auto;
     }
 
     /* Drag Handle */
