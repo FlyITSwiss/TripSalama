@@ -38,12 +38,16 @@ class PassengerController
         // Course en cours
         $activeRide = $rideModel->getActiveByPassenger((int)$user['id']);
 
+        // Courses récentes (3 dernières terminées) pour afficher dans "Destinations récentes"
+        $recentRides = $rideModel->getRecentByPassenger((int)$user['id'], 3);
+
         $this->render('passenger/dashboard', [
             'pageTitle' => __('nav.dashboard'),
             'currentPage' => 'dashboard',
             'user' => $user,
             'stats' => $stats,
             'activeRide' => $activeRide,
+            'recentRides' => $recentRides,
         ]);
     }
 

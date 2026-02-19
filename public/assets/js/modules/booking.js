@@ -125,22 +125,38 @@ const Booking = (function() {
         showPickupStatus('detecting');
 
         try {
-            // D'abord une position rapide
-            const quickPos = await GeoLocationService.getQuickPosition();
-            await setPickupFromPosition(quickPos, true);
+            // D'abord essayer une position rapide
+            let position;
+            try {
+                position = await GeoLocationService.getQuickPosition();
+                await setPickupFromPosition(position, true);
 
-            // Puis une position précise en arrière-plan
-            GeoLocationService.getHighAccuracyPosition().then(async (precisePos) => {
-                if (precisePos.accuracy < quickPos.accuracy) {
-                    await setPickupFromPosition(precisePos, false);
-                }
-            }).catch(() => {
-                // Ignorer - on garde la position rapide
-            });
+                // Puis améliorer avec position précise en arrière-plan
+                GeoLocationService.getHighAccuracyPosition().then(async (precisePos) => {
+                    if (precisePos.accuracy < position.accuracy) {
+                        await setPickupFromPosition(precisePos, false);
+                    }
+                }).catch(() => {
+                    // Ignorer - on garde la position rapide
+                });
+
+            } catch (quickError) {
+                // Position rapide échouée, essayer directement la haute précision
+                AppConfig.debug('Quick position failed, trying high accuracy:', quickError);
+                position = await GeoLocationService.getHighAccuracyPosition();
+                await setPickupFromPosition(position, true);
+            }
 
         } catch (error) {
             AppConfig.debug('Auto-location failed:', error);
+            // Ne pas afficher l'erreur immédiatement, l'utilisateur peut entrer manuellement
             showPickupStatus('error', error.message);
+            // Masquer l'erreur après 5 secondes
+            setTimeout(() => {
+                if (pickupStatusIndicator) {
+                    pickupStatusIndicator.classList.add('hidden');
+                }
+            }, 5000);
         } finally {
             isAutoLocating = false;
             hasAutoLocated = true;

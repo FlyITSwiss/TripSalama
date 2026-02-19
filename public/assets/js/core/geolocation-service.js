@@ -23,9 +23,10 @@ const GeoLocationService = (function() {
             maximumAge: 5000
         },
         // Options pour position rapide (moins précise)
+        // Timeout augmenté à 15s pour laisser le temps sur mobile
         quickPosition: {
             enableHighAccuracy: false,
-            timeout: 5000,
+            timeout: 15000,
             maximumAge: 60000
         }
     };

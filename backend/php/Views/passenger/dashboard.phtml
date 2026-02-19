@@ -1,8 +1,16 @@
 <?php
 /**
  * TripSalama - Dashboard Passager
- * Design Uber Premium
+ * Design Uber Premium - Version enrichie
  */
+
+// Simuler des données pour les sections (à remplacer par des vraies données)
+$savedPlaces = [
+    ['type' => 'home', 'name' => __('dashboard.home'), 'address' => $user['home_address'] ?? null],
+    ['type' => 'work', 'name' => __('dashboard.work'), 'address' => $user['work_address'] ?? null],
+];
+
+$recentDestinations = $recentRides ?? [];
 ?>
 
 <style>
@@ -13,7 +21,7 @@
 
     /* Welcome Section */
     .uber-welcome {
-        margin-bottom: var(--space-6);
+        margin-bottom: var(--space-5);
     }
 
     .uber-welcome-greeting {
@@ -35,7 +43,7 @@
         border-radius: var(--radius-2xl);
         padding: var(--space-4);
         box-shadow: var(--shadow-lg);
-        margin-bottom: var(--space-6);
+        margin-bottom: var(--space-5);
     }
 
     .where-to-input {
@@ -84,15 +92,277 @@
         color: var(--uber-gray-400);
     }
 
-    /* Stats */
-    .uber-stats {
+    /* Saved Places */
+    .saved-places {
         display: flex;
         gap: var(--space-3);
-        margin-bottom: var(--space-6);
+        margin-top: var(--space-4);
+        padding-top: var(--space-4);
+        border-top: 1px solid var(--uber-gray-100);
     }
 
-    .uber-stat {
+    .saved-place {
         flex: 1;
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3);
+        background: var(--uber-gray-50);
+        border-radius: var(--radius-lg);
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.2s ease;
+    }
+
+    .saved-place:hover {
+        background: var(--uber-gray-100);
+    }
+
+    .saved-place-icon {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--uber-white);
+        border-radius: var(--radius-full);
+        flex-shrink: 0;
+    }
+
+    .saved-place-icon svg {
+        width: 18px;
+        height: 18px;
+        color: var(--uber-black);
+    }
+
+    .saved-place-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .saved-place-name {
+        font-size: var(--text-sm);
+        font-weight: var(--font-semibold);
+        color: var(--uber-black);
+    }
+
+    .saved-place-address {
+        font-size: var(--text-xs);
+        color: var(--uber-gray-500);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .saved-place-add {
+        font-size: var(--text-xs);
+        color: var(--uber-green);
+        font-weight: var(--font-medium);
+    }
+
+    /* Safety Banner */
+    .safety-banner {
+        background: linear-gradient(135deg, var(--uber-green) 0%, #04A054 100%);
+        border-radius: var(--radius-2xl);
+        padding: var(--space-4);
+        margin-bottom: var(--space-5);
+        color: var(--uber-white);
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+    }
+
+    .safety-banner-icon {
+        width: 48px;
+        height: 48px;
+        background: rgba(255,255,255,0.2);
+        border-radius: var(--radius-full);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .safety-banner-icon svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .safety-banner-content {
+        flex: 1;
+    }
+
+    .safety-banner-title {
+        font-size: var(--text-base);
+        font-weight: var(--font-bold);
+        margin-bottom: 2px;
+    }
+
+    .safety-banner-text {
+        font-size: var(--text-sm);
+        opacity: 0.9;
+    }
+
+    /* Recent Destinations */
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--space-3);
+    }
+
+    .section-title {
+        font-size: var(--text-base);
+        font-weight: var(--font-bold);
+        color: var(--uber-black);
+    }
+
+    .section-link {
+        font-size: var(--text-sm);
+        color: var(--uber-gray-500);
+        text-decoration: none;
+    }
+
+    .section-link:hover {
+        color: var(--uber-black);
+    }
+
+    .recent-destinations {
+        margin-bottom: var(--space-5);
+    }
+
+    .recent-list {
+        background: var(--uber-white);
+        border-radius: var(--radius-xl);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .recent-item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-4);
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.2s ease;
+        border-bottom: 1px solid var(--uber-gray-100);
+    }
+
+    .recent-item:last-child {
+        border-bottom: none;
+    }
+
+    .recent-item:hover {
+        background: var(--uber-gray-50);
+    }
+
+    .recent-item-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--uber-gray-100);
+        border-radius: var(--radius-full);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .recent-item-icon svg {
+        width: 20px;
+        height: 20px;
+        color: var(--uber-gray-600);
+    }
+
+    .recent-item-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .recent-item-address {
+        font-size: var(--text-sm);
+        font-weight: var(--font-medium);
+        color: var(--uber-black);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .recent-item-date {
+        font-size: var(--text-xs);
+        color: var(--uber-gray-500);
+    }
+
+    .recent-item-arrow {
+        width: 16px;
+        height: 16px;
+        color: var(--uber-gray-400);
+    }
+
+    /* Promo Card */
+    .promo-card {
+        background: var(--uber-black);
+        border-radius: var(--radius-2xl);
+        padding: var(--space-4);
+        margin-bottom: var(--space-5);
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        text-decoration: none;
+        color: var(--uber-white);
+        transition: transform 0.2s ease;
+    }
+
+    .promo-card:hover {
+        transform: scale(1.02);
+    }
+
+    .promo-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--uber-green);
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .promo-icon svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .promo-content {
+        flex: 1;
+    }
+
+    .promo-title {
+        font-size: var(--text-base);
+        font-weight: var(--font-bold);
+        margin-bottom: 2px;
+    }
+
+    .promo-text {
+        font-size: var(--text-sm);
+        color: var(--uber-gray-400);
+    }
+
+    .promo-arrow {
+        width: 20px;
+        height: 20px;
+        color: var(--uber-gray-500);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-3);
+        margin-bottom: var(--space-5);
+    }
+
+    .stat-card {
         background: var(--uber-white);
         border-radius: var(--radius-xl);
         padding: var(--space-4);
@@ -100,19 +370,40 @@
         box-shadow: var(--shadow-sm);
     }
 
-    .uber-stat-value {
-        font-size: var(--text-3xl);
+    .stat-value {
+        font-size: var(--text-2xl);
         font-weight: var(--font-bold);
         color: var(--uber-black);
         line-height: 1;
         margin-bottom: var(--space-1);
     }
 
-    .uber-stat-label {
+    .stat-label {
         font-size: var(--text-xs);
         color: var(--uber-gray-500);
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.03em;
+    }
+
+    /* Community Card */
+    .community-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: var(--radius-2xl);
+        padding: var(--space-5);
+        margin-bottom: var(--space-5);
+        color: var(--uber-white);
+        text-align: center;
+    }
+
+    .community-number {
+        font-size: var(--text-4xl);
+        font-weight: var(--font-bold);
+        margin-bottom: var(--space-1);
+    }
+
+    .community-text {
+        font-size: var(--text-sm);
+        opacity: 0.9;
     }
 
     /* Active Ride Card */
@@ -120,7 +411,7 @@
         background: var(--uber-black);
         border-radius: var(--radius-2xl);
         padding: var(--space-5);
-        margin-bottom: var(--space-6);
+        margin-bottom: var(--space-5);
         color: var(--uber-white);
     }
 
@@ -215,20 +506,18 @@
 
     /* Animation */
     @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
     .uber-welcome { animation: fadeInUp 0.4s ease-out; }
     .where-to-card { animation: fadeInUp 0.4s ease-out 0.05s backwards; }
-    .uber-stats { animation: fadeInUp 0.4s ease-out 0.1s backwards; }
-    .active-ride-card { animation: fadeInUp 0.4s ease-out 0.15s backwards; }
+    .safety-banner { animation: fadeInUp 0.4s ease-out 0.1s backwards; }
+    .recent-destinations { animation: fadeInUp 0.4s ease-out 0.15s backwards; }
+    .promo-card { animation: fadeInUp 0.4s ease-out 0.2s backwards; }
+    .stats-grid { animation: fadeInUp 0.4s ease-out 0.25s backwards; }
+    .community-card { animation: fadeInUp 0.4s ease-out 0.3s backwards; }
+    .active-ride-card { animation: fadeInUp 0.4s ease-out 0.35s backwards; }
 </style>
 
 <div class="uber-dashboard">
@@ -238,36 +527,8 @@
         <h1 class="uber-welcome-name"><?= htmlspecialchars($user['first_name']) ?></h1>
     </section>
 
-    <!-- Where To Card -->
-    <section class="where-to-card">
-        <a href="<?= base_url('passenger/book') ?>" class="where-to-input">
-            <div class="where-to-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"/>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-            </div>
-            <span class="where-to-text"><?= __('booking.pickup_placeholder') ?></span>
-            <svg class="where-to-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"/>
-            </svg>
-        </a>
-    </section>
-
-    <!-- Stats -->
-    <section class="uber-stats">
-        <div class="uber-stat">
-            <div class="uber-stat-value"><?= $stats['total_rides'] ?? 0 ?></div>
-            <div class="uber-stat-label"><?= __('history.total_rides') ?></div>
-        </div>
-        <div class="uber-stat">
-            <div class="uber-stat-value"><?= $stats['this_month'] ?? 0 ?></div>
-            <div class="uber-stat-label"><?= __('history.this_month') ?></div>
-        </div>
-    </section>
-
     <?php if ($activeRide): ?>
-    <!-- Active Ride -->
+    <!-- Active Ride (prioritaire) -->
     <section class="active-ride-card">
         <div class="active-ride-header">
             <span class="active-ride-title"><?= __('ride.title') ?></span>
@@ -293,4 +554,138 @@
         </a>
     </section>
     <?php endif; ?>
+
+    <!-- Where To Card + Saved Places -->
+    <section class="where-to-card">
+        <a href="<?= base_url('passenger/book') ?>" class="where-to-input">
+            <div class="where-to-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+            </div>
+            <span class="where-to-text"><?= __('booking.dropoff_placeholder') ?></span>
+            <svg class="where-to-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"/>
+            </svg>
+        </a>
+
+        <!-- Saved Places -->
+        <div class="saved-places">
+            <a href="<?= base_url('passenger/book') ?>?dest=home" class="saved-place">
+                <div class="saved-place-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                </div>
+                <div class="saved-place-info">
+                    <div class="saved-place-name"><?= __('dashboard.home') ?></div>
+                    <?php if (!empty($user['home_address'])): ?>
+                    <div class="saved-place-address"><?= htmlspecialchars($user['home_address']) ?></div>
+                    <?php else: ?>
+                    <div class="saved-place-add"><?= __('dashboard.add_address') ?></div>
+                    <?php endif; ?>
+                </div>
+            </a>
+            <a href="<?= base_url('passenger/book') ?>?dest=work" class="saved-place">
+                <div class="saved-place-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                    </svg>
+                </div>
+                <div class="saved-place-info">
+                    <div class="saved-place-name"><?= __('dashboard.work') ?></div>
+                    <?php if (!empty($user['work_address'])): ?>
+                    <div class="saved-place-address"><?= htmlspecialchars($user['work_address']) ?></div>
+                    <?php else: ?>
+                    <div class="saved-place-add"><?= __('dashboard.add_address') ?></div>
+                    <?php endif; ?>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <!-- Safety Banner -->
+    <section class="safety-banner">
+        <div class="safety-banner-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <polyline points="9 12 11 14 15 10"/>
+            </svg>
+        </div>
+        <div class="safety-banner-content">
+            <div class="safety-banner-title"><?= __('dashboard.safety_title') ?></div>
+            <div class="safety-banner-text"><?= __('dashboard.safety_text') ?></div>
+        </div>
+    </section>
+
+    <?php if (!empty($recentDestinations)): ?>
+    <!-- Recent Destinations -->
+    <section class="recent-destinations">
+        <div class="section-header">
+            <h2 class="section-title"><?= __('dashboard.recent') ?></h2>
+            <a href="<?= base_url('passenger/history') ?>" class="section-link"><?= __('dashboard.see_all') ?></a>
+        </div>
+        <div class="recent-list">
+            <?php foreach (array_slice($recentDestinations, 0, 3) as $ride): ?>
+            <a href="<?= base_url('passenger/book') ?>?to=<?= urlencode($ride['dropoff_address']) ?>" class="recent-item">
+                <div class="recent-item-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="10" r="3"/>
+                        <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/>
+                    </svg>
+                </div>
+                <div class="recent-item-info">
+                    <div class="recent-item-address"><?= htmlspecialchars($ride['dropoff_address']) ?></div>
+                    <div class="recent-item-date"><?= date('d/m', strtotime($ride['created_at'])) ?></div>
+                </div>
+                <svg class="recent-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </a>
+            <?php endforeach; ?>
+        </div>
+    </section>
+    <?php endif; ?>
+
+    <!-- Promo Card -->
+    <a href="<?= base_url('passenger/book') ?>" class="promo-card">
+        <div class="promo-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                <line x1="7" y1="7" x2="7.01" y2="7"/>
+            </svg>
+        </div>
+        <div class="promo-content">
+            <div class="promo-title"><?= __('dashboard.promo_title') ?></div>
+            <div class="promo-text"><?= __('dashboard.promo_text') ?></div>
+        </div>
+        <svg class="promo-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+        </svg>
+    </a>
+
+    <!-- Stats Grid -->
+    <section class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value"><?= $stats['total_rides'] ?? 0 ?></div>
+            <div class="stat-label"><?= __('dashboard.rides') ?></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value"><?= $stats['this_month'] ?? 0 ?></div>
+            <div class="stat-label"><?= __('dashboard.this_month') ?></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value"><?= number_format($user['rating'] ?? 5.0, 1) ?></div>
+            <div class="stat-label"><?= __('dashboard.rating') ?></div>
+        </div>
+    </section>
+
+    <!-- Community Card -->
+    <section class="community-card">
+        <div class="community-number">5,000+</div>
+        <div class="community-text"><?= __('dashboard.community_text') ?></div>
+    </section>
 </div>

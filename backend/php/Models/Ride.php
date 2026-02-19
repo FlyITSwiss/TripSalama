@@ -194,6 +194,25 @@ class Ride
     }
 
     /**
+     * Obtenir les courses récentes (terminées) d'une passagère
+     * Pour afficher dans "Destinations récentes"
+     */
+    public function getRecentByPassenger(int $passengerId, int $limit = 3): array
+    {
+        $stmt = $this->db->prepare('
+            SELECT r.dropoff_address, r.dropoff_lat, r.dropoff_lng, r.created_at
+            FROM rides r
+            WHERE r.passenger_id = :passenger_id
+              AND r.status = "completed"
+            ORDER BY r.created_at DESC
+            LIMIT ' . $limit
+        );
+        $stmt->execute(['passenger_id' => $passengerId]);
+
+        return $stmt->fetchAll();
+    }
+
+    /**
      * Obtenir les courses en attente (pour conductrices)
      */
     public function getPending(float $lat, float $lng, float $radiusKm = 10): array

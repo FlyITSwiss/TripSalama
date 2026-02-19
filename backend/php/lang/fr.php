@@ -355,6 +355,25 @@ return [
         'continue' => 'Continuer',
     ],
 
+    // Dashboard
+    'dashboard' => [
+        'home' => 'Maison',
+        'work' => 'Travail',
+        'add_address' => 'Ajouter',
+        'safety_title' => '100% conductrices vérifiées',
+        'safety_text' => 'Toutes nos conductrices sont des femmes certifiées',
+        'recent' => 'Destinations récentes',
+        'see_all' => 'Voir tout',
+        'promo_title' => 'Première course offerte !',
+        'promo_text' => 'Utilisez le code BIENVENUE pour -50%',
+        'rides' => 'Courses',
+        'this_month' => 'Ce mois',
+        'rating' => 'Note',
+        'community_text' => 'femmes voyagent en sécurité avec TripSalama',
+        'referral_title' => 'Parrainez une amie',
+        'referral_text' => 'Gagnez 10 CHF pour chaque amie inscrite',
+    ],
+
     // Footer
     'footer' => [
         'copyright' => '© 2025 TripSalama. Tous droits réservés.',

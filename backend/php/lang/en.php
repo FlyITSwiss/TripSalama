@@ -343,6 +343,25 @@ return [
         'continue' => 'Continue',
     ],
 
+    // Dashboard
+    'dashboard' => [
+        'home' => 'Home',
+        'work' => 'Work',
+        'add_address' => 'Add',
+        'safety_title' => '100% verified female drivers',
+        'safety_text' => 'All our drivers are certified women',
+        'recent' => 'Recent destinations',
+        'see_all' => 'See all',
+        'promo_title' => 'First ride free!',
+        'promo_text' => 'Use code WELCOME for -50%',
+        'rides' => 'Rides',
+        'this_month' => 'This month',
+        'rating' => 'Rating',
+        'community_text' => 'women travel safely with TripSalama',
+        'referral_title' => 'Refer a friend',
+        'referral_text' => 'Earn 10 CHF for each friend who signs up',
+    ],
+
     // Footer
     'footer' => [
         'copyright' => '© 2025 TripSalama. All rights reserved.',
