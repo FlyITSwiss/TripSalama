@@ -201,19 +201,20 @@ jobs:
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} '
             # Create nginx config for TripSalama
             sudo tee /etc/nginx/sites-available/tripsalama << "NGINX"
-          # API routes - must be before main location
-          location /internal/tripsalama/api {
+          # API routes - rewrite all to api/index.php
+          location ~ ^/internal/tripsalama/api(/.*)?$ {
               alias /var/www/tripsalama/public/api;
-              index index.php;
 
-              location ~ \.php$ {
-                  fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
-                  fastcgi_param SCRIPT_FILENAME $request_filename;
-                  include fastcgi_params;
-              }
+              # Rewrite all API requests to index.php
+              rewrite ^/internal/tripsalama/api(/.*)?$ /internal/tripsalama/api/index.php last;
+          }
 
-              # Route all API requests to api/index.php
-              try_files $uri $uri/ /internal/tripsalama/api/index.php?$query_string;
+          # Handle api/index.php
+          location = /internal/tripsalama/api/index.php {
+              alias /var/www/tripsalama/public/api/index.php;
+              fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
+              fastcgi_param SCRIPT_FILENAME /var/www/tripsalama/public/api/index.php;
+              include fastcgi_params;
           }
 
           # Main application routes
