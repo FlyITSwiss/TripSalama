@@ -1,58 +1,209 @@
-<div class="history-list">
-    <h1 style="font-size: var(--text-xl); margin-bottom: var(--space-21);"><?= __('history.title') ?></h1>
+<?php
+/**
+ * Historique des courses - Vue améliorée
+ * Design inspiré par le Golden Ratio φ = 1.618
+ */
+
+// Calculer les statistiques
+$totalRides = count($rides);
+$completedRides = array_filter($rides, fn($r) => $r['status'] === 'completed');
+$completedCount = count($completedRides);
+
+// Courses du mois en cours
+$currentMonth = date('Y-m');
+$thisMonthRides = array_filter($rides, function($r) use ($currentMonth) {
+    return str_starts_with($r['created_at'], $currentMonth);
+});
+$thisMonthCount = count($thisMonthRides);
+
+// Formater le mois en français
+$monthNames = [
+    'January' => 'Janvier', 'February' => 'Février', 'March' => 'Mars',
+    'April' => 'Avril', 'May' => 'Mai', 'June' => 'Juin',
+    'July' => 'Juillet', 'August' => 'Août', 'September' => 'Septembre',
+    'October' => 'Octobre', 'November' => 'Novembre', 'December' => 'Décembre'
+];
+?>
+
+<div class="history-container">
+    <!-- Header avec titre et sous-titre -->
+    <header class="history-header">
+        <h1 class="history-title"><?= __('history.title') ?></h1>
+        <p class="history-subtitle"><?= __('history.subtitle') ?></p>
+    </header>
 
     <?php if (empty($rides)): ?>
-    <div class="empty-state">
-        <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12,6 12,12 16,14"/>
-        </svg>
-        <div class="empty-state-title"><?= __('history.no_rides') ?></div>
-        <div class="empty-state-text"><?= __('booking.pickup_placeholder') ?></div>
+    <!-- État vide amélioré -->
+    <div class="history-empty-state">
+        <div class="history-empty-illustration">
+            <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Voiture stylisée -->
+                <circle cx="60" cy="60" r="55" fill="var(--color-primary-soft)" opacity="0.3"/>
+                <path d="M35 70h50l-5-20H40l-5 20z" fill="var(--color-primary)" opacity="0.6"/>
+                <rect x="30" y="70" width="60" height="15" rx="4" fill="var(--color-primary)"/>
+                <circle cx="42" cy="85" r="8" fill="var(--stone-700)"/>
+                <circle cx="42" cy="85" r="4" fill="var(--stone-400)"/>
+                <circle cx="78" cy="85" r="8" fill="var(--stone-700)"/>
+                <circle cx="78" cy="85" r="4" fill="var(--stone-400)"/>
+                <!-- Route pointillée -->
+                <path d="M25 50 Q60 30 95 50" stroke="var(--color-accent)" stroke-width="3" stroke-dasharray="8 4" fill="none"/>
+                <circle cx="25" cy="50" r="5" fill="var(--success)"/>
+                <circle cx="95" cy="50" r="5" fill="var(--error)"/>
+            </svg>
+        </div>
+        <h2 class="history-empty-title"><?= __('history.no_rides') ?></h2>
+        <p class="history-empty-text"><?= __('history.no_rides_subtitle') ?></p>
         <a href="<?= base_url('passenger/book') ?>" class="btn btn-primary">
-            <?= __('booking.title') ?>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14"/>
+            </svg>
+            <?= __('history.start_booking') ?>
         </a>
     </div>
+
     <?php else: ?>
 
-    <?php foreach ($rides as $ride): ?>
-    <?php
-        $date = new DateTime($ride['created_at']);
-        $statusClass = match($ride['status']) {
-            'completed' => 'success',
-            'cancelled' => 'danger',
-            default => 'warning'
-        };
-    ?>
-    <div class="history-item">
-        <div class="history-date">
-            <span class="history-day"><?= $date->format('d') ?></span>
-            <span class="history-month"><?= strtoupper($date->format('M')) ?></span>
+    <!-- Statistiques -->
+    <div class="history-stats">
+        <div class="history-stat-card">
+            <div class="history-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 17H7A5 5 0 017 7h2M15 7h2a5 5 0 010 10h-2M8 12h8"/>
+                </svg>
+            </div>
+            <div class="history-stat-content">
+                <span class="history-stat-value"><?= $totalRides ?></span>
+                <span class="history-stat-label"><?= __('history.total_rides') ?></span>
+            </div>
         </div>
 
-        <div class="history-content">
-            <div class="history-route">
-                <div class="history-address">
-                    <span class="history-address-dot pickup"></span>
-                    <span><?= htmlspecialchars(mb_substr($ride['pickup_address'], 0, 40)) ?>...</span>
+        <div class="history-stat-card">
+            <div class="history-stat-icon history-stat-icon--success">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                    <polyline points="22,4 12,14.01 9,11.01"/>
+                </svg>
+            </div>
+            <div class="history-stat-content">
+                <span class="history-stat-value"><?= $completedCount ?></span>
+                <span class="history-stat-label"><?= __('history.completed_rides') ?></span>
+            </div>
+        </div>
+
+        <div class="history-stat-card">
+            <div class="history-stat-icon history-stat-icon--accent">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+            </div>
+            <div class="history-stat-content">
+                <span class="history-stat-value"><?= $thisMonthCount ?></span>
+                <span class="history-stat-label"><?= __('history.this_month') ?></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste des courses -->
+    <div class="history-list">
+        <?php foreach ($rides as $ride): ?>
+        <?php
+            $date = new DateTime($ride['created_at']);
+            $dayName = $date->format('l');
+            $dayNamesFr = [
+                'Monday' => 'Lun', 'Tuesday' => 'Mar', 'Wednesday' => 'Mer',
+                'Thursday' => 'Jeu', 'Friday' => 'Ven', 'Saturday' => 'Sam', 'Sunday' => 'Dim'
+            ];
+            $statusClass = match($ride['status']) {
+                'completed' => 'success',
+                'cancelled' => 'danger',
+                'in_progress' => 'info',
+                default => 'warning'
+            };
+            $driverName = isset($ride['driver_first_name'])
+                ? $ride['driver_first_name'] . ' ' . ($ride['driver_last_name'][0] ?? '') . '.'
+                : null;
+        ?>
+        <article class="history-card">
+            <!-- Date badge -->
+            <div class="history-card-date">
+                <span class="history-card-day-name"><?= $dayNamesFr[$dayName] ?? $dayName ?></span>
+                <span class="history-card-day"><?= $date->format('d') ?></span>
+                <span class="history-card-month"><?= $monthNames[$date->format('F')] ?? $date->format('M') ?></span>
+            </div>
+
+            <!-- Contenu principal -->
+            <div class="history-card-body">
+                <!-- Route avec ligne de connexion -->
+                <div class="history-card-route">
+                    <div class="history-card-location history-card-location--pickup">
+                        <div class="history-card-location-marker">
+                            <span class="history-card-dot history-card-dot--pickup"></span>
+                            <span class="history-card-connector"></span>
+                        </div>
+                        <div class="history-card-location-info">
+                            <span class="history-card-location-label"><?= __('history.pickup_label') ?></span>
+                            <span class="history-card-location-address"><?= htmlspecialchars(mb_substr($ride['pickup_address'], 0, 50)) ?><?= mb_strlen($ride['pickup_address']) > 50 ? '...' : '' ?></span>
+                        </div>
+                    </div>
+
+                    <div class="history-card-location history-card-location--dropoff">
+                        <div class="history-card-location-marker">
+                            <span class="history-card-dot history-card-dot--dropoff"></span>
+                        </div>
+                        <div class="history-card-location-info">
+                            <span class="history-card-location-label"><?= __('history.dropoff_label') ?></span>
+                            <span class="history-card-location-address"><?= htmlspecialchars(mb_substr($ride['dropoff_address'], 0, 50)) ?><?= mb_strlen($ride['dropoff_address']) > 50 ? '...' : '' ?></span>
+                        </div>
+                    </div>
                 </div>
-                <div class="history-address">
-                    <span class="history-address-dot dropoff"></span>
-                    <span><?= htmlspecialchars(mb_substr($ride['dropoff_address'], 0, 40)) ?>...</span>
+
+                <!-- Informations complémentaires -->
+                <div class="history-card-meta">
+                    <?php if ($driverName): ?>
+                    <div class="history-card-meta-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <span><?= htmlspecialchars($driverName) ?></span>
+                    </div>
+                    <?php endif; ?>
+
+                    <div class="history-card-meta-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12,6 12,12 16,14"/>
+                        </svg>
+                        <span><?= $date->format('H:i') ?></span>
+                    </div>
+
+                    <?php if (!empty($ride['distance'])): ?>
+                    <div class="history-card-meta-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        <span><?= number_format((float)$ride['distance'], 1, ',', ' ') ?> km</span>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
-            <div class="history-meta">
-                <span class="history-price">
+            <!-- Footer avec prix et statut -->
+            <div class="history-card-footer">
+                <span class="history-card-price">
                     <?= $ride['final_price'] ? format_price((float)$ride['final_price']) : format_price((float)$ride['estimated_price']) ?>
                 </span>
-                <span class="badge badge-<?= $statusClass ?> history-badge">
+                <span class="history-card-status history-card-status--<?= $statusClass ?>">
                     <?= __('ride.' . $ride['status']) ?>
                 </span>
             </div>
-        </div>
+        </article>
+        <?php endforeach; ?>
     </div>
-    <?php endforeach; ?>
 
     <?php endif; ?>
 </div>

@@ -134,10 +134,20 @@ return [
     // Historique
     'history' => [
         'title' => 'Historique des courses',
+        'subtitle' => 'Retrouvez toutes vos courses passées',
         'no_rides' => 'Aucune course pour le moment',
+        'no_rides_subtitle' => 'Vos courses apparaîtront ici après votre premier trajet',
         'view_details' => 'Voir les détails',
         'total_rides' => 'Total des courses',
+        'completed_rides' => 'Courses terminées',
         'this_month' => 'Ce mois',
+        'start_booking' => 'Réserver ma première course',
+        'pickup_label' => 'Départ',
+        'dropoff_label' => 'Arrivée',
+        'driver_label' => 'Conductrice',
+        'duration_label' => 'Durée',
+        'distance_label' => 'Distance',
+        'at_time' => 'à',
     ],
 
     // Profil

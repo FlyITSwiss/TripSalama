@@ -133,10 +133,20 @@ return [
     // History
     'history' => [
         'title' => 'Ride history',
+        'subtitle' => 'View all your past rides',
         'no_rides' => 'No rides yet',
+        'no_rides_subtitle' => 'Your rides will appear here after your first trip',
         'view_details' => 'View details',
         'total_rides' => 'Total rides',
+        'completed_rides' => 'Completed rides',
         'this_month' => 'This month',
+        'start_booking' => 'Book my first ride',
+        'pickup_label' => 'Pickup',
+        'dropoff_label' => 'Drop-off',
+        'driver_label' => 'Driver',
+        'duration_label' => 'Duration',
+        'distance_label' => 'Distance',
+        'at_time' => 'at',
     ],
 
     // Profile
