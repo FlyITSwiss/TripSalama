@@ -1558,32 +1558,36 @@ p {
 }
 
 /* ============================================
-   PROFILE PAGE
+   PROFILE PAGE - Golden Ratio φ = 1.618
+   Fibonacci sizes: 21, 34, 55, 89, 144
    ============================================ */
 
 .profile-header {
     text-align: center;
-    padding: var(--space-5);
-    background: var(--color-surface);
-    border-radius: var(--radius-2xl);
-    margin-bottom: var(--space-4);
+    padding: var(--space-6) var(--space-5); /* 44px 27px - φ ratio */
+    background: linear-gradient(180deg, var(--color-primary) 0%, var(--emerald-800) 100%);
+    border-radius: 0 0 var(--radius-2xl) var(--radius-2xl);
+    margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) var(--space-5);
+    padding-top: var(--space-7); /* 71px top for status bar */
 }
 
 .profile-avatar {
-    width: 100px;
-    height: 100px;
-    margin: 0 auto var(--space-4);
+    width: 89px;  /* Fibonacci */
+    height: 89px; /* Fibonacci */
+    margin: 0 auto var(--space-4); /* 17px bottom */
     border-radius: var(--radius-full);
     overflow: hidden;
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--emerald-600) 100%);
+    background: var(--color-surface);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--color-text-inverse);
+    color: var(--color-primary);
     font-family: var(--font-display);
-    font-size: var(--text-3xl);
+    font-size: 34px; /* Fibonacci */
     font-weight: var(--font-weight-bold);
-    box-shadow: 0 4px 20px rgba(27, 77, 62, 0.3);
+    box-shadow:
+        0 0 0 3px rgba(255,255,255,0.2),
+        0 8px 34px rgba(0, 0, 0, 0.3); /* 34px Fibonacci */
 }
 
 .profile-avatar img {
@@ -1594,44 +1598,55 @@ p {
 
 .profile-name {
     font-family: var(--font-display);
-    font-size: var(--text-xl);
-    margin-bottom: var(--space-1);
+    font-size: var(--text-2xl);
+    color: var(--color-text-inverse);
+    margin-bottom: var(--space-2); /* 6px */
 }
 
 .profile-role {
     font-size: var(--text-sm);
-    color: var(--color-accent);
+    color: var(--gold-300);
     font-weight: var(--font-weight-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 /* Profile info list */
 .info-list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+    gap: var(--space-4); /* 17px - φ based */
 }
 
 .info-item {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-4); /* 17px */
+    padding: var(--space-3); /* 10px */
+    background: var(--stone-50);
+    border-radius: var(--radius-lg);
+    transition: var(--transition-all);
+}
+
+.info-item:hover {
+    background: var(--stone-100);
 }
 
 .info-icon {
-    width: 44px;
-    height: 44px;
+    width: 55px;  /* Fibonacci */
+    height: 55px; /* Fibonacci */
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--stone-100);
-    border-radius: var(--radius-lg);
-    color: var(--color-primary);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--emerald-600) 100%);
+    border-radius: var(--radius-xl);
+    color: var(--color-text-inverse);
     flex-shrink: 0;
 }
 
 .info-icon svg {
-    width: 22px;
-    height: 22px;
+    width: 21px;  /* Fibonacci */
+    height: 21px; /* Fibonacci */
 }
 
 .info-content {
