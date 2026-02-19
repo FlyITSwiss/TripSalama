@@ -1,0 +1,122 @@
+name: Diagnose TripSalama
+
+on:
+  workflow_dispatch:
+
+env:
+  VPS_HOST: '83.228.205.222'
+  VPS_USER: 'debian'
+  REMOTE_PATH: '/var/www/tripsalama'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    name: "Diagnose VPS"
+
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          cat > ~/.ssh/config << 'SSHCONFIG'
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            ConnectTimeout 30
+            LogLevel ERROR
+          SSHCONFIG
+          chmod 600 ~/.ssh/config
+
+      - name: Check files
+        run: |
+          echo "=== Files in /var/www/tripsalama ==="
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "ls -la ${{ env.REMOTE_PATH }}/"
+          echo ""
+          echo "=== Files in public ==="
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "ls -la ${{ env.REMOTE_PATH }}/public/"
+          echo ""
+          echo "=== index.php exists? ==="
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "cat ${{ env.REMOTE_PATH }}/public/index.php | head -30"
+
+      - name: Check nginx config
+        run: |
+          echo "=== TripSalama nginx config ==="
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "cat /etc/nginx/sites-available/tripsalama 2>/dev/null || echo 'File not found'"
+          echo ""
+          echo "=== Default site config (grep tripsalama) ==="
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "grep -n tripsalama /etc/nginx/sites-available/default 2>/dev/null || echo 'Not found in default'"
+          echo ""
+          echo "=== Nginx test ==="
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "sudo nginx -t"
+
+      - name: Check PHP-FPM
+        run: |
+          echo "=== PHP-FPM status ==="
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "sudo systemctl status php8.4-fpm | head -20"
+          echo ""
+          echo "=== PHP-FPM socket ==="
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "ls -la /var/run/php/php8.4-fpm.sock 2>/dev/null || echo 'Socket not found'"
+
+      - name: Test local access
+        run: |
+          echo "=== Testing local HTTP ==="
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -sI http://127.0.0.1/internal/tripsalama/login | head -10"
+          echo ""
+          echo "=== Testing local with -L (follow redirects) ==="
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -sIL http://127.0.0.1/internal/tripsalama/login 2>&1 | head -20"
+
+      - name: Check error logs
+        run: |
+          echo "=== Nginx error log (last 30 lines) ==="
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "sudo tail -30 /var/log/nginx/error.log 2>/dev/null || echo 'No error log'"
+          echo ""
+          echo "=== PHP-FPM log (last 20 lines) ==="
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "sudo tail -20 /var/log/php8.4-fpm.log 2>/dev/null || echo 'No PHP log'"
+
+      - name: Fix nginx config
+        run: |
+          echo "=== Fixing nginx configuration ==="
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} '
+            # Create proper nginx config for TripSalama
+            sudo tee /etc/nginx/sites-available/tripsalama << "NGINX"
+          # TripSalama - Fixed configuration
+          location /internal/tripsalama {
+              alias /var/www/tripsalama/public;
+              index index.php;
+
+              # Handle PHP files
+              location ~ \.php$ {
+                  if (!-f $request_filename) {
+                      rewrite ^ /internal/tripsalama/index.php last;
+                  }
+                  fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
+                  fastcgi_index index.php;
+                  fastcgi_param SCRIPT_FILENAME $request_filename;
+                  include fastcgi_params;
+              }
+
+              # Handle all other requests
+              location ~ ^/internal/tripsalama/(.*)$ {
+                  try_files $uri $uri/ @tripsalama;
+              }
+          }
+
+          location @tripsalama {
+              rewrite ^/internal/tripsalama/(.*)$ /internal/tripsalama/index.php?$1 last;
+          }
+          NGINX
+
+            # Test and reload nginx
+            sudo nginx -t && sudo systemctl reload nginx
+            echo "Nginx reloaded"
+          '
+
+      - name: Verify fix
+        run: |
+          sleep 2
+          echo "=== Testing after fix ==="
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -sI http://127.0.0.1/internal/tripsalama/login | head -10"
+          echo ""
+          echo "=== External test ==="
+          curl -skI "https://stabilis-it.ch/internal/tripsalama/login" | head -10
