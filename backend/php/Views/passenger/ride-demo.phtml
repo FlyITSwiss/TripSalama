@@ -1,0 +1,1283 @@
+<?php
+/**
+ * TripSalama - Demo Ride Simulation
+ * Complete Uber-style workflow: driver approaching -> boarding -> trip -> rating
+ */
+?>
+
+<!-- CSS Tracker -->
+<link rel="stylesheet" href="<?= asset_url('css/uber-tracker.css') ?>">
+
+<div class="demo-ride-page">
+    <!-- Map Container -->
+    <div id="map" class="demo-map"></div>
+
+    <!-- Back Button -->
+    <a href="<?= base_url('passenger/book') ?>" class="demo-back-btn" id="backBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"/>
+        </svg>
+    </a>
+
+    <!-- Center Button -->
+    <button class="demo-center-btn" id="centerBtn" title="<?= __('tracking.center_vehicle') ?>">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <circle cx="12" cy="12" r="3"/>
+            <line x1="12" y1="2" x2="12" y2="6"/>
+            <line x1="12" y1="18" x2="12" y2="22"/>
+            <line x1="2" y1="12" x2="6" y2="12"/>
+            <line x1="18" y1="12" x2="22" y2="12"/>
+        </svg>
+    </button>
+
+    <!-- Phase Indicator -->
+    <div class="demo-phase-indicator" id="phaseIndicator">
+        <div class="phase-icon" id="phaseIcon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+        </div>
+        <span class="phase-text" id="phaseText"><?= __('demo.initializing') ?></span>
+    </div>
+
+    <!-- Tracking Panel -->
+    <div class="demo-panel" id="demoPanel">
+        <div class="demo-panel-handle"></div>
+
+        <!-- Status -->
+        <div class="demo-status" id="statusContainer">
+            <span class="demo-status-dot"></span>
+            <span class="demo-status-text" id="statusText"><?= __('demo.ride_confirmed') ?></span>
+        </div>
+
+        <!-- ETA Display -->
+        <div class="demo-eta" id="etaContainer">
+            <div class="eta-main">
+                <div class="eta-time" id="etaTime">--</div>
+                <div class="eta-label"><?= __('tracking.minutes') ?></div>
+            </div>
+            <div class="eta-distance">
+                <div class="eta-km" id="distanceKm">-- km</div>
+                <div class="eta-label"><?= __('tracking.remaining') ?></div>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="demo-progress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-labels">
+                <span id="progressPercent">0%</span>
+                <span id="speedDisplay">-- km/h</span>
+            </div>
+        </div>
+
+        <!-- Driver Info (shown during driver arriving) -->
+        <div class="demo-driver hidden" id="driverInfo">
+            <div class="driver-avatar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+            </div>
+            <div class="driver-details">
+                <div class="driver-name">Fatima B.</div>
+                <div class="driver-vehicle">Toyota Corolla Blanche • AB-123-CD</div>
+            </div>
+            <div class="driver-rating">
+                <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/></svg>
+                4.9
+            </div>
+        </div>
+
+        <!-- Speed Controls -->
+        <div class="demo-speed-controls" id="speedControls">
+            <span class="speed-label"><?= __('simulation.speed') ?>:</span>
+            <button class="speed-btn active" data-speed="1">1x</button>
+            <button class="speed-btn" data-speed="3">3x</button>
+            <button class="speed-btn" data-speed="10">10x</button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="demo-actions" id="actionsContainer">
+            <button class="action-btn call-btn" id="callBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                </svg>
+                <?= __('tracking.call') ?>
+            </button>
+        </div>
+    </div>
+
+    <!-- Boarding Modal -->
+    <div class="demo-modal hidden" id="boardingModal">
+        <div class="modal-content boarding">
+            <div class="modal-icon pulse">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="8.5" cy="7" r="4"/>
+                    <line x1="20" y1="8" x2="20" y2="14"/>
+                    <line x1="23" y1="11" x2="17" y2="11"/>
+                </svg>
+            </div>
+            <h2 class="modal-title"><?= __('demo.driver_arrived') ?></h2>
+            <p class="modal-subtitle"><?= __('demo.boarding_message') ?></p>
+            <div class="boarding-countdown">
+                <span class="countdown-number" id="boardingCountdown">10</span>
+                <span class="countdown-label"><?= __('demo.seconds') ?></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Arrival Modal -->
+    <div class="demo-modal hidden" id="arrivalModal">
+        <div class="modal-content arrival">
+            <div class="modal-icon success">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+            </div>
+            <h2 class="modal-title"><?= __('demo.trip_completed') ?></h2>
+            <p class="modal-subtitle" id="tripSummary"></p>
+            <div class="trip-stats">
+                <div class="stat">
+                    <span class="stat-value" id="finalDistance">--</span>
+                    <span class="stat-label">km</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="finalDuration">--</span>
+                    <span class="stat-label">min</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="finalPrice">--</span>
+                    <span class="stat-label">MAD</span>
+                </div>
+            </div>
+            <button class="modal-btn primary" id="showRatingBtn"><?= __('demo.rate_driver') ?></button>
+        </div>
+    </div>
+
+    <!-- Rating Modal -->
+    <div class="demo-modal hidden" id="ratingModal">
+        <div class="modal-content rating">
+            <h2 class="modal-title"><?= __('ride.rate_driver') ?></h2>
+            <p class="modal-subtitle"><?= __('demo.rate_subtitle') ?></p>
+
+            <div class="driver-card">
+                <div class="driver-avatar large">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+                <div class="driver-name">Fatima B.</div>
+            </div>
+
+            <div class="rating-stars" id="ratingStars">
+                <button class="star" data-rating="1">
+                    <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                </button>
+                <button class="star" data-rating="2">
+                    <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                </button>
+                <button class="star" data-rating="3">
+                    <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                </button>
+                <button class="star" data-rating="4">
+                    <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                </button>
+                <button class="star" data-rating="5">
+                    <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                </button>
+            </div>
+            <div class="rating-label" id="ratingLabel"><?= __('demo.tap_to_rate') ?></div>
+
+            <div class="tip-section hidden" id="tipSection">
+                <div class="tip-label"><?= __('demo.add_tip') ?></div>
+                <div class="tip-options">
+                    <button class="tip-btn" data-tip="0"><?= __('demo.no_tip') ?></button>
+                    <button class="tip-btn" data-tip="5">5 MAD</button>
+                    <button class="tip-btn" data-tip="10">10 MAD</button>
+                    <button class="tip-btn" data-tip="20">20 MAD</button>
+                </div>
+            </div>
+
+            <textarea class="rating-comment hidden" id="ratingComment" placeholder="<?= __('ride.comment') ?>"></textarea>
+
+            <button class="modal-btn primary hidden" id="submitRatingBtn"><?= __('ride.submit_rating') ?></button>
+        </div>
+    </div>
+
+    <!-- Thank You Modal -->
+    <div class="demo-modal hidden" id="thankYouModal">
+        <div class="modal-content thankyou">
+            <div class="modal-icon success animate">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+            </div>
+            <h2 class="modal-title"><?= __('demo.thank_you') ?></h2>
+            <p class="modal-subtitle"><?= __('demo.thank_you_message') ?></p>
+            <a href="<?= base_url('passenger/dashboard') ?>" class="modal-btn primary"><?= __('demo.back_home') ?></a>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ============================================
+   DEMO RIDE PAGE - FULL SCREEN MOBILE
+   ============================================ */
+
+.demo-ride-page {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: var(--stone-900);
+}
+
+.demo-map {
+    width: 100%;
+    height: 100%;
+}
+
+/* Hide default controls */
+.demo-ride-page .leaflet-control-attribution { display: none !important; }
+
+/* Back Button */
+.demo-back-btn {
+    position: absolute;
+    top: var(--space-4);
+    left: var(--space-4);
+    z-index: 1001;
+    width: 44px;
+    height: 44px;
+    background: var(--color-surface);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text);
+    text-decoration: none;
+    transition: var(--transition-all);
+}
+
+.demo-back-btn:hover {
+    background: var(--color-primary);
+    color: white;
+}
+
+.demo-back-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Center Button */
+.demo-center-btn {
+    position: absolute;
+    bottom: 300px;
+    right: var(--space-4);
+    z-index: 1001;
+    width: 48px;
+    height: 48px;
+    background: var(--color-surface);
+    border: none;
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+    cursor: pointer;
+    transition: var(--transition-all);
+}
+
+.demo-center-btn:hover {
+    background: var(--color-primary);
+    color: white;
+    transform: scale(1.05);
+}
+
+.demo-center-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Phase Indicator */
+.demo-phase-indicator {
+    position: absolute;
+    top: var(--space-4);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-surface);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-lg);
+}
+
+.phase-icon {
+    width: 24px;
+    height: 24px;
+    color: var(--color-primary);
+}
+
+.phase-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.phase-text {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+}
+
+/* Panel */
+.demo-panel {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1002;
+    background: var(--color-surface);
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+    padding: var(--space-4);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0) + var(--space-4));
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+    transition: transform 0.3s ease;
+}
+
+.demo-panel-handle {
+    width: 40px;
+    height: 4px;
+    background: var(--stone-300);
+    border-radius: var(--radius-full);
+    margin: 0 auto var(--space-4);
+}
+
+/* Status */
+.demo-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.demo-status-dot {
+    width: 10px;
+    height: 10px;
+    background: var(--success);
+    border-radius: var(--radius-full);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.2); }
+}
+
+.demo-status-text {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+}
+
+/* ETA */
+.demo-eta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-3);
+}
+
+.eta-main, .eta-distance {
+    text-align: center;
+}
+
+.eta-time, .eta-km {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+}
+
+.eta-label {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+}
+
+/* Progress */
+.demo-progress {
+    margin-bottom: var(--space-3);
+}
+
+.progress-bar {
+    height: 6px;
+    background: var(--stone-200);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+    border-radius: var(--radius-full);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.progress-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--space-1);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+}
+
+/* Driver Info */
+.demo-driver {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--stone-50);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-3);
+}
+
+.driver-avatar {
+    width: 48px;
+    height: 48px;
+    background: var(--color-primary-soft);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+}
+
+.driver-avatar svg {
+    width: 24px;
+    height: 24px;
+}
+
+.driver-avatar.large {
+    width: 80px;
+    height: 80px;
+}
+
+.driver-avatar.large svg {
+    width: 40px;
+    height: 40px;
+}
+
+.driver-details {
+    flex: 1;
+}
+
+.driver-name {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+}
+
+.driver-vehicle {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+}
+
+.driver-rating {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-weight: var(--font-weight-semibold);
+    color: var(--gold-500);
+}
+
+.driver-rating svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Speed Controls */
+.demo-speed-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.speed-label {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+}
+
+.speed-btn {
+    padding: var(--space-1) var(--space-3);
+    background: var(--stone-100);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: var(--transition-all);
+}
+
+.speed-btn.active {
+    background: var(--color-primary);
+    color: white;
+}
+
+/* Actions */
+.demo-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: var(--transition-all);
+}
+
+.call-btn {
+    background: var(--success);
+    color: white;
+}
+
+.call-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Modals */
+.demo-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: fadeIn 0.3s ease;
+}
+
+.demo-modal.hidden {
+    display: none;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    width: 100%;
+    max-width: 360px;
+    background: var(--color-surface);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-6);
+    text-align: center;
+    animation: slideUp 0.4s var(--ease-out-expo);
+}
+
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto var(--space-4);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-icon svg {
+    width: 40px;
+    height: 40px;
+}
+
+.modal-icon.pulse {
+    background: var(--info-soft);
+    color: var(--info);
+    animation: iconPulse 1.5s infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.modal-icon.success {
+    background: var(--success-soft);
+    color: var(--success);
+}
+
+.modal-icon.success.animate svg {
+    animation: checkmark 0.5s ease forwards;
+}
+
+@keyframes checkmark {
+    0% { stroke-dashoffset: 100; }
+    100% { stroke-dashoffset: 0; }
+}
+
+.modal-title {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+    margin-bottom: var(--space-2);
+}
+
+.modal-subtitle {
+    font-size: var(--text-base);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-4);
+}
+
+.modal-btn {
+    display: inline-block;
+    width: 100%;
+    padding: var(--space-4);
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: none;
+    cursor: pointer;
+    transition: var(--transition-all);
+}
+
+.modal-btn.primary {
+    background: var(--color-primary);
+    color: white;
+}
+
+.modal-btn.primary:hover {
+    background: var(--emerald-700);
+    transform: translateY(-2px);
+}
+
+/* Boarding Countdown */
+.boarding-countdown {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: var(--space-4) 0;
+}
+
+.countdown-number {
+    font-family: var(--font-display);
+    font-size: 48px;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+    line-height: 1;
+}
+
+.countdown-label {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+}
+
+/* Trip Stats */
+.trip-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: var(--space-4);
+    padding: var(--space-4);
+    background: var(--stone-50);
+    border-radius: var(--radius-lg);
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat-value {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+}
+
+.stat-label {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+}
+
+/* Rating */
+.driver-card {
+    margin-bottom: var(--space-4);
+}
+
+.rating-stars {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+}
+
+.star {
+    width: 48px;
+    height: 48px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--stone-300);
+    transition: var(--transition-all);
+}
+
+.star svg {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+}
+
+.star.active {
+    color: var(--gold-500);
+    transform: scale(1.1);
+}
+
+.star:hover {
+    transform: scale(1.2);
+}
+
+.rating-label {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-4);
+}
+
+/* Tip Section */
+.tip-section {
+    margin-bottom: var(--space-4);
+}
+
+.tip-label {
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    margin-bottom: var(--space-2);
+}
+
+.tip-options {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.tip-btn {
+    flex: 1;
+    padding: var(--space-2) var(--space-3);
+    background: var(--stone-100);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: var(--transition-all);
+}
+
+.tip-btn.active {
+    background: var(--color-primary-soft);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+/* Rating Comment */
+.rating-comment {
+    width: 100%;
+    min-height: 80px;
+    padding: var(--space-3);
+    background: var(--stone-50);
+    border: 2px solid transparent;
+    border-radius: var(--radius-lg);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    color: var(--color-text);
+    resize: none;
+    margin-bottom: var(--space-4);
+    transition: var(--transition-all);
+}
+
+.rating-comment:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background: var(--color-surface);
+}
+
+/* Hide site elements */
+.demo-ride-page ~ .site-header,
+.demo-ride-page ~ .mobile-nav,
+.app-header,
+.mobile-nav {
+    display: none !important;
+}
+
+body:has(.demo-ride-page) {
+    padding: 0 !important;
+}
+
+body:has(.demo-ride-page) .main-content {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.hidden {
+    display: none !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('[Demo] DOMContentLoaded - Starting initialization');
+
+    // Check dependencies
+    if (typeof MapController === 'undefined') {
+        console.error('[Demo] MapController is not defined!');
+        return;
+    }
+    if (typeof UberStyleTracker === 'undefined') {
+        console.error('[Demo] UberStyleTracker is not defined!');
+        return;
+    }
+    if (typeof L === 'undefined') {
+        console.error('[Demo] Leaflet (L) is not defined!');
+        return;
+    }
+    console.log('[Demo] All dependencies loaded');
+
+    // Configuration from PHP (ensure numeric types)
+    const config = {
+        pickup: {
+            lat: <?= (float)($ride['pickup_lat'] ?? 33.5731) ?>,
+            lng: <?= (float)($ride['pickup_lng'] ?? -7.5898) ?>,
+            address: <?= json_encode($ride['pickup_address'] ?? 'Point de départ') ?>
+        },
+        dropoff: {
+            lat: <?= (float)($ride['dropoff_lat'] ?? 33.5891) ?>,
+            lng: <?= (float)($ride['dropoff_lng'] ?? -7.6114) ?>,
+            address: <?= json_encode($ride['dropoff_address'] ?? 'Destination') ?>
+        },
+        routePolyline: <?= json_encode($ride['route_polyline'] ?? '') ?>,
+        estimatedDistance: <?= (float)($ride['estimated_distance_km'] ?? 5) ?>,
+        estimatedDuration: <?= (int)($ride['estimated_duration_min'] ?? 15) ?>,
+        estimatedPrice: <?= (float)($ride['estimated_price'] ?? 25) ?>,
+        i18n: {
+            driverApproaching: <?= json_encode(__('demo.driver_approaching')) ?>,
+            driverArrived: <?= json_encode(__('demo.driver_arrived')) ?>,
+            boarding: <?= json_encode(__('demo.boarding')) ?>,
+            tripInProgress: <?= json_encode(__('demo.trip_in_progress')) ?>,
+            arriving: <?= json_encode(__('demo.arriving_destination')) ?>
+        }
+    };
+    console.log('[Demo] Config loaded:', config);
+
+    // State
+    let currentPhase = 'init'; // init, driver_approaching, boarding, trip, arrived
+    let speedMultiplier = 1;
+    let tripStartTime = null;
+
+    // DOM Elements
+    const elements = {
+        phaseText: document.getElementById('phaseText'),
+        statusText: document.getElementById('statusText'),
+        etaTime: document.getElementById('etaTime'),
+        distanceKm: document.getElementById('distanceKm'),
+        progressFill: document.getElementById('progressFill'),
+        progressPercent: document.getElementById('progressPercent'),
+        speedDisplay: document.getElementById('speedDisplay'),
+        driverInfo: document.getElementById('driverInfo'),
+        boardingModal: document.getElementById('boardingModal'),
+        boardingCountdown: document.getElementById('boardingCountdown'),
+        arrivalModal: document.getElementById('arrivalModal'),
+        ratingModal: document.getElementById('ratingModal'),
+        thankYouModal: document.getElementById('thankYouModal')
+    };
+    console.log('[Demo] Elements initialized');
+
+    // Initialize map
+    console.log('[Demo] Initializing map...');
+    MapController.init('map', {
+        center: [config.pickup.lat, config.pickup.lng],
+        zoom: 14,
+        darkMode: true
+    });
+    console.log('[Demo] Map initialized');
+
+    // Add markers
+    MapController.addMarker('pickup', config.pickup.lat, config.pickup.lng, 'pickup', config.pickup.address);
+    MapController.addMarker('dropoff', config.dropoff.lat, config.dropoff.lng, 'dropoff', config.dropoff.address);
+    console.log('[Demo] Markers added');
+
+    // Initialize tracker
+    console.log('[Demo] Initializing UberStyleTracker...');
+    UberStyleTracker.init();
+    console.log('[Demo] UberStyleTracker initialized');
+
+    // Generate a simple route with multiple points for smooth animation
+    function generateSimpleRoute(start, end) {
+        const points = [];
+        const steps = 50; // More points for smoother animation
+
+        // Add slight curve to make it look more realistic
+        const midLat = (start.lat + end.lat) / 2 + 0.003;
+        const midLng = (start.lng + end.lng) / 2 - 0.002;
+
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            // Quadratic bezier curve
+            const lat = (1-t)*(1-t)*start.lat + 2*(1-t)*t*midLat + t*t*end.lat;
+            const lng = (1-t)*(1-t)*start.lng + 2*(1-t)*t*midLng + t*t*end.lng;
+            points.push([lat, lng]);
+        }
+        console.log('[Demo] Generated route with', points.length, 'points');
+        return points;
+    }
+
+    // Generate random driver position around pickup (within 1-2km)
+    function generateRandomDriverPosition() {
+        // Random angle (0-360 degrees)
+        const angle = Math.random() * 2 * Math.PI;
+        // Random distance (1-2km = 0.009-0.018 degrees approximately)
+        const distance = 0.009 + Math.random() * 0.009;
+
+        return {
+            lat: config.pickup.lat + Math.cos(angle) * distance,
+            lng: config.pickup.lng + Math.sin(angle) * distance
+        };
+    }
+
+    // Generate approach route (driver coming to pickup)
+    async function generateApproachRoute() {
+        // Driver starts at random position 1-2km away from pickup
+        const driverStart = generateRandomDriverPosition();
+        console.log('[Demo] Driver starting position:', driverStart.lat.toFixed(4), driverStart.lng.toFixed(4));
+
+        // Try OSRM with timeout
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+            const url = `https://router.project-osrm.org/route/v1/driving/${driverStart.lng},${driverStart.lat};${config.pickup.lng},${config.pickup.lat}?overview=full&geometries=polyline`;
+            console.log('[Demo] Fetching OSRM route...');
+            const response = await fetch(url, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            const data = await response.json();
+
+            if (data.routes && data.routes[0] && data.routes[0].geometry) {
+                console.log('[Demo] OSRM route received');
+                return data.routes[0].geometry;
+            }
+        } catch (e) {
+            console.warn('[Demo] OSRM failed, using fallback:', e.message || 'timeout');
+        }
+
+        // Fallback: generate simple curved route
+        console.log('[Demo] Using fallback route');
+        return generateSimpleRoute(driverStart, config.pickup);
+    }
+
+    // Phase: Driver Approaching (30 seconds base)
+    async function startDriverApproaching() {
+        try {
+            console.log('[Demo] Starting driver approaching phase');
+            currentPhase = 'driver_approaching';
+            elements.phaseText.textContent = config.i18n.driverApproaching;
+            elements.statusText.textContent = config.i18n.driverApproaching;
+            elements.driverInfo.classList.remove('hidden');
+
+            // Show initial estimates while loading
+            elements.etaTime.textContent = '3';
+            elements.distanceKm.textContent = '1.5 km';
+            elements.progressPercent.textContent = '0%';
+            elements.speedDisplay.textContent = '0 km/h';
+
+            console.log('[Demo] Generating approach route...');
+            const approachRoute = await generateApproachRoute();
+            console.log('[Demo] Route type:', typeof approachRoute, 'Length:', Array.isArray(approachRoute) ? approachRoute.length : 'N/A');
+
+        // Fit map bounds to show both driver and pickup with padding
+        if (typeof approachRoute === 'string') {
+            // Decode polyline to get bounds
+            const decoded = MapController.decodePolyline(approachRoute);
+            if (decoded && decoded.length > 0) {
+                const bounds = L.latLngBounds(decoded.map(p => [p[0], p[1]]));
+                bounds.extend([config.pickup.lat, config.pickup.lng]);
+                MapController.getMap().fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
+            }
+        } else {
+            // Array of points
+            const bounds = L.latLngBounds(approachRoute);
+            bounds.extend([config.pickup.lat, config.pickup.lng]);
+            MapController.getMap().fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
+        }
+        console.log('[Demo] Map bounds adjusted to show route');
+
+        let updateCount = 0;
+        const started = UberStyleTracker.start(approachRoute, {
+            onPositionUpdate: function(data) {
+                updateCount++;
+                if (updateCount % 30 === 1) {
+                    console.log('[Demo] Position update #' + updateCount + ':', data.stats.progress.toFixed(1) + '%');
+                }
+                const eta = Math.max(0, Math.ceil(data.stats.etaMinutes / speedMultiplier));
+                elements.etaTime.textContent = eta;
+                elements.distanceKm.textContent = (data.stats.distanceRemaining / 1000).toFixed(1) + ' km';
+                elements.progressFill.style.width = data.stats.progress + '%';
+                elements.progressPercent.textContent = Math.round(data.stats.progress) + '%';
+                elements.speedDisplay.textContent = Math.round(data.stats.currentSpeedKmh) + ' km/h';
+            },
+            onArrival: function() {
+                console.log('[Demo] *** DRIVER ARRIVED! *** Updates:', updateCount);
+                startBoarding();
+            }
+        });
+
+        console.log('[Demo] Tracker started:', started);
+
+        // Set speed for demo (5x = ~20 seconds for 1.5km)
+        UberStyleTracker.setSpeed(5 * speedMultiplier);
+        console.log('[Demo] Speed set to', 5 * speedMultiplier, 'x');
+        } catch (error) {
+            console.error('[Demo] ERROR in startDriverApproaching:', error.message || error);
+        }
+    }
+
+    // Phase: Boarding (5 seconds base, accelerated with speedMultiplier)
+    function startBoarding() {
+        console.log('[Demo] *** BOARDING PHASE STARTED ***');
+        currentPhase = 'boarding';
+        elements.phaseText.textContent = config.i18n.driverArrived;
+        elements.statusText.textContent = config.i18n.boarding;
+        elements.boardingModal.classList.remove('hidden');
+
+        let countdown = 5; // 5 seconds base
+        elements.boardingCountdown.textContent = countdown;
+
+        const interval = setInterval(() => {
+            countdown--;
+            elements.boardingCountdown.textContent = countdown;
+            console.log('[Demo] Boarding countdown:', countdown);
+
+            if (countdown <= 0) {
+                clearInterval(interval);
+                elements.boardingModal.classList.add('hidden');
+                console.log('[Demo] Boarding complete, starting trip');
+                startTrip();
+            }
+        }, 1000 / speedMultiplier);
+    }
+
+    // Phase: Trip to Dropoff
+    async function startTrip() {
+        console.log('[Demo] *** TRIP PHASE STARTED ***');
+        currentPhase = 'trip';
+        elements.phaseText.textContent = config.i18n.tripInProgress;
+        elements.statusText.textContent = config.i18n.tripInProgress;
+        tripStartTime = Date.now();
+
+        // Use the route polyline if available, otherwise fetch from OSRM
+        let tripRoute = config.routePolyline;
+
+        if (!tripRoute) {
+            console.log('[Demo] Fetching trip route from OSRM...');
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+                const url = `https://router.project-osrm.org/route/v1/driving/${config.pickup.lng},${config.pickup.lat};${config.dropoff.lng},${config.dropoff.lat}?overview=full&geometries=polyline`;
+                const response = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                const data = await response.json();
+                if (data.routes && data.routes[0]) {
+                    tripRoute = data.routes[0].geometry;
+                    console.log('[Demo] Trip route received');
+                }
+            } catch (e) {
+                console.warn('[Demo] Failed to get trip route:', e.message || 'timeout');
+            }
+        }
+
+        if (!tripRoute) {
+            tripRoute = generateSimpleRoute(config.pickup, config.dropoff);
+            console.log('[Demo] Using fallback trip route');
+        }
+
+        // Move pickup marker (simulating user getting in)
+        MapController.removeMarker('pickup');
+
+        let tripUpdateCount = 0;
+        UberStyleTracker.start(tripRoute, {
+            onPositionUpdate: function(data) {
+                tripUpdateCount++;
+                if (tripUpdateCount % 30 === 1) {
+                    console.log('[Demo] Trip progress:', data.stats.progress.toFixed(1) + '%');
+                }
+                const eta = Math.max(0, Math.ceil(data.stats.etaMinutes / speedMultiplier));
+                elements.etaTime.textContent = eta;
+                elements.distanceKm.textContent = (data.stats.distanceRemaining / 1000).toFixed(1) + ' km';
+                elements.progressFill.style.width = data.stats.progress + '%';
+                elements.progressPercent.textContent = Math.round(data.stats.progress) + '%';
+                elements.speedDisplay.textContent = Math.round(data.stats.currentSpeedKmh) + ' km/h';
+
+                // Update phase when close
+                if (data.stats.progress > 90) {
+                    elements.phaseText.textContent = config.i18n.arriving;
+                }
+            },
+            onArrival: function() {
+                console.log('[Demo] *** TRIP COMPLETE! *** Updates:', tripUpdateCount);
+                showArrival();
+            }
+        });
+
+        // Demo speed (5x for trip too)
+        UberStyleTracker.setSpeed(5 * speedMultiplier);
+        console.log('[Demo] Trip speed set');
+    }
+
+    // Phase: Arrival
+    function showArrival() {
+        console.log('[Demo] *** SHOWING ARRIVAL MODAL ***');
+        currentPhase = 'arrived';
+        const tripDuration = Math.max(1, Math.round((Date.now() - tripStartTime) / 1000 / 60)) || config.estimatedDuration;
+
+        document.getElementById('finalDistance').textContent = config.estimatedDistance.toFixed(1);
+        document.getElementById('finalDuration').textContent = tripDuration;
+        document.getElementById('finalPrice').textContent = config.estimatedPrice.toFixed(2);
+        document.getElementById('tripSummary').textContent = '<?= __("demo.trip_summary") ?>'.replace(':duration', tripDuration);
+
+        elements.arrivalModal.classList.remove('hidden');
+    }
+
+    // Rating System
+    let selectedRating = 0;
+    let selectedTip = 0;
+
+    document.getElementById('showRatingBtn').addEventListener('click', function() {
+        elements.arrivalModal.classList.add('hidden');
+        elements.ratingModal.classList.remove('hidden');
+    });
+
+    // Star rating
+    document.querySelectorAll('.star').forEach(star => {
+        star.addEventListener('click', function() {
+            selectedRating = parseInt(this.dataset.rating);
+
+            // Update stars
+            document.querySelectorAll('.star').forEach((s, index) => {
+                if (index < selectedRating) {
+                    s.classList.add('active');
+                } else {
+                    s.classList.remove('active');
+                }
+            });
+
+            // Update label
+            const labels = ['', '<?= __("demo.rating_1") ?>', '<?= __("demo.rating_2") ?>', '<?= __("demo.rating_3") ?>', '<?= __("demo.rating_4") ?>', '<?= __("demo.rating_5") ?>'];
+            document.getElementById('ratingLabel').textContent = labels[selectedRating];
+
+            // Show tip section and submit button
+            if (selectedRating > 0) {
+                document.getElementById('tipSection').classList.remove('hidden');
+                document.getElementById('ratingComment').classList.remove('hidden');
+                document.getElementById('submitRatingBtn').classList.remove('hidden');
+            }
+        });
+
+        star.addEventListener('mouseenter', function() {
+            const rating = parseInt(this.dataset.rating);
+            document.querySelectorAll('.star').forEach((s, index) => {
+                if (index < rating) {
+                    s.style.color = 'var(--gold-400)';
+                }
+            });
+        });
+
+        star.addEventListener('mouseleave', function() {
+            document.querySelectorAll('.star').forEach((s, index) => {
+                if (!s.classList.contains('active')) {
+                    s.style.color = '';
+                }
+            });
+        });
+    });
+
+    // Tip selection
+    document.querySelectorAll('.tip-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.tip-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            selectedTip = parseInt(this.dataset.tip);
+        });
+    });
+
+    // Submit rating
+    document.getElementById('submitRatingBtn').addEventListener('click', async function() {
+        const comment = document.getElementById('ratingComment').value;
+
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner"></span>';
+
+        // Simulate API call (in real app, use ApiService.post)
+        await new Promise(r => setTimeout(r, 1000));
+
+        elements.ratingModal.classList.add('hidden');
+        elements.thankYouModal.classList.remove('hidden');
+    });
+
+    // Speed controls
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            speedMultiplier = parseFloat(this.dataset.speed);
+            if (UberStyleTracker.isRunning()) {
+                UberStyleTracker.setSpeed(10 * speedMultiplier);
+            }
+        });
+    });
+
+    // Center button
+    document.getElementById('centerBtn').addEventListener('click', function() {
+        UberStyleTracker.centerOnVehicle(15);
+    });
+
+    // Call button (demo only)
+    document.getElementById('callBtn').addEventListener('click', function() {
+        Toast.info('<?= __("demo.call_demo_only") ?>');
+    });
+
+    // Start the demo!
+    setTimeout(function() {
+        startDriverApproaching();
+    }, 1000);
+});
+</script>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TripSalama - Design System PHI v3.0</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/assets/css/tripsalama-design-system.css">
+    <style>
+        .demo-section { margin-bottom: var(--space-6); }
+        .demo-title { 
+            font-family: var(--font-display);
+            font-size: var(--text-xl);
+            margin-bottom: var(--space-4);
+            color: var(--color-primary);
+        }
+        .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); }
+        .logo-showcase { text-align: center; padding: var(--space-5); }
+        .logo-showcase img { width: 120px; height: 120px; }
+        .color-swatch { 
+            padding: var(--space-4); 
+            border-radius: var(--radius-lg);
+            color: white;
+            font-weight: var(--font-weight-semibold);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <main class="main-content">
+            <!-- Logo Showcase -->
+            <section class="demo-section logo-showcase glass-card animate-phi-enter">
+                <img src="/assets/images/icons/icon.svg" alt="TripSalama Logo">
+                <h1 class="text-headline" style="margin-top: var(--space-4);">TripSalama</h1>
+                <p class="text-subtitle">Design System PHI v3.0</p>
+                <div style="margin-top: var(--space-3);">
+                    <span class="star-phi"></span>
+                    <span class="star-phi" style="animation-delay: 0.5s;"></span>
+                    <span class="star-phi" style="animation-delay: 1s;"></span>
+                </div>
+            </section>
+
+            <!-- Welcome Card Demo -->
+            <section class="demo-section">
+                <h2 class="demo-title">Welcome Card</h2>
+                <div class="welcome-phi">
+                    <p style="opacity: 0.8; margin-bottom: var(--space-2);">Bienvenue</p>
+                    <h2 class="welcome-phi-title">Tarik Gilani</h2>
+                    <p style="opacity: 0.9; display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-2);">
+                        <span class="star-phi" style="width: 14px; height: 14px;"></span>
+                        Premium Member
+                    </p>
+                </div>
+            </section>
+
+            <!-- Buttons Demo -->
+            <section class="demo-section">
+                <h2 class="demo-title">Boutons PHI</h2>
+                <div style="display: flex; flex-wrap: wrap; gap: var(--space-3);">
+                    <button class="btn btn-phi-premium">Bouton Premium</button>
+                    <button class="btn btn-phi-accent">Bouton Accent</button>
+                    <button class="btn btn-glass">Bouton Glass</button>
+                    <button class="btn btn-primary">Bouton Primary</button>
+                    <button class="btn btn-secondary">Bouton Secondary</button>
+                </div>
+            </section>
+
+            <!-- Glass Cards Demo -->
+            <section class="demo-section">
+                <h2 class="demo-title">Glass Cards</h2>
+                <div class="demo-grid">
+                    <div class="glass-card animate-phi-enter phi-delay-1" style="padding: var(--space-4);">
+                        <h3 class="text-title">Glass Card</h3>
+                        <p class="text-caption">Effet glassmorphism avec blur PHI</p>
+                    </div>
+                    <div class="glass-card-dark animate-phi-enter phi-delay-2" style="padding: var(--space-4);">
+                        <h3 class="text-title">Glass Dark</h3>
+                        <p class="text-caption" style="opacity: 0.7;">Version sombre</p>
+                    </div>
+                    <div class="card-phi-premium animate-phi-enter phi-delay-3">
+                        <h3 class="text-title">Premium Card</h3>
+                        <p class="text-caption">Avec gradient PHI</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Animations Demo -->
+            <section class="demo-section">
+                <h2 class="demo-title">Micro-Animations PHI</h2>
+                <div class="demo-grid">
+                    <div class="card animate-phi-float" style="padding: var(--space-4); text-align: center;">
+                        <div style="font-size: var(--text-2xl);">Float</div>
+                        <p class="text-caption">phiFloat animation</p>
+                    </div>
+                    <div class="card animate-phi-pulse" style="padding: var(--space-4); text-align: center;">
+                        <div style="font-size: var(--text-2xl);">Pulse</div>
+                        <p class="text-caption">phiPulse animation</p>
+                    </div>
+                    <div class="card animate-phi-glow" style="padding: var(--space-4); text-align: center;">
+                        <div style="font-size: var(--text-2xl);">Glow</div>
+                        <p class="text-caption">phiGlow animation</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Color Palette -->
+            <section class="demo-section">
+                <h2 class="demo-title">Palette PHI (137.5 deg)</h2>
+                <div class="demo-grid">
+                    <div class="color-swatch" style="background: var(--gradient-phi-emerald);">
+                        Emerald Gradient
+                    </div>
+                    <div class="color-swatch" style="background: var(--gradient-phi-gold); color: #2D2723;">
+                        Gold Gradient
+                    </div>
+                    <div class="color-swatch" style="background: var(--emerald-700);">
+                        Emerald 700
+                    </div>
+                    <div class="color-swatch" style="background: var(--gold-400); color: #2D2723;">
+                        Gold 400
+                    </div>
+                </div>
+            </section>
+
+            <!-- Typography -->
+            <section class="demo-section">
+                <h2 class="demo-title">Typographie PHI</h2>
+                <div class="card" style="padding: var(--space-4);">
+                    <p style="font-size: var(--text-hero); line-height: 1;">Hero (6.854rem)</p>
+                    <p style="font-size: var(--text-4xl);">4XL (4.236rem)</p>
+                    <p style="font-size: var(--text-3xl);">3XL (3.33rem)</p>
+                    <p style="font-size: var(--text-2xl);">2XL (2.618rem)</p>
+                    <p style="font-size: var(--text-xl);">XL (2.058rem)</p>
+                    <p style="font-size: var(--text-lg);">LG (1.618rem = PHI)</p>
+                    <p style="font-size: var(--text-base);">Base (1rem = 16px)</p>
+                    <p style="font-size: var(--text-sm);">SM (0.786rem)</p>
+                    <p style="font-size: var(--text-xs);">XS (0.618rem = 1/PHI)</p>
+                </div>
+            </section>
+
+            <!-- Info -->
+            <section class="demo-section" style="text-align: center; opacity: 0.7;">
+                <p class="text-caption">
+                    Design System base sur le Nombre d Or PHI = 1.618033988749<br>
+                    Golden Angle = 137.5 deg | Fibonacci Spacing | Premium Moroccan Aesthetic
+                </p>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

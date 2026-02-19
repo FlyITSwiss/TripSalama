@@ -1,0 +1,447 @@
+<?php
+/**
+ * TripSalama - Demo Mode
+ * Page de démonstration du suivi véhicule en temps réel
+ */
+
+$pageTitle = __('demo.title');
+$includeMap = true;
+$pageCss = ['tripsalama-demo.css'];
+$pageJs = ['modules/map-controller.js', 'modules/demo-mode.js'];
+$bodyClass = 'page-demo';
+?>
+
+<div class="demo-container">
+    <!-- Carte plein écran -->
+    <div id="demo-map" class="demo-map">
+        <div class="map-loading">
+            <div class="spinner"></div>
+            <span><?= __('demo.loading_map') ?></span>
+        </div>
+    </div>
+
+    <!-- Panneau d'information supérieur (ETA) -->
+    <div id="eta-panel" class="eta-panel glass-card" style="display: none;">
+        <div class="eta-main">
+            <span id="eta-time" class="eta-time">--</span>
+            <span class="eta-label"><?= __('demo.arrival') ?></span>
+        </div>
+        <div class="eta-details">
+            <div class="eta-detail">
+                <span id="eta-distance" class="eta-value">--</span>
+                <span class="eta-label-small"><?= __('demo.distance') ?></span>
+            </div>
+            <div class="eta-separator"></div>
+            <div class="eta-detail">
+                <span id="eta-speed" class="eta-value">1x</span>
+                <span class="eta-label-small"><?= __('demo.speed') ?></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panneau conducteur -->
+    <div id="driver-panel" class="driver-panel glass-card" style="display: none;">
+        <div class="driver-header">
+            <div class="driver-avatar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+            </div>
+            <div class="driver-info">
+                <h3 id="driver-name" class="driver-name">--</h3>
+                <div class="driver-rating">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="star-icon">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                    <span id="driver-rating">--</span>
+                </div>
+            </div>
+            <button id="btn-call-driver" class="btn-action btn-call" title="<?= __('demo.call_driver') ?>">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                </svg>
+            </button>
+        </div>
+        <div class="driver-car">
+            <span id="driver-car" class="car-model">--</span>
+            <span id="driver-plate" class="car-plate">--</span>
+        </div>
+        <div class="driver-progress">
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+            </div>
+            <span id="progress-text" class="progress-text">0%</span>
+        </div>
+    </div>
+
+    <!-- Panneau de contrôles -->
+    <div id="controls-panel" class="controls-panel">
+        <!-- État initial : bouton démarrer -->
+        <div id="start-section" class="control-section">
+            <button id="btn-start-demo" class="btn-primary btn-lg btn-demo-start">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/>
+                </svg>
+                <span><?= __('demo.start_demo') ?></span>
+            </button>
+            <p class="demo-hint"><?= __('demo.hint') ?></p>
+        </div>
+
+        <!-- Contrôles pendant la démo -->
+        <div id="active-controls" class="control-section" style="display: none;">
+            <div class="speed-controls">
+                <button class="btn-speed" data-speed="0.5">0.5x</button>
+                <button class="btn-speed active" data-speed="1">1x</button>
+                <button class="btn-speed" data-speed="2">2x</button>
+                <button class="btn-speed" data-speed="5">5x</button>
+            </div>
+            <div class="action-controls">
+                <button id="btn-pause" class="btn-action btn-pause" title="<?= __('demo.pause') ?>">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="4" width="4" height="16"/>
+                        <rect x="14" y="4" width="4" height="16"/>
+                    </svg>
+                </button>
+                <button id="btn-resume" class="btn-action btn-resume" style="display: none;" title="<?= __('demo.resume') ?>">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="5,3 19,12 5,21"/>
+                    </svg>
+                </button>
+                <button id="btn-stop" class="btn-action btn-stop" title="<?= __('demo.stop') ?>">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="4" y="4" width="16" height="16" rx="2"/>
+                    </svg>
+                </button>
+                <button id="btn-center" class="btn-action btn-center" title="<?= __('demo.center_map') ?>">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <circle cx="12" cy="12" r="3"/>
+                        <line x1="12" y1="2" x2="12" y2="6"/>
+                        <line x1="12" y1="18" x2="12" y2="22"/>
+                        <line x1="2" y1="12" x2="6" y2="12"/>
+                        <line x1="18" y1="12" x2="22" y2="12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal d'arrivée -->
+    <div id="arrival-modal" class="arrival-modal" style="display: none;">
+        <div class="arrival-content glass-card">
+            <div class="arrival-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22,4 12,14.01 9,11.01"/>
+                </svg>
+            </div>
+            <h2><?= __('demo.driver_arrived') ?></h2>
+            <p id="arrival-message"><?= __('demo.driver_waiting') ?></p>
+            <div class="arrival-driver">
+                <span id="arrival-driver-name">--</span>
+                <span id="arrival-driver-car">--</span>
+            </div>
+            <button id="btn-restart-demo" class="btn-primary btn-lg">
+                <?= __('demo.restart') ?>
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast notifications -->
+    <div id="toast-container" class="toast-container"></div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+    'use strict';
+
+    // Éléments DOM
+    const elements = {
+        map: document.getElementById('demo-map'),
+        etaPanel: document.getElementById('eta-panel'),
+        etaTime: document.getElementById('eta-time'),
+        etaDistance: document.getElementById('eta-distance'),
+        etaSpeed: document.getElementById('eta-speed'),
+        driverPanel: document.getElementById('driver-panel'),
+        driverName: document.getElementById('driver-name'),
+        driverRating: document.getElementById('driver-rating'),
+        driverCar: document.getElementById('driver-car'),
+        driverPlate: document.getElementById('driver-plate'),
+        progressFill: document.getElementById('progress-fill'),
+        progressText: document.getElementById('progress-text'),
+        startSection: document.getElementById('start-section'),
+        activeControls: document.getElementById('active-controls'),
+        btnStart: document.getElementById('btn-start-demo'),
+        btnPause: document.getElementById('btn-pause'),
+        btnResume: document.getElementById('btn-resume'),
+        btnStop: document.getElementById('btn-stop'),
+        btnCenter: document.getElementById('btn-center'),
+        arrivalModal: document.getElementById('arrival-modal'),
+        arrivalDriverName: document.getElementById('arrival-driver-name'),
+        arrivalDriverCar: document.getElementById('arrival-driver-car'),
+        btnRestart: document.getElementById('btn-restart-demo'),
+        toastContainer: document.getElementById('toast-container')
+    };
+
+    // Variables
+    let map = null;
+    let routeLayer = null;
+    let isPaused = false;
+
+    // Initialiser la carte
+    function initMap() {
+        map = MapController.init('demo-map', {
+            center: [46.2044, 6.1432], // Genève par défaut
+            zoom: 14,
+            darkMode: true // Mode sombre Uber-like
+        });
+
+        // Supprimer le loader
+        const loader = elements.map.querySelector('.map-loading');
+        if (loader) loader.remove();
+    }
+
+    // Initialiser le mode démo
+    async function initDemo() {
+        await DemoMode.init();
+
+        // Écouter les événements
+        EventBus.on('demo:starting', handleStarting);
+        EventBus.on('demo:started', handleStarted);
+        EventBus.on('demo:stopped', handleStopped);
+        EventBus.on('demo:paused', handlePaused);
+        EventBus.on('demo:resumed', handleResumed);
+        EventBus.on('demo:user_located', handleUserLocated);
+        EventBus.on('demo:driver_assigned', handleDriverAssigned);
+        EventBus.on('demo:position_update', handlePositionUpdate);
+        EventBus.on('demo:arrived', handleArrived);
+        EventBus.on('demo:error', handleError);
+    }
+
+    // Gestionnaires d'événements
+    function handleStarting() {
+        elements.btnStart.disabled = true;
+        elements.btnStart.innerHTML = `
+            <div class="spinner-small"></div>
+            <span><?= __('demo.locating') ?></span>
+        `;
+        showToast('info', <?= json_encode(__('demo.locating_you')) ?>);
+    }
+
+    function handleUserLocated(position) {
+        MapController.addMarker('user', position.lat, position.lng, 'user', <?= json_encode(__('demo.your_position')) ?>);
+        MapController.setCenter(position.lat, position.lng, 15);
+        showToast('success', <?= json_encode(__('demo.position_found')) ?>);
+    }
+
+    function handleDriverAssigned(driver) {
+        elements.driverName.textContent = driver.name;
+        elements.driverRating.textContent = driver.rating.toFixed(1);
+        elements.driverCar.textContent = driver.car;
+        elements.driverPlate.textContent = driver.plate;
+
+        showToast('success', `${driver.name} <?= __('demo.is_coming') ?>`);
+    }
+
+    function handleStarted(data) {
+        // Afficher les panneaux
+        elements.etaPanel.style.display = 'flex';
+        elements.driverPanel.style.display = 'block';
+        elements.startSection.style.display = 'none';
+        elements.activeControls.style.display = 'flex';
+
+        // Réinitialiser le bouton
+        elements.btnStart.disabled = false;
+        elements.btnStart.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/>
+            </svg>
+            <span><?= __('demo.start_demo') ?></span>
+        `;
+
+        // Ajouter le marker véhicule
+        MapController.addMarker('vehicle', data.vehiclePosition.lat, data.vehiclePosition.lng, 'vehicle');
+
+        // Dessiner la route (si on a les points)
+        // La route sera mise à jour avec les position_update
+
+        // Ajuster la vue
+        MapController.fitBounds([
+            [data.userPosition.lat, data.userPosition.lng],
+            [data.vehiclePosition.lat, data.vehiclePosition.lng]
+        ], 80);
+
+        // ETA initial
+        updateETA(data.eta);
+    }
+
+    function handleStopped() {
+        elements.etaPanel.style.display = 'none';
+        elements.driverPanel.style.display = 'block';
+        elements.startSection.style.display = 'block';
+        elements.activeControls.style.display = 'none';
+
+        // Supprimer markers et route
+        MapController.removeMarker('vehicle');
+        MapController.clearRoute();
+
+        isPaused = false;
+        elements.btnPause.style.display = 'block';
+        elements.btnResume.style.display = 'none';
+    }
+
+    function handlePaused() {
+        isPaused = true;
+        elements.btnPause.style.display = 'none';
+        elements.btnResume.style.display = 'block';
+        showToast('info', <?= json_encode(__('demo.paused')) ?>);
+    }
+
+    function handleResumed() {
+        isPaused = false;
+        elements.btnPause.style.display = 'block';
+        elements.btnResume.style.display = 'none';
+    }
+
+    function handlePositionUpdate(data) {
+        // Mettre à jour la position du véhicule
+        MapController.updateMarkerPosition('vehicle', data.position.lat, data.position.lng, true);
+
+        // Mettre à jour l'ETA
+        updateETA(data.eta);
+
+        // Mettre à jour la barre de progression
+        elements.progressFill.style.width = `${data.progress}%`;
+        elements.progressText.textContent = `${Math.round(data.progress)}%`;
+    }
+
+    function handleArrived(data) {
+        // Masquer les panneaux
+        elements.etaPanel.style.display = 'none';
+        elements.activeControls.style.display = 'none';
+
+        // Afficher le modal d'arrivée
+        elements.arrivalDriverName.textContent = data.driverInfo.name;
+        elements.arrivalDriverCar.textContent = `${data.driverInfo.car} - ${data.driverInfo.plate}`;
+        elements.arrivalModal.style.display = 'flex';
+
+        // Centrer sur l'utilisateur
+        const state = DemoMode.getState();
+        if (state.userPosition) {
+            MapController.setCenter(state.userPosition.lat, state.userPosition.lng, 17);
+        }
+
+        // Notification
+        showToast('success', <?= json_encode(__('demo.arrived_notification')) ?>);
+
+        // Vibration (si supportée)
+        if ('vibrate' in navigator) {
+            navigator.vibrate([200, 100, 200]);
+        }
+    }
+
+    function handleError(error) {
+        showToast('error', error.message || <?= json_encode(__('demo.error_occurred')) ?>);
+
+        // Réinitialiser le bouton
+        elements.btnStart.disabled = false;
+        elements.btnStart.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none"/>
+            </svg>
+            <span><?= __('demo.start_demo') ?></span>
+        `;
+    }
+
+    // Mettre à jour l'affichage ETA
+    function updateETA(eta) {
+        if (!eta) return;
+
+        elements.etaTime.textContent = eta.durationFormatted || `${eta.durationMinutes} min`;
+        elements.etaDistance.textContent = eta.distanceFormatted || `${(eta.distance / 1000).toFixed(1)} km`;
+    }
+
+    // Afficher un toast
+    function showToast(type, message) {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <span class="toast-message">${message}</span>
+            <button class="toast-close" onclick="this.parentElement.remove()">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        `;
+        elements.toastContainer.appendChild(toast);
+
+        // Auto-remove après 4s
+        setTimeout(() => {
+            toast.classList.add('toast-fade');
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+
+    // Event listeners
+    elements.btnStart.addEventListener('click', () => {
+        DemoMode.start();
+    });
+
+    elements.btnPause.addEventListener('click', () => {
+        DemoMode.pause();
+    });
+
+    elements.btnResume.addEventListener('click', () => {
+        DemoMode.resume();
+    });
+
+    elements.btnStop.addEventListener('click', () => {
+        DemoMode.stop();
+    });
+
+    elements.btnCenter.addEventListener('click', () => {
+        const state = DemoMode.getState();
+        if (state.userPosition && state.vehiclePosition) {
+            MapController.fitBounds([
+                [state.userPosition.lat, state.userPosition.lng],
+                [state.vehiclePosition.lat, state.vehiclePosition.lng]
+            ], 80);
+        }
+    });
+
+    elements.btnRestart.addEventListener('click', () => {
+        elements.arrivalModal.style.display = 'none';
+        elements.startSection.style.display = 'block';
+        elements.driverPanel.style.display = 'none';
+        MapController.removeMarker('vehicle');
+        MapController.removeMarker('user');
+        MapController.clearRoute();
+    });
+
+    // Boutons de vitesse
+    document.querySelectorAll('.btn-speed').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.btn-speed').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const speed = parseFloat(btn.dataset.speed);
+            DemoMode.setSpeed(speed);
+            elements.etaSpeed.textContent = `${speed}x`;
+        });
+    });
+
+    // Bouton appeler (démo)
+    document.getElementById('btn-call-driver').addEventListener('click', () => {
+        showToast('info', <?= json_encode(__('demo.call_demo_only')) ?>);
+    });
+
+    // Initialisation
+    initMap();
+    await initDemo();
+});
+</script>

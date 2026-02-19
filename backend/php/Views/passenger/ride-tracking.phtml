@@ -1,96 +1,344 @@
-<!-- Barre de statut -->
-<div class="ride-status-bar">
-    <div class="ride-status">
-        <span class="status-dot <?= str_replace('_', '-', $ride['status']) ?>"></span>
-        <span class="status-text" id="statusText"><?= __('ride.' . $ride['status']) ?></span>
-    </div>
-    <div class="ride-eta" id="etaText">
-        <?php if ($ride['estimated_duration_min']): ?>
-        <?= __('ride.eta') ?>: <?= format_duration((int)$ride['estimated_duration_min']) ?>
-        <?php endif; ?>
-    </div>
-</div>
+<?php
+/**
+ * TripSalama - Page Suivi de Course
+ * Tracking temps réel avec animation véhicule Uber-style
+ */
+?>
 
-<!-- Carte -->
-<div style="height: calc(100vh - var(--size-header) - 55px - var(--size-mobile-nav)); position: relative;">
-    <div id="map" class="map-container">
-        <div class="map-loading">
-            <div class="spinner"></div>
-        </div>
-    </div>
+<!-- CSS Tracker -->
+<link rel="stylesheet" href="<?= asset_url('css/uber-tracker.css') ?>">
 
-    <!-- Mode simulation -->
-    <div class="simulation-bar">
-        <span class="simulation-badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
-                <polygon points="5 3 19 12 5 21 5 3"/>
+<!-- Carte plein écran -->
+<div class="tracking-page">
+    <div id="map" class="tracking-map"></div>
+
+    <!-- Overlay top avec bouton retour -->
+    <div class="tracking-map-overlay">
+        <a href="<?= base_url('passenger/dashboard') ?>" class="tracking-back-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"/>
             </svg>
-            <?= __('simulation.demo_mode') ?>
-        </span>
-        <div class="simulation-speed">
-            <button class="speed-btn active" data-speed="1">1x</button>
-            <button class="speed-btn" data-speed="2">2x</button>
-            <button class="speed-btn" data-speed="5">5x</button>
-        </div>
+        </a>
     </div>
 
-    <?php if ($ride['driver_id']): ?>
-    <!-- Infos conductrice -->
-    <div class="driver-info-card" style="position: absolute; bottom: var(--space-89); left: var(--space-21); right: var(--space-21); margin: 0;">
-        <div class="driver-avatar">
-            <div class="avatar avatar-md">
-                <?php if ($ride['driver_avatar']): ?>
+    <!-- Bouton centrer sur véhicule -->
+    <button class="tracking-center-btn" id="centerBtn" title="<?= __('tracking.center_vehicle') ?>">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <circle cx="12" cy="12" r="3"/>
+            <line x1="12" y1="2" x2="12" y2="6"/>
+            <line x1="12" y1="18" x2="12" y2="22"/>
+            <line x1="2" y1="12" x2="6" y2="12"/>
+            <line x1="18" y1="12" x2="22" y2="12"/>
+        </svg>
+    </button>
+
+    <!-- Panel de tracking (bottom sheet) -->
+    <div class="tracking-panel" id="trackingPanel">
+        <div class="tracking-panel-handle"></div>
+
+        <!-- Statut -->
+        <div class="tracking-status" id="statusIndicator">
+            <span class="tracking-status-dot"></span>
+            <span id="statusText"><?= __('ride.' . $ride['status']) ?></span>
+        </div>
+
+        <!-- ETA -->
+        <div class="tracking-eta">
+            <div>
+                <div class="tracking-eta-time" id="etaTime"><?= $ride['estimated_duration_min'] ?? '--' ?></div>
+                <div class="tracking-eta-label"><?= __('tracking.minutes') ?></div>
+            </div>
+            <div style="margin-left: auto; text-align: right;">
+                <div style="font-size: 20px; font-weight: 600;" id="distanceRemaining">
+                    <?= isset($ride['estimated_distance_km']) ? number_format($ride['estimated_distance_km'], 1) : '--' ?> km
+                </div>
+                <div class="tracking-eta-label"><?= __('tracking.remaining') ?></div>
+            </div>
+        </div>
+
+        <!-- Barre de progression -->
+        <div class="tracking-progress">
+            <div class="tracking-progress-bar">
+                <div class="tracking-progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div class="tracking-progress-label">
+                <span id="progressPercent">0%</span>
+                <span id="speedDisplay">-- km/h</span>
+            </div>
+        </div>
+
+        <!-- Mode simulation (si pas de vraies données GPS) -->
+        <?php if ($ride['status'] === 'in_progress' || $ride['status'] === 'accepted'): ?>
+        <div class="tracking-speed-controls" id="simControls">
+            <span class="tracking-speed-label"><?= __('simulation.speed') ?>:</span>
+            <button class="tracking-speed-btn active" data-speed="1">1x</button>
+            <button class="tracking-speed-btn" data-speed="2">2x</button>
+            <button class="tracking-speed-btn" data-speed="5">5x</button>
+        </div>
+        <?php endif; ?>
+
+        <!-- Info conductrice -->
+        <?php if ($ride['driver_id']): ?>
+        <div class="tracking-driver">
+            <div class="tracking-driver-avatar">
+                <?php if (!empty($ride['driver_avatar'])): ?>
                 <img src="<?= base_url('uploads/avatars/' . $ride['driver_avatar']) ?>" alt="">
                 <?php else: ?>
-                <?= strtoupper(substr($ride['driver_first_name'], 0, 1)) ?>
+                <?= strtoupper(substr($ride['driver_first_name'] ?? 'D', 0, 1)) ?>
                 <?php endif; ?>
             </div>
-        </div>
-        <div class="driver-details">
-            <div class="driver-name"><?= htmlspecialchars($ride['driver_first_name'] . ' ' . $ride['driver_last_name']) ?></div>
-            <div class="driver-vehicle">
-                <?= htmlspecialchars($ride['vehicle_color'] . ' ' . $ride['vehicle_brand'] . ' ' . $ride['vehicle_model']) ?>
-                <br>
-                <strong><?= htmlspecialchars($ride['vehicle_plate']) ?></strong>
+            <div class="tracking-driver-info">
+                <div class="tracking-driver-name"><?= htmlspecialchars(($ride['driver_first_name'] ?? '') . ' ' . ($ride['driver_last_name'] ?? '')) ?></div>
+                <div class="tracking-driver-vehicle">
+                    <?= htmlspecialchars(($ride['vehicle_color'] ?? '') . ' ' . ($ride['vehicle_brand'] ?? '') . ' ' . ($ride['vehicle_model'] ?? '')) ?>
+                    <?php if (!empty($ride['vehicle_plate'])): ?>
+                    • <strong><?= htmlspecialchars($ride['vehicle_plate']) ?></strong>
+                    <?php endif; ?>
+                </div>
             </div>
+            <?php if (!empty($ride['driver_rating'])): ?>
+            <div class="tracking-driver-rating">
+                <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <?= number_format($ride['driver_rating'], 1) ?>
+            </div>
+            <?php endif; ?>
         </div>
-        <div class="driver-actions">
-            <a href="tel:<?= htmlspecialchars($ride['driver_phone'] ?? '') ?>" class="btn-icon" title="Appeler">
+        <?php endif; ?>
+
+        <!-- Actions -->
+        <div class="tracking-actions">
+            <?php if (!empty($ride['driver_phone'])): ?>
+            <a href="tel:<?= htmlspecialchars($ride['driver_phone']) ?>" class="tracking-action-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                 </svg>
+                <?= __('tracking.call') ?>
             </a>
+            <?php endif; ?>
+
+            <?php if ($ride['status'] === 'pending' || $ride['status'] === 'accepted'): ?>
+            <button class="tracking-action-btn danger" id="cancelRideBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                <?= __('ride.cancel') ?>
+            </button>
+            <?php endif; ?>
         </div>
     </div>
-    <?php endif; ?>
+
+    <!-- Modal arrivée -->
+    <div class="tracking-arrival-modal" id="arrivalModal">
+        <div class="tracking-arrival-content">
+            <div class="tracking-arrival-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+            </div>
+            <div class="tracking-arrival-title"><?= __('tracking.arrived') ?></div>
+            <div class="tracking-arrival-subtitle" id="tripSummary"></div>
+            <a href="<?= base_url('passenger/dashboard') ?>" class="tracking-arrival-btn"><?= __('tracking.finish') ?></a>
+        </div>
+    </div>
 </div>
 
-<?php if ($ride['status'] === 'pending' || $ride['status'] === 'accepted'): ?>
-<!-- Bouton annuler -->
-<div style="padding: var(--space-21); background: var(--color-bg-card); border-top: 1px solid var(--color-border);">
-    <button id="cancelRideBtn" class="btn btn-danger btn-block">
-        <?= __('ride.cancel') ?>
-    </button>
-</div>
-<?php endif; ?>
+<style>
+    /* Override layout pour page tracking plein écran */
+    .tracking-page {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+    }
+
+    .tracking-map {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Masquer le header/nav sur cette page */
+    .site-header,
+    .mobile-nav {
+        display: none !important;
+    }
+
+    body {
+        padding: 0 !important;
+    }
+
+    .main-content {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+</style>
 
 <script>
-    // Configuration pour le tracking
+    // Configuration du tracking
     window.TrackingConfig = {
         rideId: <?= (int)$ride['id'] ?>,
         status: <?= json_encode($ride['status']) ?>,
         pickup: { lat: <?= $ride['pickup_lat'] ?>, lng: <?= $ride['pickup_lng'] ?> },
         dropoff: { lat: <?= $ride['dropoff_lat'] ?>, lng: <?= $ride['dropoff_lng'] ?> },
-        routePolyline: <?= json_encode($ride['route_polyline']) ?>,
-        apiUrl: AppConfig.apiPath,
-        csrfToken: AppConfig.csrfToken,
+        routePolyline: <?= json_encode($ride['route_polyline'] ?? '') ?>,
+        estimatedDuration: <?= (int)($ride['estimated_duration_min'] ?? 0) ?>,
+        estimatedDistance: <?= (float)($ride['estimated_distance_km'] ?? 0) ?>,
+        hasDriver: <?= $ride['driver_id'] ? 'true' : 'false' ?>,
         i18n: {
-            searching: <?= json_encode(__('ride.searching')) ?>,
-            driverArriving: <?= json_encode(__('ride.driver_arriving')) ?>,
-            inProgress: <?= json_encode(__('ride.in_progress')) ?>,
+            pending: <?= json_encode(__('ride.pending')) ?>,
+            accepted: <?= json_encode(__('ride.accepted')) ?>,
+            arriving: <?= json_encode(__('ride.driver_arriving')) ?>,
+            in_progress: <?= json_encode(__('ride.in_progress')) ?>,
             completed: <?= json_encode(__('ride.completed')) ?>,
-            eta: <?= json_encode(__('ride.eta')) ?>,
-            cancelConfirm: <?= json_encode(__('ride.cancel_confirm')) ?>
+            cancelled: <?= json_encode(__('ride.cancelled')) ?>,
+            cancelConfirm: <?= json_encode(__('ride.cancel_confirm')) ?>,
+            tripComplete: <?= json_encode(__('tracking.trip_complete')) ?>
         }
     };
+</script>
+<script src="<?= asset_url('js/modules/map-controller.js') ?>"></script>
+<script src="<?= asset_url('js/modules/uber-style-tracker.js') ?>"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const config = window.TrackingConfig;
+
+        // Initialiser la carte en mode sombre
+        MapController.init('map', {
+            center: [config.pickup.lat, config.pickup.lng],
+            zoom: 14,
+            darkMode: true
+        });
+
+        // Ajouter les markers départ/arrivée
+        MapController.addMarker('pickup', config.pickup.lat, config.pickup.lng, 'pickup');
+        MapController.addMarker('dropoff', config.dropoff.lat, config.dropoff.lng, 'dropoff');
+
+        // Initialiser le tracker
+        UberStyleTracker.init();
+
+        // Démarrer la simulation si course en cours
+        if (config.status === 'in_progress' || config.status === 'accepted') {
+            startTracking();
+        } else if (config.status === 'completed') {
+            showCompleted();
+        }
+
+        // Event listeners
+        setupEventListeners();
+
+        function startTracking() {
+            if (!config.routePolyline) {
+                console.warn('Pas de polyline de route disponible');
+                return;
+            }
+
+            UberStyleTracker.start(config.routePolyline, {
+                onPositionUpdate: function(data) {
+                    updateUI(data.stats);
+                },
+                onETAUpdate: function(minutes) {
+                    document.getElementById('etaTime').textContent = minutes;
+                },
+                onArrival: function(stats) {
+                    handleArrival(stats);
+                }
+            });
+
+            document.getElementById('statusText').textContent = config.i18n.in_progress;
+        }
+
+        function updateUI(stats) {
+            document.getElementById('progressFill').style.width = stats.progress.toFixed(1) + '%';
+            document.getElementById('progressPercent').textContent = stats.progress.toFixed(1) + '%';
+            document.getElementById('speedDisplay').textContent = Math.round(stats.currentSpeedKmh) + ' km/h';
+            document.getElementById('distanceRemaining').textContent = (stats.distanceRemaining / 1000).toFixed(1) + ' km';
+        }
+
+        function handleArrival(stats) {
+            const duration = Math.round((Date.now() - stats.startTime) / 60000);
+            document.getElementById('tripSummary').textContent = config.i18n.tripComplete.replace('{duration}', duration);
+            document.getElementById('arrivalModal').classList.add('active');
+            document.getElementById('statusText').textContent = config.i18n.completed;
+            document.getElementById('statusIndicator').classList.add('arriving');
+        }
+
+        function showCompleted() {
+            document.getElementById('progressFill').style.width = '100%';
+            document.getElementById('progressPercent').textContent = '100%';
+            document.getElementById('statusText').textContent = config.i18n.completed;
+        }
+
+        function setupEventListeners() {
+            // Bouton centrer
+            document.getElementById('centerBtn')?.addEventListener('click', function() {
+                UberStyleTracker.centerOnVehicle(15);
+            });
+
+            // Boutons vitesse simulation
+            document.querySelectorAll('.tracking-speed-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.tracking-speed-btn').forEach(function(b) {
+                        b.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    UberStyleTracker.setSpeed(parseFloat(this.dataset.speed));
+                });
+            });
+
+            // Bouton annuler
+            document.getElementById('cancelRideBtn')?.addEventListener('click', function() {
+                if (confirm(config.i18n.cancelConfirm)) {
+                    cancelRide();
+                }
+            });
+
+            // Gestion du panel (drag)
+            setupPanelDrag();
+        }
+
+        function cancelRide() {
+            ApiService.post('rides', {
+                action: 'cancel',
+                ride_id: config.rideId
+            }).then(function(response) {
+                if (response.success) {
+                    AppConfig.navigateTo('passenger/dashboard');
+                }
+            }).catch(function(error) {
+                Toast.error(error.message);
+            });
+        }
+
+        function setupPanelDrag() {
+            const panel = document.getElementById('trackingPanel');
+            const handle = panel.querySelector('.tracking-panel-handle');
+            let startY, startTransform;
+
+            handle?.addEventListener('touchstart', function(e) {
+                startY = e.touches[0].clientY;
+                startTransform = panel.style.transform || 'translateY(0)';
+            });
+
+            handle?.addEventListener('touchmove', function(e) {
+                const deltaY = e.touches[0].clientY - startY;
+                if (deltaY > 0) {
+                    panel.style.transform = 'translateY(' + Math.min(deltaY, 200) + 'px)';
+                }
+            });
+
+            handle?.addEventListener('touchend', function(e) {
+                const currentTransform = panel.style.transform;
+                const translateY = parseInt(currentTransform.replace(/[^\d-]/g, '') || 0);
+
+                if (translateY > 100) {
+                    panel.classList.add('collapsed');
+                } else {
+                    panel.classList.remove('collapsed');
+                }
+                panel.style.transform = '';
+            });
+        }
+    });
 </script>

@@ -129,6 +129,81 @@
          */
         isReady: function() {
             return isLoaded;
+        },
+
+        /**
+         * Formater une distance (km ou m)
+         * @param {number} distanceKm - Distance en kilometres
+         * @returns {string}
+         */
+        formatDistance: function(distanceKm) {
+            if (distanceKm < 1) {
+                return Math.round(distanceKm * 1000) + ' m';
+            }
+            return distanceKm.toFixed(1) + ' km';
+        },
+
+        /**
+         * Formater une duree (minutes ou heures)
+         * @param {number} minutes - Duree en minutes
+         * @returns {string}
+         */
+        formatDuration: function(minutes) {
+            if (minutes < 1) {
+                return '< 1 min';
+            }
+            if (minutes < 60) {
+                return Math.round(minutes) + ' min';
+            }
+            const hours = Math.floor(minutes / 60);
+            const mins = Math.round(minutes % 60);
+            if (mins === 0) {
+                return hours + 'h';
+            }
+            return hours + 'h ' + mins + 'min';
+        },
+
+        /**
+         * Formater un montant en devise
+         * @param {number} amount - Montant
+         * @param {string} currency - Code devise (defaut: MAD)
+         * @returns {string}
+         */
+        formatCurrency: function(amount, currency = 'MAD') {
+            const formatter = new Intl.NumberFormat(currentLang === 'fr' ? 'fr-MA' : 'en-US', {
+                style: 'currency',
+                currency: currency,
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            return formatter.format(amount);
+        },
+
+        /**
+         * Formater une date
+         * @param {Date|string|number} date - Date a formater
+         * @param {Object} options - Options Intl.DateTimeFormat
+         * @returns {string}
+         */
+        formatDate: function(date, options = {}) {
+            const d = date instanceof Date ? date : new Date(date);
+            const defaultOptions = {
+                dateStyle: 'medium',
+                ...options
+            };
+            return new Intl.DateTimeFormat(currentLang, defaultOptions).format(d);
+        },
+
+        /**
+         * Formater une heure
+         * @param {Date|string|number} date - Date/heure a formater
+         * @returns {string}
+         */
+        formatTime: function(date) {
+            const d = date instanceof Date ? date : new Date(date);
+            return new Intl.DateTimeFormat(currentLang, {
+                timeStyle: 'short'
+            }).format(d);
         }
     };
 
@@ -146,6 +221,11 @@
      * Fonction globale alias
      */
     window.t = window.__;
+
+    /**
+     * Alias I18n (avec majuscule) pour compatibilite
+     */
+    window.I18n = window.i18n;
 
     // Auto-initialiser si le DOM est pret
     if (document.readyState === 'loading') {

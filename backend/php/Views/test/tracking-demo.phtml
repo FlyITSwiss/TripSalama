@@ -1,0 +1,423 @@
+<?php
+/**
+ * TripSalama - Demo Tracking Page
+ * Test complet du système de tracking Uber-style
+ */
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>TripSalama - Test Tracking</title>
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tracker CSS -->
+    <link rel="stylesheet" href="<?= base_url('assets/css/uber-tracker.css') ?>">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0f;
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+            height: 100dvh;
+        }
+
+        #map {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+        }
+
+        /* Demo Controls */
+        .demo-controls {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 1001;
+            background: rgba(26, 26, 46, 0.95);
+            padding: 8px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .demo-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .demo-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .demo-btn.active {
+            background: #00D26A;
+            color: #0a0a0f;
+        }
+
+        .demo-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Route selector */
+        .route-selector {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1001;
+            background: rgba(26, 26, 46, 0.95);
+            padding: 12px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        .route-selector select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 8px 16px;
+            color: #ffffff;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .route-selector select option {
+            background: #1a1a2e;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <!-- Map -->
+    <div id="map"></div>
+
+    <!-- Demo Controls -->
+    <div class="demo-controls">
+        <button class="demo-btn" id="startBtn">▶ Démarrer</button>
+        <button class="demo-btn" id="pauseBtn" disabled>⏸ Pause</button>
+        <button class="demo-btn" id="stopBtn" disabled>⏹ Stop</button>
+    </div>
+
+    <!-- Route Selector -->
+    <div class="route-selector">
+        <select id="routeSelect">
+            <option value="casablanca">Casablanca Centre → Aéroport</option>
+            <option value="rabat">Rabat Agdal → Hay Riad</option>
+            <option value="marrakech">Marrakech Médina → Gueliz</option>
+        </select>
+    </div>
+
+    <!-- Tracking Panel -->
+    <div class="tracking-panel" id="trackingPanel">
+        <div class="tracking-panel-handle"></div>
+
+        <div class="tracking-status" id="trackingStatus">
+            <span class="tracking-status-dot"></span>
+            <span id="statusText">En attente</span>
+        </div>
+
+        <div class="tracking-eta">
+            <div>
+                <div class="tracking-eta-time" id="etaTime">--</div>
+                <div class="tracking-eta-label">minutes</div>
+            </div>
+            <div style="margin-left: auto; text-align: right;">
+                <div style="font-size: 20px; font-weight: 600;" id="distanceRemaining">-- km</div>
+                <div class="tracking-eta-label">restants</div>
+            </div>
+        </div>
+
+        <div class="tracking-progress">
+            <div class="tracking-progress-bar">
+                <div class="tracking-progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div class="tracking-progress-label">
+                <span id="progressPercent">0%</span>
+                <span id="speedDisplay">0 km/h</span>
+            </div>
+        </div>
+
+        <div class="tracking-speed-controls">
+            <span class="tracking-speed-label">Vitesse simulation:</span>
+            <button class="tracking-speed-btn active" data-speed="1">1x</button>
+            <button class="tracking-speed-btn" data-speed="2">2x</button>
+            <button class="tracking-speed-btn" data-speed="5">5x</button>
+            <button class="tracking-speed-btn" data-speed="10">10x</button>
+        </div>
+
+        <div class="tracking-driver">
+            <div class="tracking-driver-avatar">F</div>
+            <div class="tracking-driver-info">
+                <div class="tracking-driver-name">Fatima Benali</div>
+                <div class="tracking-driver-vehicle">Tesla Model 3 • Blanc • 12-A-456</div>
+            </div>
+            <div class="tracking-driver-rating">
+                <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                4.9
+            </div>
+        </div>
+
+        <div class="tracking-actions">
+            <button class="tracking-action-btn" id="centerBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Centrer
+            </button>
+            <button class="tracking-action-btn" id="callBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                </svg>
+                Appeler
+            </button>
+        </div>
+    </div>
+
+    <!-- Arrival Modal -->
+    <div class="tracking-arrival-modal" id="arrivalModal">
+        <div class="tracking-arrival-content">
+            <div class="tracking-arrival-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+            </div>
+            <div class="tracking-arrival-title">Vous êtes arrivé !</div>
+            <div class="tracking-arrival-subtitle">Trajet terminé en <span id="tripDuration">--</span> minutes</div>
+            <button class="tracking-arrival-btn" id="closeArrivalBtn">Terminer</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // AppConfig minimal
+        window.AppConfig = {
+            basePath: '',
+            apiPath: '/api',
+            lang: 'fr',
+            _debug: true,
+            debug: function(...args) { console.log('[TripSalama]', ...args); },
+            getLang: function() { return this.lang; }
+        };
+
+        // EventBus minimal
+        window.EventBus = {
+            events: {},
+            Events: {},
+            on: function(event, callback) {
+                if (!this.events[event]) this.events[event] = [];
+                this.events[event].push(callback);
+            },
+            emit: function(event, data) {
+                if (this.events[event]) {
+                    this.events[event].forEach(cb => cb(data));
+                }
+            }
+        };
+    </script>
+    <script src="<?= base_url('assets/js/modules/map-controller.js') ?>"></script>
+    <script src="<?= base_url('assets/js/modules/uber-style-tracker.js') ?>"></script>
+    <script>
+        // Routes prédéfinies (polylines encodées)
+        const routes = {
+            casablanca: {
+                name: 'Casablanca Centre → Aéroport',
+                // Route réelle Casablanca centre vers aéroport (encodée via OSRM)
+                polyline: 'mvqpFvkgwCdAiBdAuA~@cBz@_Bv@aBp@}Ar@cBj@uAh@{Ah@eBb@yAd@eBb@iBZ}A\\eBV_BXeBP_BReBL}ANeBJeBHeBFeBDeBBeBBgB@eB?eBAgBCeBEeBGeBI_BKeBMeBOeBQ_BSeBU}AW_BY_B[}A]_B_{Aa_Ba}Ac_Be}Ag_Bi}Ak_Bm}Ao_Bq{As_Bu{Aw_By{A{_B}zACeBEeBGeBIcBKeBMcBOcBQcBScBUcBWaBYaB[aB]_B_@_Ba@]c@]e@[g@Yi@Wk@Um@So@Qq@Os@Mt@Kv@Ix@Gz@E|@C~@A~@?B?',
+                center: [33.5731, -7.5898],
+                zoom: 12
+            },
+            rabat: {
+                name: 'Rabat Agdal → Hay Riad',
+                polyline: 'smqrF~aexCaAiBcAuAeAsBgAqBiAoBkAmBoAmBqAkBsAiBuAgBwAeByAcB{AaB}A_BA_BC}AE{AG{AIyAKwAMwAOuAQuASsAUsAWqAYqA[oA]oA_@mAa@mAc@kAe@kAgAqBiAoBkAmBmAkBoAiBqAgBsAeBuAcBwAaByA_B{A}A}A{AcBwAeBuAgBsAiBqAkBoAmBmAoBkAqBiAsBgAuBeAuBcAwBaAyB_AyB}@{B{@{By@}Bw@}Bu@_Cs@_Cq@aCo@aCm@aCk@cCi@cC',
+                center: [33.9716, -6.8498],
+                zoom: 13
+            },
+            marrakech: {
+                name: 'Marrakech Médina → Gueliz',
+                polyline: 'kineFhjbgDiAqBkAoBmAmBoAkBqAiBsAgBuAeBwAcByA_B{A}A}A{A_ByAaBwAcBuAeBsAgBqAiBnAkBoAmBmAoBkAqBiAsBgAuBeAwBcAyBaA{B_@{Ba@}B]_C[aC]_C_@}Aa@}Ac@{Ae@{AgAuBiAsBkAqBmAoBqAkBsAiBwA}AwA{AwAyAuAuAsAqAqAmAmAkAiAgAeAcAaA_@]Ye@Wg@Ui@Sk@Qm@Oo@Mq@Ks@I',
+                center: [31.6295, -7.9811],
+                zoom: 14
+            }
+        };
+
+        let currentRoute = 'casablanca';
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialiser la carte avec mode sombre
+            MapController.init('map', {
+                center: routes[currentRoute].center,
+                zoom: routes[currentRoute].zoom,
+                darkMode: true
+            });
+
+            // Initialiser le tracker
+            UberStyleTracker.init();
+
+            // Dessiner la route preview
+            drawRoutePreview();
+
+            // Event listeners
+            setupEventListeners();
+        });
+
+        function drawRoutePreview() {
+            const route = routes[currentRoute];
+            const points = MapController.decodePolyline(route.polyline);
+            MapController.drawRoute(points, { color: '#00D26A', weight: 5, opacity: 0.8 });
+            MapController.fitBounds(points, 80);
+
+            // Markers départ/arrivée
+            if (points.length > 0) {
+                MapController.addMarker('pickup', points[0][0], points[0][1], 'pickup', 'Départ');
+                MapController.addMarker('dropoff', points[points.length-1][0], points[points.length-1][1], 'dropoff', 'Arrivée');
+            }
+        }
+
+        function setupEventListeners() {
+            // Start
+            document.getElementById('startBtn').addEventListener('click', () => {
+                const route = routes[currentRoute];
+
+                UberStyleTracker.start(route.polyline, {
+                    onPositionUpdate: updateUI,
+                    onETAUpdate: updateETA,
+                    onArrival: handleArrival
+                });
+
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('pauseBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = false;
+                document.getElementById('statusText').textContent = 'En route';
+            });
+
+            // Pause
+            document.getElementById('pauseBtn').addEventListener('click', function() {
+                if (UberStyleTracker.isPaused()) {
+                    UberStyleTracker.resume();
+                    this.textContent = '⏸ Pause';
+                    document.getElementById('statusText').textContent = 'En route';
+                } else {
+                    UberStyleTracker.pause();
+                    this.textContent = '▶ Reprendre';
+                    document.getElementById('statusText').textContent = 'En pause';
+                }
+            });
+
+            // Stop
+            document.getElementById('stopBtn').addEventListener('click', () => {
+                UberStyleTracker.stop();
+                resetUI();
+            });
+
+            // Route selector
+            document.getElementById('routeSelect').addEventListener('change', (e) => {
+                currentRoute = e.target.value;
+                UberStyleTracker.stop();
+                MapController.clearRoute();
+                MapController.removeMarker('pickup');
+                MapController.removeMarker('dropoff');
+
+                const route = routes[currentRoute];
+                MapController.setCenter(route.center[0], route.center[1], route.zoom);
+                drawRoutePreview();
+                resetUI();
+            });
+
+            // Speed buttons
+            document.querySelectorAll('.tracking-speed-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.tracking-speed-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    UberStyleTracker.setSpeed(parseFloat(this.dataset.speed));
+                });
+            });
+
+            // Center button
+            document.getElementById('centerBtn').addEventListener('click', () => {
+                UberStyleTracker.centerOnVehicle(15);
+            });
+
+            // Close arrival modal
+            document.getElementById('closeArrivalBtn').addEventListener('click', () => {
+                document.getElementById('arrivalModal').classList.remove('active');
+                resetUI();
+            });
+        }
+
+        function updateUI(data) {
+            const stats = data.stats;
+
+            // Progress
+            document.getElementById('progressFill').style.width = stats.progress.toFixed(1) + '%';
+            document.getElementById('progressPercent').textContent = stats.progress.toFixed(1) + '%';
+
+            // Speed
+            document.getElementById('speedDisplay').textContent = Math.round(stats.currentSpeedKmh) + ' km/h';
+
+            // Distance
+            document.getElementById('distanceRemaining').textContent = (stats.distanceRemaining / 1000).toFixed(1) + ' km';
+        }
+
+        function updateETA(minutes, distance) {
+            document.getElementById('etaTime').textContent = minutes;
+        }
+
+        function handleArrival(stats) {
+            const duration = Math.round((Date.now() - stats.startTime) / 60000);
+            document.getElementById('tripDuration').textContent = duration;
+            document.getElementById('arrivalModal').classList.add('active');
+            document.getElementById('statusText').textContent = 'Arrivé !';
+            document.querySelector('.tracking-status').classList.add('arriving');
+        }
+
+        function resetUI() {
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('pauseBtn').textContent = '⏸ Pause';
+            document.getElementById('stopBtn').disabled = true;
+
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('progressPercent').textContent = '0%';
+            document.getElementById('speedDisplay').textContent = '0 km/h';
+            document.getElementById('distanceRemaining').textContent = '-- km';
+            document.getElementById('etaTime').textContent = '--';
+            document.getElementById('statusText').textContent = 'En attente';
+            document.querySelector('.tracking-status').classList.remove('arriving');
+
+            drawRoutePreview();
+        }
+    </script>
+</body>
+</html>

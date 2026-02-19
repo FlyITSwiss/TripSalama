@@ -15,7 +15,24 @@ const MapController = (function() {
     const defaultOptions = {
         center: [46.2044, 6.1432], // Geneve
         zoom: 13,
-        zoomControl: true
+        zoomControl: true,
+        darkMode: false // Mode sombre type Uber
+    };
+
+    // Fournisseurs de tuiles
+    const tileLayers = {
+        // OSM standard (clair)
+        light: {
+            url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            attribution: '&copy; OpenStreetMap',
+            subdomains: 'abc'
+        },
+        // CartoDB Dark Matter (sombre style Uber)
+        dark: {
+            url: 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png',
+            attribution: '&copy; OSM &copy; CARTO',
+            subdomains: 'abcd'
+        }
     };
 
     // Styles des markers
@@ -75,10 +92,12 @@ const MapController = (function() {
             zoomControl: config.zoomControl
         });
 
-        // Ajouter les tuiles OSM
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-            maxZoom: 19
+        // Choisir le layer selon le mode
+        const tileConfig = config.darkMode ? tileLayers.dark : tileLayers.light;
+        L.tileLayer(tileConfig.url, {
+            attribution: tileConfig.attribution,
+            maxZoom: 19,
+            subdomains: tileConfig.subdomains || 'abc'
         }).addTo(map);
 
         // Retirer le loading

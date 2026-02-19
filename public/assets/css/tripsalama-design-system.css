@@ -2257,3 +2257,122 @@ p {
 .delay-3 { animation-delay: 0.3s; }
 .delay-4 { animation-delay: 0.4s; }
 .delay-5 { animation-delay: 0.5s; }
+
+
+/* ============================================
+   PHI PREMIUM v3.0 - GLASSMORPHISM
+   ============================================ */
+
+:root {
+    --glass-blur-xs: 5px;
+    --glass-blur-sm: 8px;
+    --glass-blur-md: 13px;
+    --glass-blur-lg: 21px;
+    --glass-blur-xl: 34px;
+    --gradient-phi-emerald: linear-gradient(137.5deg, #1B6B54 0%, #1B4D3E 38.2%, #142A23 61.8%, #0D1A16 100%);
+    --gradient-phi-gold: linear-gradient(137.5deg, #F5E08A 0%, #D4A853 38.2%, #A67520 100%);
+    --anim-quick: 162ms;
+    --anim-normal: 262ms;
+    --anim-slow: 424ms;
+    --ease-phi: cubic-bezier(0.618, 0, 0.382, 1);
+    --ease-phi-bounce: cubic-bezier(0.34, 1.618, 0.64, 1);
+    --shadow-phi-md: 0 4px 13px rgba(27, 77, 62, 0.12), 0 0 34px rgba(212, 168, 83, 0.08);
+    --shadow-phi-lg: 0 8px 21px rgba(27, 77, 62, 0.16), 0 0 55px rgba(212, 168, 83, 0.1);
+    --glass-white: rgba(255, 255, 255, 0.618);
+    --glass-dark: rgba(13, 26, 22, 0.618);
+}
+
+.glass-card {
+    background: var(--glass-white);
+    backdrop-filter: blur(var(--glass-blur-lg));
+    -webkit-backdrop-filter: blur(var(--glass-blur-lg));
+    border: 1px solid rgba(255, 255, 255, 0.382);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-phi-md);
+    transition: all var(--anim-normal) var(--ease-phi);
+}
+.glass-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-phi-lg); }
+
+.glass-card-dark {
+    background: var(--glass-dark);
+    backdrop-filter: blur(var(--glass-blur-xl));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-xl);
+    color: #FFFFFF;
+}
+
+@keyframes phiPulse {
+    0%, 100% { transform: scale(1); }
+    38.2% { transform: scale(1.05); }
+    61.8% { transform: scale(0.98); }
+}
+
+@keyframes phiFloat {
+    0%, 100% { transform: translateY(0); }
+    38.2% { transform: translateY(-8px); }
+}
+
+@keyframes phiGlow {
+    0%, 100% { box-shadow: 0 0 13px rgba(212, 168, 83, 0.3); }
+    38.2% { box-shadow: 0 0 21px rgba(212, 168, 83, 0.5); }
+}
+
+@keyframes phiEnter {
+    0% { opacity: 0; transform: translateY(21px) scale(0.95); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-phi-enter { animation: phiEnter var(--anim-slow) var(--ease-phi) backwards; }
+.animate-phi-float { animation: phiFloat 3s var(--ease-phi) infinite; }
+.animate-phi-pulse { animation: phiPulse 2s var(--ease-phi) infinite; }
+.animate-phi-glow { animation: phiGlow 2.5s var(--ease-phi) infinite; }
+
+.phi-delay-1 { animation-delay: 55ms; }
+.phi-delay-2 { animation-delay: 110ms; }
+.phi-delay-3 { animation-delay: 165ms; }
+
+.btn-phi-premium {
+    background: var(--gradient-phi-emerald);
+    color: #FFFFFF;
+    padding: var(--space-3) var(--space-5);
+    border: none;
+    border-radius: var(--radius-lg);
+    font-weight: var(--font-weight-semibold);
+    transition: all var(--anim-quick) var(--ease-phi);
+    box-shadow: var(--shadow-phi-md);
+}
+.btn-phi-premium:hover { transform: translateY(-2px); box-shadow: var(--shadow-phi-lg); }
+
+.btn-phi-accent {
+    background: var(--gradient-phi-gold);
+    color: #2D2723;
+    padding: var(--space-3) var(--space-5);
+    border: none;
+    border-radius: var(--radius-lg);
+    font-weight: var(--font-weight-bold);
+    transition: all var(--anim-quick) var(--ease-phi-bounce);
+    box-shadow: 0 4px 21px rgba(212, 168, 83, 0.4);
+}
+.btn-phi-accent:hover { transform: translateY(-3px) scale(1.02); }
+
+.welcome-phi {
+    background: var(--gradient-phi-emerald);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-5);
+    color: #FFFFFF;
+    overflow: hidden;
+    animation: phiEnter var(--anim-slow) var(--ease-phi) backwards;
+}
+.welcome-phi-title {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    color: #ECCC4E !important;
+}
+
+.star-phi {
+    display: inline-block;
+    width: 21px;
+    height: 21px;
+    background: var(--gradient-phi-gold);
+    clip-path: polygon(50% 0%, 61.8% 38.2%, 100% 50%, 61.8% 61.8%, 50% 100%, 38.2% 61.8%, 0% 50%, 38.2% 38.2%);
+}

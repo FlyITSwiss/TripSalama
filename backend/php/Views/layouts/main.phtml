@@ -2,15 +2,29 @@
 <html lang="<?= $_SESSION['lang'] ?? 'fr' ?>">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#1B4D3E">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="theme-color" content="#2D5A4A">
     <meta name="description" content="<?= __('app.tagline') ?>">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TripSalama">
+    <meta name="application-name" content="TripSalama">
+    <meta name="msapplication-TileColor" content="#2D5A4A">
+    <meta name="msapplication-config" content="<?= asset_url('browserconfig.xml') ?>">
     <?= csrf_meta() ?>
 
     <title><?= $pageTitle ?? __('app.name') ?> - <?= __('app.name') ?></title>
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="<?= asset_url('images/logo.svg') ?>">
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="<?= base_url('manifest.json') ?>">
+
+    <!-- Favicon & App Icons -->
+    <link rel="icon" type="image/svg+xml" href="<?= asset_url('images/icons/icon.svg') ?>">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= asset_url('images/icons/icon-32x32.png') ?>">
+    <link rel="icon" type="image/png" sizes="16x16" href="<?= asset_url('images/icons/icon-16x16.png') ?>">
+    <link rel="apple-touch-icon" sizes="180x180" href="<?= asset_url('images/icons/apple-touch-icon.png') ?>">
+    <link rel="mask-icon" href="<?= asset_url('images/icons/safari-pinned-tab.svg') ?>" color="#2D5A4A">
 
     <!-- Leaflet CSS -->
     <?php if (!empty($includeMap)): ?>
@@ -44,10 +58,10 @@
 
     <?php if (is_authenticated()): ?>
     <!-- Header -->
-    <header class="app-header">
+    <header class="app-header glass-header">
         <div class="header-inner">
             <a href="<?= base_url(has_role('driver') ? 'driver/dashboard' : 'passenger/dashboard') ?>" class="logo">
-                <div class="logo-icon">T</div>
+                <img src="<?= asset_url('images/icons/icon.svg') ?>" alt="" style="width: 36px; height: 36px; border-radius: var(--radius-md);">
                 <span class="logo-text">Trip<span>Salama</span></span>
             </a>
 
@@ -132,7 +146,7 @@
 
         <?php if (is_authenticated()): ?>
         <!-- Mobile Navigation -->
-        <nav class="mobile-nav" aria-label="Navigation mobile">
+        <nav class="mobile-nav glass-header" aria-label="Navigation mobile">
             <div class="mobile-nav-inner">
                 <?php if (has_role('passenger')): ?>
                 <a href="<?= base_url('passenger/dashboard') ?>" class="nav-item <?= ($currentPage ?? '') === 'dashboard' ? 'active' : '' ?>">
@@ -200,6 +214,8 @@
     <script src="<?= versioned_asset('js/core/event-bus.js') ?>"></script>
     <script src="<?= versioned_asset('js/core/state-manager.js') ?>"></script>
     <script src="<?= versioned_asset('js/core/i18n.js') ?>"></script>
+    <script src="<?= versioned_asset('js/core/geolocation-service.js') ?>"></script>
+    <script src="<?= versioned_asset('js/core/tracking-service.js') ?>"></script>
 
     <!-- Components -->
     <script src="<?= versioned_asset('js/components/toast-notification.js') ?>"></script>
@@ -225,6 +241,44 @@
                 setTimeout(() => msg.remove(), 300);
             });
         }, 5000);
+    </script>
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('[App] Service Worker registered:', registration.scope);
+
+                        // Écouter les mises à jour
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // Nouvelle version disponible
+                                    if (typeof Toast !== 'undefined') {
+                                        Toast.info('Une mise à jour est disponible. Rafraîchissez la page.');
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch((error) => {
+                        console.warn('[App] Service Worker registration failed:', error);
+                    });
+
+                // Écouter les messages du Service Worker
+                navigator.serviceWorker.addEventListener('message', (event) => {
+                    if (event.data.type === 'SYNC_POSITIONS') {
+                        // Déclencher la synchronisation des positions
+                        if (typeof TrackingService !== 'undefined') {
+                            TrackingService.syncPendingPositions();
+                        }
+                    }
+                });
+            });
+        }
     </script>
 </body>
 </html>

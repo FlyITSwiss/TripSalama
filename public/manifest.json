@@ -1,0 +1,123 @@
+{
+    "name": "TripSalama",
+    "short_name": "TripSalama",
+    "description": "Voyagez en toute sérénité - Service de VTC réservé aux femmes",
+    "lang": "fr-MA",
+    "dir": "ltr",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "background_color": "#F8F6F3",
+    "theme_color": "#2D5A4A",
+    "categories": ["transportation", "travel", "lifestyle"],
+    "icons": [
+        {
+            "src": "/assets/images/icons/icon-72x72.png",
+            "sizes": "72x72",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/assets/images/icons/icon-96x96.png",
+            "sizes": "96x96",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/assets/images/icons/icon-128x128.png",
+            "sizes": "128x128",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/assets/images/icons/icon-144x144.png",
+            "sizes": "144x144",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/assets/images/icons/icon-152x152.png",
+            "sizes": "152x152",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/assets/images/icons/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/assets/images/icons/icon-384x384.png",
+            "sizes": "384x384",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/assets/images/icons/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/assets/images/screenshots/booking-mobile.png",
+            "sizes": "390x844",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "Réservation de course"
+        },
+        {
+            "src": "/assets/images/screenshots/tracking-mobile.png",
+            "sizes": "390x844",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "Suivi en temps réel"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Réserver une course",
+            "short_name": "Réserver",
+            "description": "Réserver une nouvelle course",
+            "url": "/passenger/book",
+            "icons": [
+                {
+                    "src": "/assets/images/icons/shortcut-book.png",
+                    "sizes": "96x96",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Mes courses",
+            "short_name": "Historique",
+            "description": "Voir l'historique des courses",
+            "url": "/passenger/history",
+            "icons": [
+                {
+                    "src": "/assets/images/icons/shortcut-history.png",
+                    "sizes": "96x96",
+                    "type": "image/png"
+                }
+            ]
+        }
+    ],
+    "share_target": {
+        "action": "/passenger/book",
+        "method": "GET",
+        "params": {
+            "title": "destination",
+            "text": "address",
+            "url": "url"
+        }
+    },
+    "handle_links": "preferred",
+    "launch_handler": {
+        "client_mode": "navigate-existing"
+    },
+    "prefer_related_applications": false,
+    "related_applications": []
+}

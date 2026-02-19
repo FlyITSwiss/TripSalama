@@ -9,7 +9,7 @@
 
     <title><?= __('auth.login') ?> - <?= __('app.name') ?></title>
 
-    <link rel="icon" type="image/svg+xml" href="<?= asset_url('images/logo.svg') ?>">
+    <link rel="icon" type="image/svg+xml" href="<?= asset_url('images/icons/icon.svg') ?>">
 
     <!-- Design System CSS (includes Google Fonts) -->
     <link rel="stylesheet" href="<?= versioned_asset('css/tripsalama-design-system.css') ?>">
@@ -28,11 +28,11 @@
         <!-- Moroccan Pattern Background -->
         <div class="auth-pattern"></div>
 
-        <div class="auth-card">
+        <div class="auth-card glass-card animate-phi-enter">
             <!-- Logo & Header -->
             <div class="auth-header">
                 <div class="auth-logo">
-                    <div class="logo-icon">T</div>
+                    <img src="<?= asset_url('images/icons/icon.svg') ?>" alt="TripSalama" class="logo-img" style="width: 80px; height: 80px; border-radius: var(--radius-xl);">
                 </div>
                 <h1 class="auth-title"><?= __('auth.welcome_back') ?></h1>
                 <p class="auth-subtitle"><?= __('app.tagline') ?></p>
@@ -103,7 +103,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-accent btn-lg btn-block">
+                <button type="submit" class="btn btn-phi-accent btn-lg btn-block">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
                         <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
                         <polyline points="10 17 15 12 10 7"/>

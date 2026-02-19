@@ -9,6 +9,10 @@ declare(strict_types=1);
 return [
     // Pages publiques
     'GET /' => ['AuthController', 'showLogin'],
+
+    // Demo et Tests (accessible sans auth pour presentation)
+    'GET /demo' => ['DemoController', 'tracking'],
+    'GET /test/tracking' => ['DemoController', 'trackingTest'],
     'GET /login' => ['AuthController', 'showLogin'],
     'GET /register' => ['AuthController', 'showRegisterChoice'],
     'GET /register/passenger' => ['AuthController', 'showRegisterPassenger'],
@@ -25,6 +29,7 @@ return [
     'GET /passenger/dashboard' => ['PassengerController', 'dashboard', 'auth' => true, 'role' => 'passenger'],
     'GET /passenger/book' => ['PassengerController', 'bookRide', 'auth' => true, 'role' => 'passenger'],
     'GET /passenger/ride/{id}' => ['PassengerController', 'trackRide', 'auth' => true, 'role' => 'passenger'],
+    'GET /passenger/demo/{id}' => ['PassengerController', 'demoRide', 'auth' => true, 'role' => 'passenger'],
     'GET /passenger/history' => ['PassengerController', 'history', 'auth' => true, 'role' => 'passenger'],
 
     // Dashboard conductrice (auth required)

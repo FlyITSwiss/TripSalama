@@ -6,10 +6,10 @@
 ?>
 
 <!-- Welcome Card -->
-<section class="welcome-card section" style="animation-delay: 0.05s;">
+<section class="welcome-phi section animate-phi-enter" style="animation-delay: 0.05s;">
     <div class="welcome-content">
         <p class="welcome-eyebrow"><?= __('auth.welcome_back') ?></p>
-        <h1 class="welcome-title"><?= htmlspecialchars($user['first_name']) ?> !</h1>
+        <h1 class="welcome-phi-title"><?= htmlspecialchars($user['first_name']) ?> !</h1>
         <p class="welcome-subtitle">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                 <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/>
@@ -22,11 +22,11 @@
 
 <!-- Stats Grid -->
 <section class="stats-grid section-tight">
-    <div class="stat-card">
+    <div class="stat-card glass-card animate-phi-enter phi-delay-1">
         <div class="stat-value"><?= $stats['total_rides'] ?? 0 ?></div>
         <div class="stat-label"><?= __('history.total_rides') ?></div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card glass-card animate-phi-enter">
         <div class="stat-value"><?= $stats['this_month'] ?? 0 ?></div>
         <div class="stat-label"><?= __('history.this_month') ?></div>
     </div>
@@ -52,7 +52,7 @@
                 <span class="text-body"><?= htmlspecialchars($activeRide['dropoff_address']) ?></span>
             </div>
         </div>
-        <a href="<?= base_url('passenger/ride/' . $activeRide['id']) ?>" class="btn btn-primary btn-block">
+        <a href="<?= base_url('passenger/ride/' . $activeRide['id']) ?>" class="btn btn-phi-premium btn-block">
             <?= __('ride.title') ?>
         </a>
     </div>
@@ -64,7 +64,7 @@
     <h2 class="text-overline mb-3"><?= __('nav.home') ?></h2>
 
     <div class="action-list">
-        <a href="<?= base_url('passenger/book') ?>" class="action-item">
+        <a href="<?= base_url('passenger/book') ?>" class="action-item glass-card animate-phi-enter phi-delay-2">
             <div class="action-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
@@ -81,7 +81,7 @@
             </svg>
         </a>
 
-        <a href="<?= base_url('passenger/history') ?>" class="action-item">
+        <a href="<?= base_url('passenger/history') ?>" class="action-item glass-card animate-phi-enter">
             <div class="action-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
@@ -97,7 +97,7 @@
             </svg>
         </a>
 
-        <a href="<?= base_url('profile') ?>" class="action-item">
+        <a href="<?= base_url('profile') ?>" class="action-item glass-card animate-phi-enter">
             <div class="action-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>

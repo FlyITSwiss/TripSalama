@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <!-- Gradient Principal - Angle d'Or 137.5 -->
+    <linearGradient id="phi-gradient" x1="0%" y1="0%" x2="100%" y2="100%" gradientTransform="rotate(137.5)">
+      <stop offset="0%" stop-color="#1B6B54"/>
+      <stop offset="38.2%" stop-color="#1B4D3E"/>
+      <stop offset="61.8%" stop-color="#142A23"/>
+      <stop offset="100%" stop-color="#0D1A16"/>
+    </linearGradient>
+
+    <!-- Gradient Or - Accent -->
+    <linearGradient id="gold-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F5E08A"/>
+      <stop offset="38.2%" stop-color="#D4A853"/>
+      <stop offset="100%" stop-color="#A67520"/>
+    </linearGradient>
+
+    <!-- Gradient Spirale -->
+    <linearGradient id="spiral-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="61.8%" stop-color="#F8F6F3" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#EBE5D8" stop-opacity="0.85"/>
+    </linearGradient>
+
+    <!-- Glow Effect -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Shadow -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#0D1A16" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background - Rounded Square (89px = Fibonacci) -->
+  <rect width="512" height="512" rx="89" ry="89" fill="url(#phi-gradient)"/>
+
+  <!-- Moroccan Pattern Overlay (subtle) -->
+  <g opacity="0.06">
+    <path d="M256 80 L432 256 L256 432 L80 256 Z" fill="none" stroke="#FFFFFF" stroke-width="1"/>
+    <path d="M256 130 L382 256 L256 382 L130 256 Z" fill="none" stroke="#FFFFFF" stroke-width="0.5"/>
+    <path d="M256 180 L332 256 L256 332 L180 256 Z" fill="none" stroke="#FFFFFF" stroke-width="0.5"/>
+  </g>
+
+  <!-- Main Symbol: Spirale formant un S avec arche marocaine -->
+  <g filter="url(#shadow)">
+    <!-- Arche Marocaine Externe (cadre) -->
+    <path
+      d="M 140 380 L 140 220 Q 140 100, 256 100 Q 372 100, 372 220 L 372 380"
+      fill="none"
+      stroke="url(#gold-gradient)"
+      stroke-width="8"
+      stroke-linecap="round"
+      opacity="0.4"
+    />
+
+    <!-- Spirale de Fibonacci / S stylise -->
+    <g filter="url(#glow)">
+      <!-- Arc superieur du S (spirale entrante) -->
+      <path
+        d="M 310 160 Q 360 160, 360 210 Q 360 270, 256 270"
+        fill="none"
+        stroke="url(#spiral-gradient)"
+        stroke-width="34"
+        stroke-linecap="round"
+      />
+
+      <!-- Arc central (connexion phi) -->
+      <path
+        d="M 256 270 Q 200 270, 200 310 Q 200 350, 256 350"
+        fill="none"
+        stroke="url(#spiral-gradient)"
+        stroke-width="34"
+        stroke-linecap="round"
+      />
+
+      <!-- Arc inferieur du S (spirale sortante) -->
+      <path
+        d="M 256 350 Q 340 350, 340 390 Q 340 430, 256 430"
+        fill="none"
+        stroke="url(#spiral-gradient)"
+        stroke-width="26"
+        stroke-linecap="round"
+      />
+
+      <!-- Point de depart - Debut du voyage -->
+      <circle cx="310" cy="160" r="21" fill="url(#gold-gradient)"/>
+
+      <!-- Point d arrivee - Destination sure (Salama) -->
+      <circle cx="256" cy="430" r="17" fill="url(#gold-gradient)"/>
+    </g>
+  </g>
+
+  <!-- Accent decoratif - Etoile marocaine miniature -->
+  <g transform="translate(410, 90)" opacity="0.8">
+    <path
+      d="M 0 -21 L 6 -6 L 21 0 L 6 6 L 0 21 L -6 6 L -21 0 L -6 -6 Z"
+      fill="url(#gold-gradient)"
+    />
+  </g>
+
+  <!-- Petits accents dores (constellation phi) -->
+  <circle cx="100" cy="420" r="8" fill="url(#gold-gradient)" opacity="0.5"/>
+  <circle cx="85" cy="385" r="5" fill="url(#gold-gradient)" opacity="0.3"/>
+</svg>

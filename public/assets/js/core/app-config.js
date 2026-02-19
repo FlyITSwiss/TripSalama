@@ -18,7 +18,7 @@
         apiPath: config.apiPath || '/api',
         lang: config.lang || 'fr',
         csrfToken: config.csrfToken || '',
-        debug: config.debug || false,
+        _debug: config.debug || false,
 
         /**
          * Generer une URL complete
@@ -83,9 +83,17 @@
          * @param {...any} args - Arguments a logger
          */
         log: function(...args) {
-            if (this.debug) {
+            if (this._debug) {
                 console.log('[TripSalama]', ...args);
             }
+        },
+
+        /**
+         * Alias pour log() - utilise pour la compatibilite
+         * @param {...any} args - Arguments a logger
+         */
+        debug: function(...args) {
+            this.log(...args);
         },
 
         /**
@@ -118,6 +126,14 @@
          */
         isDesktop: function() {
             return window.innerWidth >= 838;
+        },
+
+        /**
+         * Obtenir la langue courante
+         * @returns {string}
+         */
+        getLang: function() {
+            return this.lang;
         }
     };
 

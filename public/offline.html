@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2D5A4A">
+    <title>Hors ligne - TripSalama</title>
+    <style>
+        :root {
+            --primary: #2D5A4A;
+            --primary-light: #3D7A6A;
+            --accent: #C9A962;
+            --background: #F8F6F3;
+            --text: #1A1A1A;
+            --text-muted: #6B7280;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .offline-container {
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .offline-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 32px;
+            color: var(--primary);
+            opacity: 0.8;
+        }
+
+        .offline-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+
+        p {
+            font-size: 16px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .retry-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            background: var(--primary);
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .retry-btn:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        .retry-btn:active {
+            transform: translateY(0);
+        }
+
+        .retry-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .logo {
+            position: absolute;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: var(--primary);
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--primary);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', Georgia, serif;
+            font-weight: 700;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .logo-text span {
+            color: var(--accent);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --background: #1A1A1A;
+                --text: #F8F6F3;
+                --text-muted: #9CA3AF;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="logo">
+        <div class="logo-icon">T</div>
+        <span class="logo-text">Trip<span>Salama</span></span>
+    </a>
+
+    <div class="offline-container">
+        <div class="offline-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M8.111 16.404a5.5 5.5 0 0 1 7.778 0M12 20h.01M1 1l22 22"/>
+                <path d="M16.72 11.06c.973.343 1.896.86 2.722 1.538M5.06 12.598a10.464 10.464 0 0 1 2.722-1.538"/>
+                <path d="M10.71 5.05A15.95 15.95 0 0 1 12 5c4.478 0 8.585 1.73 11.617 4.555M1.394 9.555a15.89 15.89 0 0 1 5.617-3.505"/>
+            </svg>
+        </div>
+
+        <h1>Vous êtes hors ligne</h1>
+
+        <p>
+            Impossible de se connecter à Internet. Vérifiez votre connexion et réessayez.
+        </p>
+
+        <button class="retry-btn" onclick="window.location.reload()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 4v6h-6"/>
+                <path d="M1 20v-6h6"/>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/>
+                <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/>
+            </svg>
+            Réessayer
+        </button>
+    </div>
+
+    <script>
+        // Vérifier la connexion périodiquement
+        setInterval(() => {
+            fetch('/', { method: 'HEAD' })
+                .then(() => window.location.reload())
+                .catch(() => {});
+        }, 5000);
+    </script>
+</body>
+</html>

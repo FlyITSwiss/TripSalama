@@ -103,6 +103,44 @@ class PassengerController
     }
 
     /**
+     * Demo simulation de course (workflow complet)
+     */
+    public function demoRide(string $id): void
+    {
+        $rideId = (int)$id;
+        $user = current_user();
+
+        $rideModel = new Ride($this->db);
+        $ride = $rideModel->findById($rideId);
+
+        // Si pas de ride trouvé, créer des données demo
+        if (!$ride) {
+            $ride = [
+                'id' => 0,
+                'pickup_lat' => 33.5731,
+                'pickup_lng' => -7.5898,
+                'pickup_address' => 'Casablanca Centre',
+                'dropoff_lat' => 33.5891,
+                'dropoff_lng' => -7.6114,
+                'dropoff_address' => 'Anfa, Casablanca',
+                'route_polyline' => '',
+                'estimated_distance_km' => 5.2,
+                'estimated_duration_min' => 12,
+                'estimated_price' => 28.50,
+                'status' => 'accepted',
+            ];
+        }
+
+        $this->render('passenger/ride-demo', [
+            'pageTitle' => __('demo.title'),
+            'currentPage' => 'ride',
+            'includeMap' => true,
+            'ride' => $ride,
+            'pageJs' => ['modules/map-controller.js', 'modules/uber-style-tracker.js'],
+        ]);
+    }
+
+    /**
      * Rendre une vue
      */
     private function render(string $view, array $data = []): void

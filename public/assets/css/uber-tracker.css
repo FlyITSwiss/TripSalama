@@ -1,0 +1,611 @@
+/**
+ * TripSalama - Uber Style Tracker CSS
+ * Styles pour le tracking véhicule niveau Uber
+ * Mobile-first, 60fps optimisé
+ */
+
+/* ============================================
+   VEHICLE MARKER
+   ============================================ */
+
+.uber-vehicle-icon {
+    background: transparent !important;
+    border: none !important;
+}
+
+.uber-vehicle-marker {
+    width: 50px;
+    height: 50px;
+    transition: transform 0.15s ease-out;
+    will-change: transform;
+    transform-origin: center center;
+}
+
+.uber-vehicle-marker svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+/* Animation pulse pour le véhicule */
+@keyframes vehiclePulse {
+    0%, 100% {
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+    }
+    50% {
+        filter: drop-shadow(0 4px 12px rgba(0, 210, 106, 0.4));
+    }
+}
+
+.uber-vehicle-marker.arriving svg {
+    animation: vehiclePulse 1.5s ease-in-out infinite;
+}
+
+/* ============================================
+   TRACKING PANEL (Bottom Sheet Mobile)
+   ============================================ */
+
+.tracking-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, rgba(26, 26, 46, 0.98) 0%, rgba(26, 26, 46, 1) 100%);
+    border-radius: 24px 24px 0 0;
+    padding: 16px 20px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0));
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    transform: translateY(0);
+    transition: transform 0.3s ease-out;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+.tracking-panel.collapsed {
+    transform: translateY(calc(100% - 80px));
+}
+
+/* Handle de glissement */
+.tracking-panel-handle {
+    width: 40px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+    cursor: grab;
+}
+
+.tracking-panel-handle:active {
+    cursor: grabbing;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* ============================================
+   ETA DISPLAY
+   ============================================ */
+
+.tracking-eta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.tracking-eta-time {
+    font-size: 48px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+}
+
+.tracking-eta-label {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tracking-eta-unit {
+    font-size: 18px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    margin-left: 4px;
+}
+
+/* ============================================
+   PROGRESS BAR
+   ============================================ */
+
+.tracking-progress {
+    margin-bottom: 16px;
+}
+
+.tracking-progress-bar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+.tracking-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00D26A 0%, #00E676 100%);
+    border-radius: 3px;
+    transition: width 0.5s ease-out;
+    position: relative;
+}
+
+.tracking-progress-fill::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    background: #00D26A;
+    border-radius: 50%;
+    box-shadow: 0 0 12px rgba(0, 210, 106, 0.6);
+}
+
+.tracking-progress-label {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* ============================================
+   DRIVER INFO
+   ============================================ */
+
+.tracking-driver {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    margin-bottom: 12px;
+}
+
+.tracking-driver-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2D5A4A 0%, #1a3a2e 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #00D26A;
+    font-weight: 600;
+    font-size: 18px;
+    overflow: hidden;
+}
+
+.tracking-driver-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tracking-driver-info {
+    flex: 1;
+}
+
+.tracking-driver-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 2px;
+}
+
+.tracking-driver-vehicle {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.tracking-driver-rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    color: #FFD700;
+}
+
+.tracking-driver-rating svg {
+    width: 14px;
+    height: 14px;
+    fill: #FFD700;
+}
+
+/* ============================================
+   ACTION BUTTONS
+   ============================================ */
+
+.tracking-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.tracking-action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tracking-action-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.tracking-action-btn:active {
+    transform: scale(0.98);
+}
+
+.tracking-action-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.tracking-action-btn.primary {
+    background: #00D26A;
+    color: #0a0a0f;
+}
+
+.tracking-action-btn.primary:hover {
+    background: #00E676;
+}
+
+.tracking-action-btn.danger {
+    background: rgba(239, 68, 68, 0.2);
+    color: #EF4444;
+}
+
+.tracking-action-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.3);
+}
+
+/* ============================================
+   SPEED CONTROLS (Demo mode)
+   ============================================ */
+
+.tracking-speed-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    margin-bottom: 12px;
+}
+
+.tracking-speed-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-right: auto;
+}
+
+.tracking-speed-btn {
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tracking-speed-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.tracking-speed-btn.active {
+    background: #00D26A;
+    color: #0a0a0f;
+}
+
+/* ============================================
+   STATUS INDICATOR
+   ============================================ */
+
+.tracking-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(0, 210, 106, 0.15);
+    border-radius: 20px;
+    font-size: 13px;
+    color: #00D26A;
+    margin-bottom: 12px;
+}
+
+.tracking-status-dot {
+    width: 8px;
+    height: 8px;
+    background: #00D26A;
+    border-radius: 50%;
+    animation: statusPulse 2s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(0.8);
+    }
+}
+
+.tracking-status.arriving {
+    background: rgba(255, 215, 0, 0.15);
+    color: #FFD700;
+}
+
+.tracking-status.arriving .tracking-status-dot {
+    background: #FFD700;
+}
+
+/* ============================================
+   MAP OVERLAY
+   ============================================ */
+
+.tracking-map-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 16px;
+    padding-top: calc(16px + env(safe-area-inset-top, 0));
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
+    z-index: 500;
+}
+
+.tracking-back-btn {
+    width: 44px;
+    height: 44px;
+    background: rgba(26, 26, 46, 0.9);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.tracking-back-btn:hover {
+    background: rgba(26, 26, 46, 1);
+    transform: scale(1.05);
+}
+
+.tracking-back-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Center on vehicle button */
+.tracking-center-btn {
+    position: absolute;
+    bottom: 200px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+    background: rgba(26, 26, 46, 0.95);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 500;
+}
+
+.tracking-center-btn:hover {
+    background: #1a1a2e;
+    color: #00D26A;
+}
+
+.tracking-center-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* ============================================
+   ARRIVAL MODAL
+   ============================================ */
+
+.tracking-arrival-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.tracking-arrival-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.tracking-arrival-content {
+    background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
+    border-radius: 24px;
+    padding: 32px;
+    text-align: center;
+    max-width: 320px;
+    margin: 20px;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.tracking-arrival-modal.active .tracking-arrival-content {
+    transform: scale(1);
+}
+
+.tracking-arrival-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #00D26A 0%, #00E676 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    animation: arrivalBounce 0.6s ease;
+}
+
+@keyframes arrivalBounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.tracking-arrival-icon svg {
+    width: 40px;
+    height: 40px;
+    color: #0a0a0f;
+}
+
+.tracking-arrival-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 8px;
+}
+
+.tracking-arrival-subtitle {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 24px;
+}
+
+.tracking-arrival-btn {
+    width: 100%;
+    padding: 16px;
+    background: #00D26A;
+    border: none;
+    border-radius: 12px;
+    color: #0a0a0f;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tracking-arrival-btn:hover {
+    background: #00E676;
+}
+
+/* ============================================
+   MOBILE OPTIMIZATIONS
+   ============================================ */
+
+@media (max-width: 480px) {
+    .tracking-panel {
+        padding: 12px 16px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0));
+    }
+
+    .tracking-eta-time {
+        font-size: 40px;
+    }
+
+    .tracking-driver {
+        padding: 10px;
+    }
+
+    .tracking-driver-avatar {
+        width: 40px;
+        height: 40px;
+    }
+
+    .tracking-action-btn {
+        padding: 12px 16px;
+        font-size: 13px;
+    }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    .uber-vehicle-marker {
+        transition: none;
+    }
+
+    .tracking-progress-fill {
+        transition: none;
+    }
+
+    .tracking-status-dot,
+    .uber-vehicle-marker.arriving svg {
+        animation: none;
+    }
+}
+
+/* ============================================
+   DARK MAP INTEGRATION
+   ============================================ */
+
+/* Masquer l'attribution Leaflet */
+.leaflet-control-attribution {
+    display: none !important;
+}
+
+/* Style des contrôles de zoom pour carte sombre */
+.leaflet-control-zoom {
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    border-radius: 12px !important;
+    overflow: hidden;
+}
+
+.leaflet-control-zoom a {
+    background: rgba(26, 26, 46, 0.95) !important;
+    color: #ffffff !important;
+    border: none !important;
+    width: 40px !important;
+    height: 40px !important;
+    line-height: 40px !important;
+    font-size: 18px !important;
+}
+
+.leaflet-control-zoom a:hover {
+    background: #1a1a2e !important;
+    color: #00D26A !important;
+}
+
+.leaflet-control-zoom-in {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}

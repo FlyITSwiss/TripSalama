@@ -51,11 +51,30 @@
         "profile": "Mon profil",
         "settings": "Paramètres"
     },
+    "booking": {
+        "title": "Réserver une course",
+        "pickup": "Point de départ",
+        "dropoff": "Destination",
+        "pickup_placeholder": "Rechercher une adresse...",
+        "dropoff_placeholder": "Où allez-vous ?",
+        "estimate": "Estimer le trajet",
+        "confirm_ride": "Confirmer la course",
+        "price": "Prix estimé",
+        "duration": "Durée estimée",
+        "distance": "Distance",
+        "my_location": "Ma position actuelle",
+        "no_results": "Aucun résultat trouvé",
+        "detecting_location": "Détection de votre position...",
+        "location_found": "Position détectée",
+        "change_location": "Modifier le point de départ",
+        "use_current_location": "Utiliser ma position actuelle",
+        "position_accuracy": "Précision : :meters m"
+    },
     "ride": {
         "book": "Réserver une course",
         "pickup": "Point de départ",
         "dropoff": "Destination",
-        "pickup_placeholder": "D'où partez-vous ?",
+        "pickup_placeholder": "Rechercher une adresse...",
         "dropoff_placeholder": "Où allez-vous ?",
         "estimated_price": "Prix estimé",
         "estimated_time": "Durée estimée",
@@ -68,7 +87,24 @@
         "completed": "Course terminée",
         "cancelled": "Course annulée",
         "rate_ride": "Noter cette course",
+        "rate_driver": "Noter votre conductrice",
+        "comment": "Commentaire (optionnel)",
+        "submit_rating": "Envoyer la note",
         "history": "Historique des courses"
+    },
+    "geolocation": {
+        "detecting": "Détection de votre position...",
+        "detected": "Position détectée",
+        "change": "Modifier le point de départ",
+        "use_current": "Utiliser ma position actuelle",
+        "accuracy": "Précision : :meters m",
+        "permission_denied": "Veuillez autoriser l'accès à votre position",
+        "unavailable": "Service de localisation indisponible",
+        "timeout": "Délai de localisation dépassé",
+        "unsupported": "Votre navigateur ne supporte pas la géolocalisation",
+        "error": "Impossible d'obtenir votre position",
+        "watching": "Suivi de position activé",
+        "stopped": "Suivi de position arrêté"
     },
     "driver": {
         "dashboard": "Tableau de bord",
@@ -125,6 +161,10 @@
         "hours": ":count h",
         "just_now": "À l'instant",
         "ago": "Il y a :time"
+    },
+    "demo": {
+        "title": "Démo de suivi en temps réel",
+        "geo_unsupported": "Géolocalisation non supportée sur ce navigateur"
     },
     "verification": {
         "title": "Vérification d'identité",

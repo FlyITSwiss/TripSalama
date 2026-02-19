@@ -25,7 +25,16 @@ module.exports = {
     timeout: {
         navigation: 30000,
         element: 10000,
-        action: 5000
+        action: 5000,
+        animation: 500
+    },
+
+    // Alias pour compatibilité
+    timeouts: {
+        navigation: 30000,
+        element: 10000,
+        action: 5000,
+        animation: 500
     },
 
     // Utilisateurs de test
@@ -38,6 +47,15 @@ module.exports = {
             email: 'khadija@example.com',
             password: 'Test1234!'
         }
+    },
+
+    // Sélecteurs communs
+    selectors: {
+        loginForm: '#loginForm, form[action*="login"]',
+        emailInput: '#email, input[name="email"]',
+        passwordInput: '#password, input[name="password"]',
+        submitBtn: 'button[type="submit"]',
+        toast: '.toast, .flash, .notification'
     },
 
     // Helpers

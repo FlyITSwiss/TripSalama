@@ -6,10 +6,10 @@
 ?>
 
 <!-- Welcome Card with Status -->
-<section class="welcome-card section" style="animation-delay: 0.05s;">
+<section class="welcome-phi section animate-phi-enter" style="animation-delay: 0.05s;">
     <div class="welcome-content">
         <p class="welcome-eyebrow"><?= __('auth.welcome_back') ?></p>
-        <h1 class="welcome-title"><?= htmlspecialchars($user['first_name']) ?> !</h1>
+        <h1 class="welcome-phi-title"><?= htmlspecialchars($user['first_name']) ?> !</h1>
         <p class="welcome-subtitle">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                 <path d="M5 17h14v-6h-4l-2-4H9l-2 4H5v6z"/>
@@ -22,7 +22,7 @@
 </section>
 
 <!-- Driver Status Toggle -->
-<section class="card section" style="animation-delay: 0.1s;">
+<section class="card glass-card section animate-phi-enter" style="animation-delay: 0.1s;">
     <div class="card-body-compact">
         <div class="driver-status-row">
             <div class="driver-status-info">
@@ -56,11 +56,11 @@
 
 <!-- Stats Grid -->
 <section class="stats-grid section-tight">
-    <div class="stat-card">
+    <div class="stat-card glass-card animate-phi-enter">
         <div class="stat-value"><?= $stats['total_rides'] ?? 0 ?></div>
         <div class="stat-label"><?= __('history.total_rides') ?></div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card glass-card animate-phi-enter">
         <div class="stat-value"><?= $stats['this_month'] ?? 0 ?></div>
         <div class="stat-label"><?= __('history.this_month') ?></div>
     </div>
@@ -68,7 +68,7 @@
 
 <?php if ($activeRide): ?>
 <!-- Active Ride Card -->
-<section class="card section" style="animation-delay: 0.15s;">
+<section class="card glass-card section animate-phi-enter" style="animation-delay: 0.15s;">
     <div class="card-header flex justify-between items-center">
         <h3 class="text-title"><?= __('ride.title') ?></h3>
         <span class="badge badge-<?= $activeRide['status'] === 'in_progress' ? 'success' : 'warning' ?>">
@@ -171,7 +171,7 @@
 
 <?php if ($vehicle): ?>
 <!-- Vehicle Card -->
-<section class="card section" style="animation-delay: 0.2s;">
+<section class="card glass-card section animate-phi-enter" style="animation-delay: 0.2s;">
     <div class="card-body-compact">
         <h2 class="text-title mb-4"><?= __('vehicle.title') ?></h2>
 

@@ -1,28 +1,32 @@
 /**
  * TripSalama - Booking Module
- * Gestion de la reservation de course
+ * Gestion de la réservation de course
+ * Avec géolocalisation automatique et modification de position
  */
 
 'use strict';
 
 const Booking = (function() {
-    // Elements DOM
+    // Éléments DOM
     let pickupInput, dropoffInput;
     let pickupDropdown, dropoffDropdown;
     let estimationCard, confirmBtn;
-    let locateMeBtn;
+    let locateMeBtn, quickLocateBtn;
+    let pickupStatusIndicator;
 
-    // Etat
+    // État
     let pickup = null;
     let dropoff = null;
     let routeData = null;
     let searchTimeout = null;
+    let isAutoLocating = false;
+    let hasAutoLocated = false;
 
     /**
      * Initialiser le module
      */
     function init() {
-        // Elements
+        // Éléments
         pickupInput = document.getElementById('pickupInput');
         dropoffInput = document.getElementById('dropoffInput');
         pickupDropdown = document.getElementById('pickupDropdown');
@@ -30,25 +34,37 @@ const Booking = (function() {
         estimationCard = document.getElementById('estimationCard');
         confirmBtn = document.getElementById('confirmBtn');
         locateMeBtn = document.getElementById('locateMeBtn');
+        quickLocateBtn = document.getElementById('quickLocateBtn');
+        pickupStatusIndicator = document.getElementById('pickupStatusIndicator');
 
         if (!pickupInput || !dropoffInput) {
             AppConfig.debug('Booking: Required elements not found');
             return;
         }
 
-        // Initialiser la carte
+        // Initialiser la carte avec style sombre type Uber
         MapController.init('map', {
             center: window.BookingConfig?.defaultCenter || [46.2044, 6.1432],
-            zoom: window.BookingConfig?.defaultZoom || 13
+            zoom: window.BookingConfig?.defaultZoom || 13,
+            darkMode: true
         });
 
         // Event listeners
         setupAutocomplete(pickupInput, pickupDropdown, 'pickup');
         setupAutocomplete(dropoffInput, dropoffDropdown, 'dropoff');
 
-        locateMeBtn.addEventListener('click', handleLocateMe);
+        if (locateMeBtn) {
+            locateMeBtn.addEventListener('click', handleLocateMe);
+        }
+
+        if (quickLocateBtn) {
+            quickLocateBtn.addEventListener('click', handleLocateMe);
+        }
 
         document.getElementById('bookingForm').addEventListener('submit', handleSubmit);
+
+        // Permettre de modifier la position en cliquant sur l'input même si déjà géolocalisé
+        pickupInput.addEventListener('focus', handlePickupFocus);
 
         // Fermer les dropdowns en cliquant ailleurs
         document.addEventListener('click', (e) => {
@@ -60,7 +76,226 @@ const Booking = (function() {
             }
         });
 
+        // Écouter les événements de géolocalisation
+        setupGeoLocationEvents();
+
+        // Géolocalisation automatique au chargement
+        autoLocateOnLoad();
+
         AppConfig.debug('Booking module initialized');
+    }
+
+    /**
+     * Configurer les événements de géolocalisation
+     */
+    function setupGeoLocationEvents() {
+        if (typeof EventBus !== 'undefined') {
+            EventBus.on(EventBus.Events.GEO_DETECTING, () => {
+                showPickupStatus('detecting');
+            });
+
+            EventBus.on(EventBus.Events.GEO_ERROR, (error) => {
+                showPickupStatus('error', error.message);
+            });
+        }
+    }
+
+    /**
+     * Géolocalisation automatique au chargement
+     */
+    async function autoLocateOnLoad() {
+        if (hasAutoLocated) return;
+
+        // Vérifier si la géolocalisation est supportée
+        if (!GeoLocationService.isSupported()) {
+            AppConfig.debug('Geolocation not supported');
+            return;
+        }
+
+        // Vérifier les permissions
+        const permission = await GeoLocationService.checkPermission();
+
+        if (permission === 'denied') {
+            AppConfig.debug('Geolocation permission denied');
+            return;
+        }
+
+        // Lancer la géolocalisation automatique
+        isAutoLocating = true;
+        showPickupStatus('detecting');
+
+        try {
+            // D'abord une position rapide
+            const quickPos = await GeoLocationService.getQuickPosition();
+            await setPickupFromPosition(quickPos, true);
+
+            // Puis une position précise en arrière-plan
+            GeoLocationService.getHighAccuracyPosition().then(async (precisePos) => {
+                if (precisePos.accuracy < quickPos.accuracy) {
+                    await setPickupFromPosition(precisePos, false);
+                }
+            }).catch(() => {
+                // Ignorer - on garde la position rapide
+            });
+
+        } catch (error) {
+            AppConfig.debug('Auto-location failed:', error);
+            showPickupStatus('error', error.message);
+        } finally {
+            isAutoLocating = false;
+            hasAutoLocated = true;
+        }
+    }
+
+    /**
+     * Définir le point de départ depuis une position GPS
+     */
+    async function setPickupFromPosition(position, showLoader = true) {
+        if (showLoader) {
+            showPickupStatus('detecting');
+        }
+
+        try {
+            // Reverse geocoding
+            const address = await GeoLocationService.reverseGeocode(position.lat, position.lng);
+
+            selectLocation('pickup', {
+                lat: position.lat,
+                lng: position.lng,
+                name: address.displayName,
+                shortName: address.shortName,
+                accuracy: position.accuracy
+            });
+
+            showPickupStatus('found', null, position.accuracy);
+
+            // Afficher le marqueur utilisateur
+            MapController.addMarker('user', position.lat, position.lng, 'user');
+            MapController.setCenter(position.lat, position.lng, 15);
+
+        } catch (error) {
+            showPickupStatus('error', getText('geolocation.error'));
+            throw error;
+        }
+    }
+
+    /**
+     * Obtenir une traduction avec fallback sur BookingConfig.i18n
+     */
+    function getText(key, params = {}) {
+        // Essayer I18n si disponible et prêt
+        if (typeof I18n !== 'undefined' && I18n.isReady && I18n.isReady()) {
+            return I18n.t(key, params);
+        }
+
+        // Fallback sur BookingConfig.i18n (défini dans le PHP) ou I18n global
+        const config = window.BookingConfig?.i18n || {};
+        const i18n = window.I18n;
+        const keyMap = {
+            'geolocation.detecting': config.detectingLocation || (i18n?.t('geolocation.detecting') ?? key),
+            'geolocation.detected': config.locationFound || (i18n?.t('geolocation.detected') ?? key),
+            'geolocation.accuracy': config.positionAccuracy || (i18n?.t('geolocation.accuracy') ?? key),
+            'geolocation.error': config.geolocationError || (i18n?.t('geolocation.error') ?? key),
+            'geolocation.use_current': config.useCurrentLocation || (i18n?.t('geolocation.use_current') ?? key)
+        };
+
+        let text = keyMap[key] || key;
+
+        // Remplacer les paramètres :param
+        for (const [param, val] of Object.entries(params)) {
+            text = text.replace(new RegExp(':' + param, 'g'), String(val));
+        }
+
+        return text;
+    }
+
+    /**
+     * Afficher le statut du point de départ
+     */
+    function showPickupStatus(status, message = null, accuracy = null) {
+        if (!pickupStatusIndicator) return;
+
+        pickupStatusIndicator.classList.remove('hidden', 'detecting', 'found', 'error');
+
+        switch (status) {
+            case 'detecting':
+                pickupStatusIndicator.classList.add('detecting');
+                pickupStatusIndicator.innerHTML = `
+                    <span class="status-spinner"></span>
+                    <span class="status-text">${getText('geolocation.detecting')}</span>
+                `;
+                pickupStatusIndicator.classList.remove('hidden');
+                break;
+
+            case 'found':
+                pickupStatusIndicator.classList.add('found');
+                const accuracyText = accuracy ? getText('geolocation.accuracy', { meters: Math.round(accuracy) }) : '';
+                pickupStatusIndicator.innerHTML = `
+                    <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                    <span class="status-text">${getText('geolocation.detected')}</span>
+                    ${accuracyText ? `<span class="status-accuracy">${accuracyText}</span>` : ''}
+                `;
+                pickupStatusIndicator.classList.remove('hidden');
+
+                // Masquer après 3 secondes
+                setTimeout(() => {
+                    pickupStatusIndicator.classList.add('hidden');
+                }, 3000);
+                break;
+
+            case 'error':
+                pickupStatusIndicator.classList.add('error');
+                pickupStatusIndicator.innerHTML = `
+                    <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span class="status-text">${message || getText('geolocation.error')}</span>
+                `;
+                pickupStatusIndicator.classList.remove('hidden');
+                break;
+
+            default:
+                pickupStatusIndicator.classList.add('hidden');
+        }
+    }
+
+    /**
+     * Gérer le focus sur l'input pickup
+     * Permet de modifier la position même après géolocalisation
+     */
+    function handlePickupFocus() {
+        // Sélectionner tout le texte pour faciliter la modification
+        pickupInput.select();
+
+        // Si une position est définie, proposer de la modifier
+        if (pickup && pickupDropdown) {
+            // Afficher une option pour utiliser la position actuelle
+            pickupDropdown.innerHTML = `
+                <div class="booking-dropdown-item current-location" data-action="use-current">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+                        <circle cx="12" cy="12" r="10"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <div class="autocomplete-item-text">
+                        <div class="autocomplete-item-primary">${getText('geolocation.use_current')}</div>
+                        <div class="autocomplete-item-secondary">${pickup.shortName || pickup.name}</div>
+                    </div>
+                </div>
+            `;
+
+            // Handler pour réutiliser la position actuelle
+            pickupDropdown.querySelector('[data-action="use-current"]')?.addEventListener('click', () => {
+                handleLocateMe();
+                pickupDropdown.classList.add('hidden');
+            });
+
+            pickupDropdown.classList.remove('hidden');
+        }
     }
 
     /**
@@ -155,33 +390,51 @@ const Booking = (function() {
     }
 
     /**
-     * Selectionner une location
+     * Sélectionner une location
      */
     function selectLocation(type, location) {
+        // Utiliser shortName si disponible, sinon extraire de name
+        const displayName = location.shortName || location.name.split(',')[0];
+
         if (type === 'pickup') {
-            pickup = location;
-            pickupInput.value = location.name.split(',')[0];
+            pickup = {
+                ...location,
+                shortName: displayName
+            };
+            pickupInput.value = displayName;
             document.getElementById('pickupLat').value = location.lat;
             document.getElementById('pickupLng').value = location.lng;
             document.getElementById('pickupAddress').value = location.name;
 
             MapController.addMarker('pickup', location.lat, location.lng, 'pickup', location.name);
 
-            EventBus.emit(EventBus.Events.BOOKING_PICKUP_SET, location);
+            if (typeof EventBus !== 'undefined') {
+                EventBus.emit(EventBus.Events.BOOKING_PICKUP_SET, location);
+            }
+
+            // Masquer le bouton de localisation rapide si position définie
+            if (quickLocateBtn) {
+                quickLocateBtn.classList.add('hidden');
+            }
 
         } else {
-            dropoff = location;
-            dropoffInput.value = location.name.split(',')[0];
+            dropoff = {
+                ...location,
+                shortName: displayName
+            };
+            dropoffInput.value = displayName;
             document.getElementById('dropoffLat').value = location.lat;
             document.getElementById('dropoffLng').value = location.lng;
             document.getElementById('dropoffAddress').value = location.name;
 
             MapController.addMarker('dropoff', location.lat, location.lng, 'dropoff', location.name);
 
-            EventBus.emit(EventBus.Events.BOOKING_DROPOFF_SET, location);
+            if (typeof EventBus !== 'undefined') {
+                EventBus.emit(EventBus.Events.BOOKING_DROPOFF_SET, location);
+            }
         }
 
-        // Si les deux sont definis, calculer la route
+        // Si les deux sont définis, calculer la route
         if (pickup && dropoff) {
             calculateRoute();
         }
@@ -260,31 +513,39 @@ const Booking = (function() {
     }
 
     /**
-     * Gerer "Ma position"
+     * Gérer "Ma position"
      */
     async function handleLocateMe() {
-        locateMeBtn.disabled = true;
-        locateMeBtn.classList.add('locating');
+        // Désactiver les boutons pendant la géolocalisation
+        if (locateMeBtn) {
+            locateMeBtn.disabled = true;
+            locateMeBtn.classList.add('locating');
+        }
+        if (quickLocateBtn) {
+            quickLocateBtn.disabled = true;
+            quickLocateBtn.classList.add('locating');
+        }
+
+        showPickupStatus('detecting');
 
         try {
-            const location = await MapController.showUserLocation();
-
-            // Reverse geocoding
-            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.lat}&lon=${location.lng}`;
-            const response = await fetch(url);
-            const data = await response.json();
-
-            selectLocation('pickup', {
-                lat: location.lat,
-                lng: location.lng,
-                name: data.display_name
-            });
+            // Utiliser GeoLocationService pour une meilleure gestion
+            const position = await GeoLocationService.getHighAccuracyPosition();
+            await setPickupFromPosition(position);
 
         } catch (error) {
-            Toast.error(window.BookingConfig?.i18n?.geolocationError || 'Unable to get location');
+            const errorMessage = error.message || I18n.t('geolocation.error');
+            Toast.error(errorMessage);
+            showPickupStatus('error', errorMessage);
         } finally {
-            locateMeBtn.disabled = false;
-            locateMeBtn.classList.remove('locating');
+            if (locateMeBtn) {
+                locateMeBtn.disabled = false;
+                locateMeBtn.classList.remove('locating');
+            }
+            if (quickLocateBtn) {
+                quickLocateBtn.disabled = false;
+                quickLocateBtn.classList.remove('locating');
+            }
         }
     }
 
@@ -317,12 +578,12 @@ const Booking = (function() {
             });
 
             if (response.success && response.data?.ride_id) {
-                Toast.success(window.__ ? __('msg.ride_created') : 'Ride created');
+                Toast.success(window.BookingConfig?.i18n?.rideCreated || 'Ride created');
                 EventBus.emit(EventBus.Events.BOOKING_CONFIRMED, response.data);
 
-                // Rediriger vers le tracking
+                // Rediriger vers le mode démo (simulation complète)
                 setTimeout(() => {
-                    AppConfig.navigateTo(`passenger/ride/${response.data.ride_id}`);
+                    AppConfig.navigateTo(`passenger/demo/${response.data.ride_id}`);
                 }, 1000);
             }
 
