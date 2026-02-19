@@ -45,7 +45,7 @@
     <script>
         window.AppConfig = {
             basePath: <?= json_encode(config('base_path', '')) ?>,
-            apiPath: <?= json_encode(config('base_path', '') . '/api') ?>,
+            apiPath: "/api",
             lang: <?= json_encode($_SESSION['lang'] ?? 'fr') ?>,
             csrfToken: <?= json_encode(csrf_token()) ?>,
             debug: <?= json_encode(config('debug', false)) ?>
