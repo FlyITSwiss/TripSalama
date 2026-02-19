@@ -325,11 +325,30 @@ const Booking = (function() {
 
     /**
      * Rechercher une adresse via Nominatim
+     * Pour le dropoff, limite les résultats dans un rayon de 30km autour du pickup
      */
     async function searchAddress(query, dropdown, type) {
         try {
-            // Utiliser Nominatim directement (sans proxy serveur pour le MVP)
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`;
+            // Construire l'URL Nominatim
+            let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`;
+
+            // Pour la destination, limiter au rayon de 30km autour du point de départ
+            if (type === 'dropoff' && pickup) {
+                // 30km ≈ 0.27 degrés de latitude, ajuster longitude selon la latitude
+                const radiusDeg = 0.27;
+                const lngRadius = radiusDeg / Math.cos(pickup.lat * Math.PI / 180);
+
+                // viewbox = lon_min, lat_min, lon_max, lat_max
+                const viewbox = [
+                    (pickup.lng - lngRadius).toFixed(4),
+                    (pickup.lat - radiusDeg).toFixed(4),
+                    (pickup.lng + lngRadius).toFixed(4),
+                    (pickup.lat + radiusDeg).toFixed(4)
+                ].join(',');
+
+                url += `&viewbox=${viewbox}&bounded=1`;
+                AppConfig.debug('Dropoff search bounded to 30km around pickup');
+            }
 
             const response = await fetch(url, {
                 headers: { 'Accept-Language': AppConfig.getLang() }
