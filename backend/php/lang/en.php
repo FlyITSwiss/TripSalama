@@ -169,6 +169,7 @@ return [
         'logout_success' => 'Logged out successfully',
         'register_success' => 'Account created successfully',
         'ride_created' => 'Ride request sent',
+        'ride_booked' => 'Ride booked successfully!',
         'ride_accepted' => 'Ride accepted by a driver',
         'ride_cancelled' => 'Ride cancelled',
         'ride_completed' => 'Ride completed',

@@ -170,6 +170,7 @@ return [
         'logout_success' => 'Déconnexion réussie',
         'register_success' => 'Compte créé avec succès',
         'ride_created' => 'Demande de course envoyée',
+        'ride_booked' => 'Course réservée avec succès !',
         'ride_accepted' => 'Course acceptée par une conductrice',
         'ride_cancelled' => 'Course annulée',
         'ride_completed' => 'Course terminée',
