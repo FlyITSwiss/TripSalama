@@ -11,8 +11,9 @@ declare(strict_types=1);
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/api';
 $requestPath = parse_url($requestUri, PHP_URL_PATH);
 
-// Extraire l'endpoint (ex: /api/rides -> rides)
-$endpoint = preg_replace('#^/api/?#', '', $requestPath);
+// Support both local (/api/...) and production (/internal/tripsalama/api/...)
+// Extract endpoint from URL (handles BASE_PATH prefix)
+$endpoint = preg_replace('#^.*/api/?#', '', $requestPath);
 $endpoint = trim($endpoint, '/');
 
 // Si pas d'endpoint, retourner la liste des endpoints disponibles
