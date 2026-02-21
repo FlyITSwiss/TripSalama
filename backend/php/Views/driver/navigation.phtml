@@ -1,3 +1,6 @@
+<!-- CSS Chat -->
+<link rel="stylesheet" href="<?= asset_url('css/ride-chat.css') ?>">
+
 <div class="navigation-page">
     <!-- En-tête avec infos course -->
     <div class="navigation-header">
@@ -75,6 +78,22 @@
     </div>
 </div>
 
+<script src="<?= asset_url('js/modules/ride-chat.js') ?>"></script>
+<script>
+    // Configuration i18n pour le chat
+    window.ChatI18n = {
+        title: <?= json_encode(__('chat.title')) ?>,
+        placeholder: <?= json_encode(__('chat.placeholder')) ?>,
+        no_messages: <?= json_encode(__('chat.no_messages')) ?>,
+        message_sent: <?= json_encode(__('chat.message_sent')) ?>,
+        driver_arriving: <?= json_encode(__('chat.driver_arriving')) ?>,
+        driver_arrived: <?= json_encode(__('chat.driver_arrived')) ?>,
+        driver_where_are_you: <?= json_encode(__('chat.driver_where_are_you')) ?>,
+        driver_waiting: <?= json_encode(__('chat.driver_waiting')) ?>,
+        driver_traffic: <?= json_encode(__('chat.driver_traffic')) ?>,
+        call_not_available: <?= json_encode(__('call.not_available')) ?>
+    };
+</script>
 <script>
     window.NavigationConfig = {
         rideId: <?= (int)$ride['id'] ?>,
@@ -99,4 +118,27 @@
             error: <?= json_encode(__('error.generic')) ?>
         }
     };
+
 </script>
+
+<!-- Initialisation Chat (isolé des erreurs carte) -->
+<?php if (in_array($ride['status'], ['accepted', 'driver_arriving', 'in_progress'])): ?>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            if (typeof RideChat !== 'undefined' && RideChat.init) {
+                RideChat.init(
+                    <?= (int)$ride['id'] ?>,
+                    'driver',
+                    <?= (int)(current_user()['id'] ?? 0) ?>
+                );
+                console.log('RideChat initialized successfully');
+            } else {
+                console.warn('RideChat module not available');
+            }
+        } catch (e) {
+            console.error('RideChat init error:', e);
+        }
+    });
+</script>
+<?php endif; ?>

@@ -2,11 +2,14 @@
 /**
  * TripSalama - Page Suivi de Course
  * Tracking temps réel avec animation véhicule Uber-style
+ * + Chat conductrice-passagère
  */
 ?>
 
 <!-- CSS Tracker -->
 <link rel="stylesheet" href="<?= asset_url('css/uber-tracker.css') ?>">
+<!-- CSS Chat -->
+<link rel="stylesheet" href="<?= asset_url('css/ride-chat.css') ?>">
 
 <!-- Carte plein écran -->
 <div class="tracking-page">
@@ -200,6 +203,21 @@
 </script>
 <script src="<?= asset_url('js/modules/map-controller.js') ?>"></script>
 <script src="<?= asset_url('js/modules/uber-style-tracker.js') ?>"></script>
+<script src="<?= asset_url('js/modules/ride-chat.js') ?>"></script>
+<script>
+    // Configuration i18n pour le chat
+    window.ChatI18n = {
+        title: <?= json_encode(__('chat.title')) ?>,
+        placeholder: <?= json_encode(__('chat.placeholder')) ?>,
+        no_messages: <?= json_encode(__('chat.no_messages')) ?>,
+        message_sent: <?= json_encode(__('chat.message_sent')) ?>,
+        passenger_on_my_way: <?= json_encode(__('chat.passenger_on_my_way')) ?>,
+        passenger_arriving_soon: <?= json_encode(__('chat.passenger_arriving_soon')) ?>,
+        passenger_at_location: <?= json_encode(__('chat.passenger_at_location')) ?>,
+        passenger_waiting: <?= json_encode(__('chat.passenger_waiting')) ?>,
+        call_not_available: <?= json_encode(__('call.not_available')) ?>
+    };
+</script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const config = window.TrackingConfig;
@@ -342,3 +360,26 @@
         }
     });
 </script>
+
+<!-- Initialisation Chat (isolé des erreurs carte) -->
+<?php if ($ride['driver_id'] && in_array($ride['status'], ['accepted', 'driver_arriving', 'in_progress'])): ?>
+<script>
+    // Init chat dans un script séparé pour éviter que les erreurs de carte bloquent le chat
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            if (typeof RideChat !== 'undefined' && RideChat.init) {
+                RideChat.init(
+                    <?= (int)$ride['id'] ?>,
+                    'passenger',
+                    <?= (int)(current_user()['id'] ?? 0) ?>
+                );
+                console.log('RideChat initialized successfully');
+            } else {
+                console.warn('RideChat module not available');
+            }
+        } catch (e) {
+            console.error('RideChat init error:', e);
+        }
+    });
+</script>
+<?php endif; ?>

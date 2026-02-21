@@ -206,6 +206,7 @@ return [
         'no_driver' => 'No driver available at the moment',
         'too_many_attempts' => 'Too many attempts. Please try again in :minutes minutes.',
         'account_locked' => 'Account temporarily locked for security reasons',
+        'ride_not_active' => 'This ride is no longer active',
     ],
 
     // Validation
@@ -371,5 +372,40 @@ return [
         'privacy' => 'Privacy',
         'terms' => 'Terms of service',
         'contact' => 'Contact',
+    ],
+
+    // Chat driver-passenger
+    'chat' => [
+        'title' => 'Chat',
+        'send' => 'Send',
+        'placeholder' => 'Type your message...',
+        'quick_messages' => 'Quick messages',
+        'message_sent' => 'Message sent',
+        'no_messages' => 'No messages yet',
+        'new_message' => 'New message',
+        // Quick messages passenger
+        'passenger_on_my_way' => 'I\'m on my way',
+        'passenger_arriving_soon' => 'I\'ll be there in a few minutes',
+        'passenger_at_location' => 'I\'m at the location',
+        'passenger_waiting' => 'I\'m waiting for you',
+        'passenger_delayed' => 'I\'m running a bit late',
+        // Quick messages driver
+        'driver_arriving' => 'I\'m arriving',
+        'driver_arrived' => 'I\'ve arrived',
+        'driver_where_are_you' => 'Where are you exactly?',
+        'driver_waiting' => 'I\'m waiting for you',
+        'driver_traffic' => 'Traffic is slow, I\'ll be there soon',
+        'driver_im_outside' => 'I\'m outside the entrance',
+    ],
+
+    // Phone call
+    'call' => [
+        'title' => 'Call',
+        'driver' => 'Call driver',
+        'passenger' => 'Call passenger',
+        'masked_number' => 'Number masked for your safety',
+        'connecting' => 'Connecting...',
+        'not_available' => 'Call not available',
+        'call_ended' => 'Call ended',
     ],
 ];

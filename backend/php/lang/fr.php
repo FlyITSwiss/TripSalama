@@ -218,6 +218,7 @@ return [
         'no_driver' => 'Aucune conductrice disponible pour le moment',
         'too_many_attempts' => 'Trop de tentatives. Veuillez réessayer dans :minutes minutes.',
         'account_locked' => 'Compte temporairement verrouillé pour raison de sécurité',
+        'ride_not_active' => 'Cette course n\'est plus active',
     ],
 
     // Validation
@@ -383,5 +384,40 @@ return [
         'privacy' => 'Confidentialité',
         'terms' => 'Conditions d\'utilisation',
         'contact' => 'Contact',
+    ],
+
+    // Chat conductrice-passagère
+    'chat' => [
+        'title' => 'Discussion',
+        'send' => 'Envoyer',
+        'placeholder' => 'Tapez votre message...',
+        'quick_messages' => 'Messages rapides',
+        'message_sent' => 'Message envoyé',
+        'no_messages' => 'Aucun message pour le moment',
+        'new_message' => 'Nouveau message',
+        // Messages rapides passagère
+        'passenger_on_my_way' => 'Je suis en route',
+        'passenger_arriving_soon' => 'J\'arrive dans quelques minutes',
+        'passenger_at_location' => 'Je suis à l\'adresse indiquée',
+        'passenger_waiting' => 'Je vous attends',
+        'passenger_delayed' => 'Je suis un peu en retard',
+        // Messages rapides conductrice
+        'driver_arriving' => 'J\'arrive',
+        'driver_arrived' => 'Je suis arrivée',
+        'driver_where_are_you' => 'Où êtes-vous exactement ?',
+        'driver_waiting' => 'Je vous attends',
+        'driver_traffic' => 'Trafic ralenti, j\'arrive bientôt',
+        'driver_im_outside' => 'Je suis devant l\'entrée',
+    ],
+
+    // Appel téléphonique
+    'call' => [
+        'title' => 'Appeler',
+        'driver' => 'Appeler la conductrice',
+        'passenger' => 'Appeler la passagère',
+        'masked_number' => 'Numéro masqué pour votre sécurité',
+        'connecting' => 'Connexion en cours...',
+        'not_available' => 'Appel non disponible',
+        'call_ended' => 'Appel terminé',
     ],
 ];
