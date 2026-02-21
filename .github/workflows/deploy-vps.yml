@@ -201,49 +201,22 @@ jobs:
             sudo chmod -R 777 ${{ env.REMOTE_PATH }}/public/uploads
           "
 
+      - name: Deploy nginx config
+        run: |
+          echo "Deploying nginx config file..."
+          scp -o StrictHostKeyChecking=no \
+            "docker/nginx-tripsalama.conf" \
+            "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/tripsalama.conf"
+
       - name: Configure nginx
         run: |
-          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} '
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} 'bash -s' << 'ENDSSH'
             echo "=== Configuring nginx for TripSalama ==="
 
-            # Create nginx snippet for TripSalama (PHP-FPM direct, no Docker)
-            sudo tee /etc/nginx/snippets/tripsalama.conf << "NGINX"
-# ================================================
-# TripSalama - PHP 8.4 FPM Configuration
-# ================================================
-
-# Main location for TripSalama
-location /internal/tripsalama {
-    alias /var/www/tripsalama/public;
-    index index.php;
-
-    # Try static files first, then route to PHP
-    location ~ \.php$ {
-        # Prevent processing of non-existing PHP files
-        try_files $uri =404;
-
-        # Fix SCRIPT_FILENAME for alias directive
-        fastcgi_split_path_info ^(.+\.php)(/.+)$;
-
-        # Use the full path from alias
-        set $script_path /var/www/tripsalama/public;
-        if ($uri ~ "^/internal/tripsalama/(.*)$") {
-            set $script_path /var/www/tripsalama/public/$1;
-        }
-
-        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
-        fastcgi_index index.php;
-        fastcgi_param SCRIPT_FILENAME $script_path;
-        fastcgi_param DOCUMENT_ROOT /var/www/tripsalama/public;
-        include fastcgi_params;
-    }
-
-    # Try files, fallback to index.php for routing
-    try_files $uri $uri/ /internal/tripsalama/index.php?$query_string;
-}
-NGINX
-
-            echo "✅ Created /etc/nginx/snippets/tripsalama.conf"
+            # Move nginx config to snippets
+            sudo mkdir -p /etc/nginx/snippets
+            sudo cp /tmp/tripsalama.conf /etc/nginx/snippets/tripsalama.conf
+            echo "Created /etc/nginx/snippets/tripsalama.conf"
 
             # Find the active nginx config (Certbot-managed)
             NGINX_CONFIG=""
@@ -257,7 +230,7 @@ NGINX
             fi
 
             if [ -z "$NGINX_CONFIG" ]; then
-              echo "❌ No nginx config found!"
+              echo "No nginx config found!"
               exit 1
             fi
 
@@ -268,36 +241,31 @@ NGINX
 
             # Check if TripSalama is already included
             if grep -q "include.*tripsalama" "$NGINX_CONFIG"; then
-              echo "✅ TripSalama already included in nginx config"
+              echo "TripSalama already included in nginx config"
             else
               echo "Adding TripSalama include to nginx config..."
-
-              # Find the first server block and add include after server_name
-              sudo sed -i "/server_name.*stabilis-it.ch/a\\    # TripSalama application\\n    include /etc/nginx/snippets/tripsalama.conf;" "$NGINX_CONFIG" 2>/dev/null || {
-                # Fallback: add after any server_name line
-                sudo sed -i "/server_name/a\\    include /etc/nginx/snippets/tripsalama.conf;" "$NGINX_CONFIG"
-              }
-
-              echo "✅ Added TripSalama include"
+              sudo sed -i '/server_name.*stabilis-it.ch/a\    include /etc/nginx/snippets/tripsalama.conf;' "$NGINX_CONFIG" 2>/dev/null || \
+              sudo sed -i '/server_name/a\    include /etc/nginx/snippets/tripsalama.conf;' "$NGINX_CONFIG"
+              echo "Added TripSalama include"
             fi
 
             # Test nginx syntax
             if sudo nginx -t 2>&1; then
-              echo "✅ Nginx syntax OK"
+              echo "Nginx syntax OK"
               sudo systemctl reload nginx
-              echo "✅ Nginx reloaded"
+              echo "Nginx reloaded"
             else
-              echo "❌ Nginx syntax error - restoring backup"
+              echo "Nginx syntax error - restoring backup"
               sudo cp /tmp/nginx-tripsalama-backup.conf "$NGINX_CONFIG"
               sudo nginx -t && sudo systemctl reload nginx
               echo "Restored original config"
               exit 1
             fi
 
-            # Show final config snippet
+            # Show final config
             echo "=== TripSalama location in nginx ==="
-            grep -A 5 "tripsalama" "$NGINX_CONFIG" | head -10
-          '
+            grep -A 3 "tripsalama" "$NGINX_CONFIG" | head -6
+          ENDSSH
 
       - name: Verify deployment
         id: verify
