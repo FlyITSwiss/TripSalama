@@ -326,13 +326,13 @@ jobs:
           echo "--- Checking index.php ---"
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "head -5 ${{ env.REMOTE_PATH }}/public/index.php 2>/dev/null || echo 'index.php NOT FOUND!'"
 
-          # Check HTTP response with follow redirects
+          # Check HTTP response (use -k to ignore SSL issues with localhost)
           echo "--- HTTP Check ---"
-          HTTP=$(ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -sL -o /dev/null -w '%{http_code}' http://127.0.0.1${{ env.BASE_PATH }}/login")
+          HTTP=$(ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -skL -o /dev/null -w '%{http_code}' http://127.0.0.1${{ env.BASE_PATH }}/login")
           echo "HTTP Status (following redirects): $HTTP"
 
           # Also check without following redirects
-          HTTP_DIRECT=$(ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1${{ env.BASE_PATH }}/login")
+          HTTP_DIRECT=$(ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -sk -o /dev/null -w '%{http_code}' http://127.0.0.1${{ env.BASE_PATH }}/login")
           echo "HTTP Status (direct): $HTTP_DIRECT"
 
           # If error, show logs
@@ -349,7 +349,7 @@ jobs:
           # Verify with curl verbose for debugging
           if [ "$HTTP" != "200" ]; then
             echo "--- Curl verbose debug ---"
-            ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -sv http://127.0.0.1${{ env.BASE_PATH }}/ 2>&1 | head -30"
+            ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -svk http://127.0.0.1${{ env.BASE_PATH }}/ 2>&1 | head -30"
           fi
 
           # Success conditions: 200, 301, 302 are all OK
