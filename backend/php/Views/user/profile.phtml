@@ -27,6 +27,11 @@ $user = current_user();
         margin-bottom: var(--space-4);
     }
 
+    .profile-avatar-wrapper {
+        position: relative;
+        margin-bottom: var(--space-4);
+    }
+
     .profile-avatar {
         width: 100px;
         height: 100px;
@@ -38,14 +43,77 @@ $user = current_user();
         font-size: var(--text-4xl);
         font-weight: var(--font-bold);
         color: var(--uber-white);
-        margin-bottom: var(--space-4);
         overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+
+    .profile-avatar:hover {
+        transform: scale(1.05);
+    }
+
+    .profile-avatar:active {
+        transform: scale(0.95);
     }
 
     .profile-avatar img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+    }
+
+    .profile-avatar-edit {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 32px;
+        height: 32px;
+        background: var(--uber-green);
+        border-radius: var(--radius-full);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--uber-white);
+        border: 3px solid var(--uber-black);
+        cursor: pointer;
+        transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .profile-avatar-edit:hover {
+        transform: scale(1.1);
+        background: var(--uber-green-dark);
+    }
+
+    .profile-avatar-edit svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .profile-avatar-hint {
+        font-size: var(--text-xs);
+        color: var(--uber-gray-400);
+        margin-top: var(--space-2);
+    }
+
+    /* Upload loading state */
+    .profile-avatar.uploading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    .profile-avatar.uploading::after {
+        content: '';
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        border: 3px solid var(--uber-white);
+        border-top-color: transparent;
+        border-radius: var(--radius-full);
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
     }
 
     .profile-name {
@@ -233,14 +301,26 @@ $user = current_user();
 </style>
 
 <div class="profile-page">
+    <!-- Hidden file input -->
+    <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/gif,image/webp" style="display: none;">
+
     <!-- Header -->
     <header class="profile-header">
-        <div class="profile-avatar">
-            <?php if (!empty($userData['avatar'])): ?>
-            <img src="<?= htmlspecialchars($userData['avatar']) ?>" alt="<?= htmlspecialchars($userData['first_name']) ?>">
-            <?php else: ?>
-            <?= strtoupper(substr($userData['first_name'] ?? 'U', 0, 1)) ?>
-            <?php endif; ?>
+        <div class="profile-avatar-wrapper">
+            <div class="profile-avatar" id="profileAvatar" onclick="document.getElementById('avatarInput').click()">
+                <?php if (!empty($userData['avatar_path'])): ?>
+                <img src="<?= base_url(ltrim($userData['avatar_path'], '/')) ?>" alt="<?= htmlspecialchars($userData['first_name']) ?>" id="avatarImage">
+                <?php else: ?>
+                <span id="avatarInitial"><?= strtoupper(substr($userData['first_name'] ?? 'U', 0, 1)) ?></span>
+                <?php endif; ?>
+            </div>
+            <div class="profile-avatar-edit" onclick="document.getElementById('avatarInput').click()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                </svg>
+            </div>
+            <p class="profile-avatar-hint"><?= __('profile.tap_to_change') ?></p>
         </div>
         <h1 class="profile-name"><?= htmlspecialchars($userData['first_name'] . ' ' . $userData['last_name']) ?></h1>
         <p class="profile-role"><?= $user['role'] === 'driver' ? __('auth.driver') : __('auth.passenger') ?></p>
@@ -424,3 +504,106 @@ $user = current_user();
         </form>
     </div>
 </div>
+
+<script>
+(function() {
+    const avatarInput = document.getElementById('avatarInput');
+    const profileAvatar = document.getElementById('profileAvatar');
+
+    if (!avatarInput || !profileAvatar) return;
+
+    avatarInput.addEventListener('change', async function() {
+        const file = this.files[0];
+        if (!file) return;
+
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            if (typeof showToast === 'function') {
+                showToast('error', <?= json_encode(__('validation.invalid_file_type')) ?>);
+            } else {
+                alert(<?= json_encode(__('validation.invalid_file_type')) ?>);
+            }
+            return;
+        }
+
+        // Validate file size (max 5MB)
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+            if (typeof showToast === 'function') {
+                showToast('error', <?= json_encode(__('validation.file_too_large')) ?>);
+            } else {
+                alert(<?= json_encode(__('validation.file_too_large')) ?>);
+            }
+            return;
+        }
+
+        // Show loading state
+        profileAvatar.classList.add('uploading');
+
+        try {
+            // Create FormData
+            const formData = new FormData();
+            formData.append('avatar', file);
+            formData.append('action', 'upload-avatar');
+
+            // Upload via ApiService
+            let response;
+            if (typeof ApiService !== 'undefined' && typeof ApiService.upload === 'function') {
+                response = await ApiService.upload('user?action=upload-avatar', formData);
+            } else {
+                const res = await fetch(AppConfig.basePath + '/api/user?action=upload-avatar', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-Token': AppConfig.csrfToken
+                    },
+                    body: formData
+                });
+                response = await res.json();
+            }
+
+            if (response.success) {
+                // Update avatar image
+                const avatarUrl = response.data.avatar_url;
+                let img = document.getElementById('avatarImage');
+                const initial = document.getElementById('avatarInitial');
+
+                if (initial) {
+                    initial.remove();
+                }
+
+                if (!img) {
+                    img = document.createElement('img');
+                    img.id = 'avatarImage';
+                    profileAvatar.appendChild(img);
+                }
+
+                img.src = avatarUrl;
+                img.alt = 'Avatar';
+
+                // Show success message
+                if (typeof showToast === 'function') {
+                    showToast('success', <?= json_encode(__('profile.avatar_updated')) ?>);
+                }
+
+                // Haptic feedback
+                if ('vibrate' in navigator) {
+                    navigator.vibrate(20);
+                }
+            } else {
+                throw new Error(response.message || <?= json_encode(__('error.generic')) ?>);
+            }
+        } catch (error) {
+            console.error('Avatar upload error:', error);
+            if (typeof showToast === 'function') {
+                showToast('error', error.message || <?= json_encode(__('error.generic')) ?>);
+            } else {
+                alert(error.message || <?= json_encode(__('error.generic')) ?>);
+            }
+        } finally {
+            profileAvatar.classList.remove('uploading');
+            avatarInput.value = ''; // Reset input
+        }
+    });
+})();
+</script>
