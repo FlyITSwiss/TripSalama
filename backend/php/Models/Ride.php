@@ -286,14 +286,80 @@ class Ride
     {
         $sql = 'SELECT COUNT(*) FROM rides WHERE driver_id = :driver_id AND status = "completed"';
 
-        if ($period === 'month') {
-            $sql .= ' AND created_at >= DATE_FORMAT(NOW(), "%Y-%m-01")';
+        if ($period === 'today') {
+            $sql .= ' AND DATE(completed_at) = CURDATE()';
+        } elseif ($period === 'week') {
+            $sql .= ' AND completed_at >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)';
+        } elseif ($period === 'month') {
+            $sql .= ' AND completed_at >= DATE_FORMAT(NOW(), "%Y-%m-01")';
         }
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['driver_id' => $driverId]);
 
         return (int)$stmt->fetchColumn();
+    }
+
+    /**
+     * Calculer les gains d'une conductrice
+     * Commission TripSalama : 12% (comme InDrive)
+     */
+    public function getEarningsByDriver(int $driverId, ?string $period = null): float
+    {
+        $sql = 'SELECT COALESCE(SUM(estimated_price * 0.88), 0) FROM rides WHERE driver_id = :driver_id AND status = "completed"';
+
+        if ($period === 'today') {
+            $sql .= ' AND DATE(completed_at) = CURDATE()';
+        } elseif ($period === 'week') {
+            $sql .= ' AND completed_at >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)';
+        } elseif ($period === 'month') {
+            $sql .= ' AND completed_at >= DATE_FORMAT(NOW(), "%Y-%m-01")';
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['driver_id' => $driverId]);
+
+        return (float)$stmt->fetchColumn();
+    }
+
+    /**
+     * Calculer la distance totale parcourue par une conductrice
+     */
+    public function getTotalDistanceByDriver(int $driverId, ?string $period = null): float
+    {
+        $sql = 'SELECT COALESCE(SUM(estimated_distance_km), 0) FROM rides WHERE driver_id = :driver_id AND status = "completed"';
+
+        if ($period === 'today') {
+            $sql .= ' AND DATE(completed_at) = CURDATE()';
+        } elseif ($period === 'week') {
+            $sql .= ' AND completed_at >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)';
+        } elseif ($period === 'month') {
+            $sql .= ' AND completed_at >= DATE_FORMAT(NOW(), "%Y-%m-01")';
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['driver_id' => $driverId]);
+
+        return (float)$stmt->fetchColumn();
+    }
+
+    /**
+     * Obtenir les statistiques complètes d'une conductrice
+     */
+    public function getDriverStats(int $driverId): array
+    {
+        return [
+            'rides_today' => $this->countByDriver($driverId, 'today'),
+            'rides_week' => $this->countByDriver($driverId, 'week'),
+            'rides_month' => $this->countByDriver($driverId, 'month'),
+            'rides_total' => $this->countByDriver($driverId),
+            'earnings_today' => $this->getEarningsByDriver($driverId, 'today'),
+            'earnings_week' => $this->getEarningsByDriver($driverId, 'week'),
+            'earnings_month' => $this->getEarningsByDriver($driverId, 'month'),
+            'distance_today' => $this->getTotalDistanceByDriver($driverId, 'today'),
+            'distance_week' => $this->getTotalDistanceByDriver($driverId, 'week'),
+            'distance_total' => $this->getTotalDistanceByDriver($driverId),
+        ];
     }
 
     /**

@@ -1,7 +1,7 @@
 <?php
 /**
  * TripSalama - Driver Dashboard
- * Design Uber Premium
+ * Design Uber Premium - Version enrichie
  */
 ?>
 
@@ -11,25 +11,48 @@
         padding-bottom: calc(var(--nav-height) + var(--space-8));
     }
 
+    /* Welcome Section */
+    .driver-welcome {
+        margin-bottom: var(--space-5);
+    }
+
+    .driver-welcome-greeting {
+        font-size: var(--text-sm);
+        color: var(--uber-gray-500);
+        margin-bottom: var(--space-1);
+    }
+
+    .driver-welcome-name {
+        font-size: var(--text-3xl);
+        font-weight: var(--font-bold);
+        color: var(--uber-black);
+        letter-spacing: -0.02em;
+    }
+
     /* Status Toggle - Main CTA */
     .driver-status-card {
         background: var(--uber-white);
         border-radius: var(--radius-2xl);
-        padding: var(--space-6);
+        padding: var(--space-5);
         box-shadow: var(--shadow-lg);
-        margin-bottom: var(--space-6);
-        text-align: center;
+        margin-bottom: var(--space-5);
+    }
+
+    .driver-status-header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
     }
 
     .driver-status-icon {
-        width: 80px;
-        height: 80px;
-        margin: 0 auto var(--space-4);
+        width: 64px;
+        height: 64px;
         display: flex;
         align-items: center;
         justify-content: center;
         border-radius: var(--radius-full);
         transition: all 0.3s ease;
+        flex-shrink: 0;
     }
 
     .driver-status-icon.online {
@@ -43,29 +66,32 @@
     }
 
     .driver-status-icon svg {
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
+    }
+
+    .driver-status-info {
+        flex: 1;
     }
 
     .driver-status-text {
-        font-size: var(--text-2xl);
+        font-size: var(--text-xl);
         font-weight: var(--font-bold);
         color: var(--uber-black);
-        margin-bottom: var(--space-1);
+        margin-bottom: 2px;
     }
 
     .driver-status-hint {
         font-size: var(--text-sm);
         color: var(--uber-gray-500);
-        margin-bottom: var(--space-4);
     }
 
     /* Toggle Switch */
     .status-toggle {
         position: relative;
-        width: 80px;
-        height: 44px;
-        margin: 0 auto;
+        width: 64px;
+        height: 36px;
+        flex-shrink: 0;
     }
 
     .status-toggle input {
@@ -89,8 +115,8 @@
     .status-toggle-slider::before {
         position: absolute;
         content: '';
-        height: 36px;
-        width: 36px;
+        height: 28px;
+        width: 28px;
         left: 4px;
         bottom: 4px;
         background: var(--uber-white);
@@ -104,15 +130,126 @@
     }
 
     .status-toggle input:checked + .status-toggle-slider::before {
-        transform: translateX(36px);
+        transform: translateX(28px);
     }
 
-    /* Stats */
+    /* Daily Goal Progress */
+    .daily-goal-section {
+        margin-top: var(--space-4);
+        padding-top: var(--space-4);
+        border-top: 1px solid var(--uber-gray-100);
+    }
+
+    .daily-goal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--space-2);
+    }
+
+    .daily-goal-title {
+        font-size: var(--text-sm);
+        font-weight: var(--font-semibold);
+        color: var(--uber-black);
+    }
+
+    .daily-goal-value {
+        font-size: var(--text-sm);
+        color: var(--uber-gray-600);
+    }
+
+    .daily-goal-bar {
+        height: 8px;
+        background: var(--uber-gray-100);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+    }
+
+    .daily-goal-progress {
+        height: 100%;
+        background: linear-gradient(90deg, var(--uber-green) 0%, #04A054 100%);
+        border-radius: var(--radius-full);
+        transition: width 0.5s ease;
+    }
+
+    .daily-goal-achieved {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin-top: var(--space-2);
+        font-size: var(--text-sm);
+        color: var(--uber-green);
+        font-weight: var(--font-semibold);
+    }
+
+    .daily-goal-achieved svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Earnings Card */
+    .earnings-card {
+        background: linear-gradient(135deg, var(--uber-black) 0%, #1a1a1a 100%);
+        border-radius: var(--radius-2xl);
+        padding: var(--space-5);
+        margin-bottom: var(--space-5);
+        color: var(--uber-white);
+    }
+
+    .earnings-main {
+        text-align: center;
+        margin-bottom: var(--space-4);
+    }
+
+    .earnings-label {
+        font-size: var(--text-sm);
+        color: var(--uber-gray-400);
+        margin-bottom: var(--space-1);
+    }
+
+    .earnings-value {
+        font-size: var(--text-4xl);
+        font-weight: var(--font-bold);
+        line-height: 1;
+    }
+
+    .earnings-currency {
+        font-size: var(--text-lg);
+        font-weight: var(--font-normal);
+        margin-left: var(--space-1);
+    }
+
+    .earnings-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-3);
+        padding-top: var(--space-4);
+        border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .earnings-stat {
+        text-align: center;
+    }
+
+    .earnings-stat-value {
+        font-size: var(--text-lg);
+        font-weight: var(--font-bold);
+        margin-bottom: 2px;
+    }
+
+    .earnings-stat-label {
+        font-size: var(--text-xs);
+        color: var(--uber-gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    /* Stats Grid */
     .driver-stats {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: var(--space-3);
-        margin-bottom: var(--space-6);
+        margin-bottom: var(--space-5);
     }
 
     .driver-stat {
@@ -123,8 +260,27 @@
         box-shadow: var(--shadow-xs);
     }
 
+    .driver-stat-icon {
+        width: 40px;
+        height: 40px;
+        margin: 0 auto var(--space-2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-lg);
+    }
+
+    .driver-stat-icon.rides { background: var(--uber-green-soft); color: var(--uber-green); }
+    .driver-stat-icon.rating { background: #FEF3C7; color: #F59E0B; }
+    .driver-stat-icon.distance { background: #DBEAFE; color: #3B82F6; }
+
+    .driver-stat-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+
     .driver-stat-value {
-        font-size: var(--text-2xl);
+        font-size: var(--text-xl);
         font-weight: var(--font-bold);
         color: var(--uber-black);
         line-height: 1;
@@ -136,6 +292,105 @@
         color: var(--uber-gray-500);
         text-transform: uppercase;
         letter-spacing: 0.05em;
+    }
+
+    /* Safety Banner */
+    .safety-banner {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: var(--radius-2xl);
+        padding: var(--space-4);
+        margin-bottom: var(--space-5);
+        color: var(--uber-white);
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+
+    .safety-banner:hover {
+        transform: scale(1.02);
+    }
+
+    .safety-banner-icon {
+        width: 48px;
+        height: 48px;
+        background: rgba(255,255,255,0.2);
+        border-radius: var(--radius-full);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .safety-banner-icon svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .safety-banner-content {
+        flex: 1;
+    }
+
+    .safety-banner-title {
+        font-size: var(--text-base);
+        font-weight: var(--font-bold);
+        margin-bottom: 2px;
+    }
+
+    .safety-banner-text {
+        font-size: var(--text-sm);
+        opacity: 0.9;
+    }
+
+    .safety-banner-arrow {
+        width: 20px;
+        height: 20px;
+        opacity: 0.7;
+    }
+
+    /* Vehicle Info */
+    .vehicle-card {
+        background: var(--uber-white);
+        border-radius: var(--radius-xl);
+        padding: var(--space-4);
+        margin-bottom: var(--space-5);
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        box-shadow: var(--shadow-xs);
+    }
+
+    .vehicle-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--uber-gray-100);
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .vehicle-icon svg {
+        width: 24px;
+        height: 24px;
+        color: var(--uber-black);
+    }
+
+    .vehicle-info {
+        flex: 1;
+    }
+
+    .vehicle-name {
+        font-size: var(--text-base);
+        font-weight: var(--font-semibold);
+        color: var(--uber-black);
+    }
+
+    .vehicle-plate {
+        font-size: var(--text-sm);
+        color: var(--uber-gray-500);
     }
 
     /* Section Title */
@@ -175,9 +430,18 @@
         color: var(--uber-green);
     }
 
+    .ride-request-meta {
+        text-align: right;
+    }
+
     .ride-request-distance {
         font-size: var(--text-sm);
         color: var(--uber-gray-500);
+    }
+
+    .ride-request-duration {
+        font-size: var(--text-xs);
+        color: var(--uber-gray-400);
     }
 
     .ride-request-route {
@@ -210,7 +474,7 @@
 
     .ride-request-line {
         width: 2px;
-        height: 20px;
+        height: 24px;
         background: var(--uber-gray-300);
     }
 
@@ -221,7 +485,7 @@
     .ride-request-address {
         font-size: var(--text-sm);
         color: var(--uber-black);
-        margin-bottom: var(--space-2);
+        margin-bottom: var(--space-3);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -229,6 +493,15 @@
 
     .ride-request-address:last-child {
         margin-bottom: 0;
+    }
+
+    .ride-request-address-label {
+        font-size: var(--text-xs);
+        color: var(--uber-gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: block;
+        margin-bottom: 2px;
     }
 
     .ride-request-actions {
@@ -306,58 +579,239 @@
         color: var(--uber-gray-500);
     }
 
+    /* Quick Actions */
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-3);
+        margin-bottom: var(--space-5);
+    }
+
+    .quick-action {
+        background: var(--uber-white);
+        border-radius: var(--radius-xl);
+        padding: var(--space-4);
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        text-decoration: none;
+        color: inherit;
+        box-shadow: var(--shadow-xs);
+        transition: all 0.2s ease;
+    }
+
+    .quick-action:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+    }
+
+    .quick-action-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .quick-action-icon.history { background: var(--uber-gray-100); color: var(--uber-black); }
+    .quick-action-icon.share { background: #DBEAFE; color: #3B82F6; }
+
+    .quick-action-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .quick-action-text {
+        font-size: var(--text-sm);
+        font-weight: var(--font-medium);
+        color: var(--uber-black);
+    }
+
     /* Animation */
     @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
     }
 
-    .driver-status-card { animation: fadeInUp 0.4s ease-out; }
-    .driver-stats { animation: fadeInUp 0.4s ease-out 0.1s backwards; }
-    .ride-requests { animation: fadeInUp 0.4s ease-out 0.2s backwards; }
+    .driver-welcome { animation: fadeInUp 0.4s ease-out; }
+    .driver-status-card { animation: fadeInUp 0.4s ease-out 0.05s backwards; }
+    .earnings-card { animation: fadeInUp 0.4s ease-out 0.1s backwards; }
+    .driver-stats { animation: fadeInUp 0.4s ease-out 0.15s backwards; }
+    .safety-banner { animation: fadeInUp 0.4s ease-out 0.2s backwards; }
+    .quick-actions { animation: fadeInUp 0.4s ease-out 0.25s backwards; }
+    .ride-requests { animation: fadeInUp 0.4s ease-out 0.3s backwards; }
 </style>
 
 <div class="driver-dashboard">
-    <!-- Status Toggle -->
-    <section class="driver-status-card">
-        <div class="driver-status-icon <?= ($status['is_available'] ?? false) ? 'online' : 'offline' ?>" id="statusIcon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <?php if ($status['is_available'] ?? false): ?>
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                <polyline points="22 4 12 14.01 9 11.01"/>
-                <?php else: ?>
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="15" y1="9" x2="9" y2="15"/>
-                <line x1="9" y1="9" x2="15" y2="15"/>
-                <?php endif; ?>
-            </svg>
-        </div>
-        <div class="driver-status-text" id="statusText">
-            <?= ($status['is_available'] ?? false) ? __('driver.online') : __('driver.offline') ?>
-        </div>
-        <div class="driver-status-hint" id="statusHint">
-            <?= ($status['is_available'] ?? false) ? __('driver.accepting_rides') : __('driver.not_accepting') ?>
-        </div>
-        <label class="status-toggle">
-            <input type="checkbox" id="availabilityToggle" <?= ($status['is_available'] ?? false) ? 'checked' : '' ?>>
-            <span class="status-toggle-slider"></span>
-        </label>
+    <!-- Welcome -->
+    <section class="driver-welcome">
+        <p class="driver-welcome-greeting"><?= __('driver.welcome_back') ?></p>
+        <h1 class="driver-welcome-name"><?= htmlspecialchars($user['first_name']) ?></h1>
     </section>
 
-    <!-- Stats -->
+    <!-- Status Toggle -->
+    <section class="driver-status-card">
+        <div class="driver-status-header">
+            <div class="driver-status-icon <?= ($status['is_available'] ?? false) ? 'online' : 'offline' ?>" id="statusIcon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <?php if ($status['is_available'] ?? false): ?>
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                    <?php else: ?>
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                    <?php endif; ?>
+                </svg>
+            </div>
+            <div class="driver-status-info">
+                <div class="driver-status-text" id="statusText">
+                    <?= ($status['is_available'] ?? false) ? __('driver.online') : __('driver.offline') ?>
+                </div>
+                <div class="driver-status-hint" id="statusHint">
+                    <?= ($status['is_available'] ?? false) ? __('driver.accepting_rides') : __('driver.not_accepting') ?>
+                </div>
+            </div>
+            <label class="status-toggle">
+                <input type="checkbox" id="availabilityToggle" <?= ($status['is_available'] ?? false) ? 'checked' : '' ?>>
+                <span class="status-toggle-slider"></span>
+            </label>
+        </div>
+
+        <!-- Daily Goal Progress -->
+        <div class="daily-goal-section">
+            <div class="daily-goal-header">
+                <span class="daily-goal-title"><?= __('driver.daily_goal') ?></span>
+                <span class="daily-goal-value"><?= number_format($stats['earnings_today'] ?? 0) ?> / <?= number_format($stats['daily_goal'] ?? 200) ?> MAD</span>
+            </div>
+            <div class="daily-goal-bar">
+                <div class="daily-goal-progress" style="width: <?= $stats['goal_progress'] ?? 0 ?>%"></div>
+            </div>
+            <?php if (($stats['goal_progress'] ?? 0) >= 100): ?>
+            <div class="daily-goal-achieved">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <?= __('driver.goal_reached') ?>
+            </div>
+            <?php endif; ?>
+        </div>
+    </section>
+
+    <!-- Earnings Card -->
+    <section class="earnings-card">
+        <div class="earnings-main">
+            <div class="earnings-label"><?= __('driver.earnings_today') ?></div>
+            <div class="earnings-value">
+                <?= number_format($stats['earnings_today'] ?? 0) ?>
+                <span class="earnings-currency">MAD</span>
+            </div>
+        </div>
+        <div class="earnings-grid">
+            <div class="earnings-stat">
+                <div class="earnings-stat-value"><?= number_format($stats['earnings_week'] ?? 0) ?></div>
+                <div class="earnings-stat-label"><?= __('driver.this_week') ?></div>
+            </div>
+            <div class="earnings-stat">
+                <div class="earnings-stat-value"><?= number_format($stats['earnings_month'] ?? 0) ?></div>
+                <div class="earnings-stat-label"><?= __('driver.this_month') ?></div>
+            </div>
+            <div class="earnings-stat">
+                <div class="earnings-stat-value"><?= $stats['rides_today'] ?? 0 ?></div>
+                <div class="earnings-stat-label"><?= __('driver.today') ?></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Grid -->
     <section class="driver-stats">
         <div class="driver-stat">
-            <div class="driver-stat-value"><?= $stats['today'] ?? 0 ?></div>
-            <div class="driver-stat-label"><?= __('driver.today') ?></div>
+            <div class="driver-stat-icon rides">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                </svg>
+            </div>
+            <div class="driver-stat-value"><?= $stats['rides_total'] ?? 0 ?></div>
+            <div class="driver-stat-label"><?= __('driver.rides') ?></div>
         </div>
         <div class="driver-stat">
-            <div class="driver-stat-value"><?= $stats['week'] ?? 0 ?></div>
-            <div class="driver-stat-label"><?= __('driver.this_week') ?></div>
+            <div class="driver-stat-icon rating">
+                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+            </div>
+            <div class="driver-stat-value"><?= number_format($user['rating'] ?? 5.0, 1) ?></div>
+            <div class="driver-stat-label"><?= __('driver.rating') ?></div>
         </div>
         <div class="driver-stat">
-            <div class="driver-stat-value"><?= number_format($stats['earnings'] ?? 0) ?></div>
-            <div class="driver-stat-label"><?= __('driver.earnings') ?></div>
+            <div class="driver-stat-icon distance">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </div>
+            <div class="driver-stat-value"><?= number_format($stats['distance_total'] ?? 0, 0) ?></div>
+            <div class="driver-stat-label"><?= __('driver.km') ?></div>
         </div>
+    </section>
+
+    <!-- Safety Banner -->
+    <section class="safety-banner" id="shareTrip">
+        <div class="safety-banner-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <path d="M9 12l2 2 4-4"/>
+            </svg>
+        </div>
+        <div class="safety-banner-content">
+            <div class="safety-banner-title"><?= __('driver.share_trip') ?></div>
+            <div class="safety-banner-text"><?= __('driver.share_trip_hint') ?></div>
+        </div>
+        <svg class="safety-banner-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+        </svg>
+    </section>
+
+    <!-- Vehicle Info -->
+    <?php if ($vehicle): ?>
+    <section class="vehicle-card">
+        <div class="vehicle-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/>
+                <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/>
+                <path d="M5 17h-2v-6l2 -5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0h-6m-6 -6h15m-6 0v-5"/>
+            </svg>
+        </div>
+        <div class="vehicle-info">
+            <div class="vehicle-name"><?= htmlspecialchars($vehicle['brand'] . ' ' . $vehicle['model']) ?></div>
+            <div class="vehicle-plate"><?= htmlspecialchars($vehicle['license_plate']) ?> - <?= htmlspecialchars($vehicle['color']) ?></div>
+        </div>
+    </section>
+    <?php endif; ?>
+
+    <!-- Quick Actions -->
+    <section class="quick-actions">
+        <a href="<?= base_url('driver/history') ?>" class="quick-action">
+            <div class="quick-action-icon history">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+            </div>
+            <span class="quick-action-text"><?= __('driver.history') ?></span>
+        </a>
+        <a href="<?= base_url('profile') ?>" class="quick-action">
+            <div class="quick-action-icon share">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+            </div>
+            <span class="quick-action-text"><?= __('nav.profile') ?></span>
+        </a>
     </section>
 
     <!-- Ride Requests -->
@@ -370,7 +824,10 @@
             <div class="ride-request" data-ride-id="<?= $ride['id'] ?>">
                 <div class="ride-request-header">
                     <span class="ride-request-price"><?= number_format($ride['estimated_price']) ?> MAD</span>
-                    <span class="ride-request-distance"><?= number_format($ride['distance'], 1) ?> km</span>
+                    <div class="ride-request-meta">
+                        <div class="ride-request-distance"><?= number_format($ride['estimated_distance_km'] ?? 0, 1) ?> km</div>
+                        <div class="ride-request-duration">~<?= $ride['estimated_duration_min'] ?? 0 ?> min</div>
+                    </div>
                 </div>
                 <div class="ride-request-route">
                     <div class="ride-request-dots">
@@ -379,8 +836,14 @@
                         <div class="ride-request-dot dropoff"></div>
                     </div>
                     <div class="ride-request-addresses">
-                        <div class="ride-request-address"><?= htmlspecialchars($ride['pickup_address']) ?></div>
-                        <div class="ride-request-address"><?= htmlspecialchars($ride['dropoff_address']) ?></div>
+                        <div class="ride-request-address">
+                            <span class="ride-request-address-label"><?= __('history.pickup_label') ?></span>
+                            <?= htmlspecialchars($ride['pickup_address']) ?>
+                        </div>
+                        <div class="ride-request-address">
+                            <span class="ride-request-address-label"><?= __('history.dropoff_label') ?></span>
+                            <?= htmlspecialchars($ride['dropoff_address']) ?>
+                        </div>
                     </div>
                 </div>
                 <div class="ride-request-actions">
@@ -463,6 +926,25 @@
             this.checked = !isAvailable;
             if (typeof showToast === 'function') {
                 showToast('error', <?= json_encode(__('error.generic')) ?>);
+            }
+        }
+    });
+
+    // Share trip button
+    document.getElementById('shareTrip')?.addEventListener('click', async function() {
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'TripSalama - Ma position',
+                    text: <?= json_encode(__('driver.share_trip_hint')) ?>,
+                    url: window.location.href
+                });
+            } catch (err) {
+                console.log('Share cancelled');
+            }
+        } else {
+            if (typeof showToast === 'function') {
+                showToast('info', 'Partage non disponible sur cet appareil');
             }
         }
     });

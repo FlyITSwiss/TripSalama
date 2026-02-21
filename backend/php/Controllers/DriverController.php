@@ -33,12 +33,14 @@ class DriverController
         // Statut de disponibilite
         $status = $this->getDriverStatus($driverId);
 
-        // Statistiques
+        // Statistiques enrichies
         $rideModel = new Ride($this->db);
-        $stats = [
-            'total_rides' => $rideModel->countByDriver($driverId),
-            'this_month' => $rideModel->countByDriver($driverId, 'month'),
-        ];
+        $stats = $rideModel->getDriverStats($driverId);
+
+        // Objectif journalier (configurable, défaut 200 MAD)
+        $dailyGoal = 200;
+        $stats['daily_goal'] = $dailyGoal;
+        $stats['goal_progress'] = min(100, round(($stats['earnings_today'] / $dailyGoal) * 100));
 
         // Course en cours
         $activeRide = $rideModel->getActiveByDriver($driverId);
@@ -52,7 +54,7 @@ class DriverController
             );
         }
 
-        // Vehicule
+        // Véhicule
         $vehicleModel = new Vehicle($this->db);
         $vehicle = $vehicleModel->findByDriver($driverId);
 

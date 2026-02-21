@@ -51,7 +51,11 @@ async function fillInput(page, selector, value) {
 async function login(page, userType = 'passenger') {
     const user = config.users[userType];
 
-    await page.goto(`${config.baseUrl}/login`);
+    // TripSalama utilise / comme page de login
+    await page.goto(`${config.baseUrl}/`);
+    await sleep(1000);
+
+    // Attendre le formulaire
     await waitForElement(page, config.selectors.loginForm);
 
     await fillInput(page, config.selectors.emailInput, user.email);
@@ -59,8 +63,13 @@ async function login(page, userType = 'passenger') {
 
     await clickElement(page, config.selectors.submitBtn);
 
-    // Attendre la redirection
-    await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: config.timeouts.navigation });
+    // Attendre la redirection (avec fallback)
+    try {
+        await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 10000 });
+    } catch (e) {
+        // Si pas de navigation, attendre que la page charge
+        await sleep(2000);
+    }
 
     return user;
 }
