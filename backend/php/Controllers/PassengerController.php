@@ -60,7 +60,7 @@ class PassengerController
             'pageTitle' => __('booking.title'),
             'currentPage' => 'book',
             'includeMap' => true,
-            'pageJs' => ['modules/map-controller.js', 'modules/booking.js', 'components/address-autocomplete.js'],
+            'pageJs' => ['modules/map-controller.js', 'modules/booking.js'],
         ]);
     }
 
