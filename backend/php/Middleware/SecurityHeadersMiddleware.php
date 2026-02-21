@@ -27,8 +27,8 @@ class SecurityHeadersMiddleware
         // Referrer Policy
         header('Referrer-Policy: strict-origin-when-cross-origin');
 
-        // Permissions Policy - geolocation=* pour permettre la géolocalisation
-        header('Permissions-Policy: accelerometer=(), camera=*, geolocation=*, gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()');
+        // Permissions Policy - DÉPLACÉ VERS NGINX pour éviter conflit avec Helios
+        // header('Permissions-Policy: accelerometer=(), camera=*, geolocation=*, gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()');
 
         // Content Security Policy
         $csp = [
