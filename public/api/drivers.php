@@ -17,8 +17,9 @@ try {
     $db = getDbConnection();
 
     switch ($action) {
+        case 'availability':
         case 'toggle-status':
-            if ($method !== 'PUT') errorResponse('Method not allowed', 405);
+            if ($method !== 'POST' && $method !== 'PUT') errorResponse('Method not allowed', 405);
             requireAuth();
             requireRole('driver');
             requireCsrf();

@@ -320,9 +320,9 @@
 <div class="driver-dashboard">
     <!-- Status Toggle -->
     <section class="driver-status-card">
-        <div class="driver-status-icon <?= ($driver['is_available'] ?? false) ? 'online' : 'offline' ?>" id="statusIcon">
+        <div class="driver-status-icon <?= ($status['is_available'] ?? false) ? 'online' : 'offline' ?>" id="statusIcon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <?php if ($driver['is_available'] ?? false): ?>
+                <?php if ($status['is_available'] ?? false): ?>
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                 <polyline points="22 4 12 14.01 9 11.01"/>
                 <?php else: ?>
@@ -333,13 +333,13 @@
             </svg>
         </div>
         <div class="driver-status-text" id="statusText">
-            <?= ($driver['is_available'] ?? false) ? __('driver.online') : __('driver.offline') ?>
+            <?= ($status['is_available'] ?? false) ? __('driver.online') : __('driver.offline') ?>
         </div>
-        <div class="driver-status-hint">
-            <?= ($driver['is_available'] ?? false) ? __('driver.accepting_rides') : __('driver.not_accepting') ?>
+        <div class="driver-status-hint" id="statusHint">
+            <?= ($status['is_available'] ?? false) ? __('driver.accepting_rides') : __('driver.not_accepting') ?>
         </div>
         <label class="status-toggle">
-            <input type="checkbox" id="availabilityToggle" <?= ($driver['is_available'] ?? false) ? 'checked' : '' ?>>
+            <input type="checkbox" id="availabilityToggle" <?= ($status['is_available'] ?? false) ? 'checked' : '' ?>>
             <span class="status-toggle-slider"></span>
         </label>
     </section>
@@ -424,26 +424,46 @@
         const isAvailable = this.checked;
         const statusIcon = document.getElementById('statusIcon');
         const statusText = document.getElementById('statusText');
+        const statusHint = document.getElementById('statusHint');
 
         try {
-            const response = await ApiService.post('driver/availability', {
+            const response = await ApiService.post('drivers?action=availability', {
                 is_available: isAvailable
             });
 
             if (response.success) {
+                // Update icon
                 statusIcon.className = 'driver-status-icon ' + (isAvailable ? 'online' : 'offline');
+                statusIcon.innerHTML = isAvailable
+                    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
+                    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+
+                // Update text
                 statusText.textContent = isAvailable
                     ? <?= json_encode(__('driver.online')) ?>
                     : <?= json_encode(__('driver.offline')) ?>;
+
+                // Update hint
+                statusHint.textContent = isAvailable
+                    ? <?= json_encode(__('driver.accepting_rides')) ?>
+                    : <?= json_encode(__('driver.not_accepting')) ?>;
 
                 // Haptic feedback
                 if ('vibrate' in navigator) {
                     navigator.vibrate(20);
                 }
+
+                // Show toast notification
+                if (typeof showToast === 'function') {
+                    showToast('success', response.message || <?= json_encode(__('msg.status_changed')) ?>);
+                }
             }
         } catch (error) {
             console.error('Error updating availability:', error);
             this.checked = !isAvailable;
+            if (typeof showToast === 'function') {
+                showToast('error', <?= json_encode(__('error.generic')) ?>);
+            }
         }
     });
 </script>
