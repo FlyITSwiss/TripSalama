@@ -99,6 +99,7 @@ function requireCsrf(): void
 
 /**
  * Obtenir les donnees de la requete (JSON ou form)
+ * Fusionne toujours $_GET pour avoir les query params (ex: ?action=xxx)
  */
 function getRequestData(): array
 {
@@ -107,7 +108,8 @@ function getRequestData(): array
     if (strpos($contentType, 'application/json') !== false) {
         $input = file_get_contents('php://input');
         $data = json_decode($input, true);
-        return is_array($data) ? $data : [];
+        // Fusionner $_GET pour avoir les query params comme action
+        return array_merge($_GET, is_array($data) ? $data : []);
     }
 
     return array_merge($_GET, $_POST);
