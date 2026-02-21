@@ -2,6 +2,42 @@
 
 ---
 
+## 🚨 RÈGLE ABSOLUE - ISOLATION DES PROJETS
+
+**TripSalama est un projet 100% INDÉPENDANT. Il ne doit JAMAIS interférer avec les autres projets du VPS stabilis-it.ch.**
+
+### Projets sur le VPS (complètement isolés)
+
+| Projet | URL | Responsabilité |
+|--------|-----|----------------|
+| **Site principal** | stabilis-it.ch | Géré par Helios - **NE JAMAIS TOUCHER** |
+| **Helios Landing** | stabilis-it.ch/helios | Géré par Helios - **NE JAMAIS TOUCHER** |
+| **Helios App** | stabilis-it.ch/internal/helios | Géré par Helios - **NE JAMAIS TOUCHER** |
+| **TripSalama** | stabilis-it.ch/internal/tripsalama | **SEUL PROJET GÉRÉ ICI** |
+
+### INTERDICTIONS ABSOLUES
+
+| ❌ STRICTEMENT INTERDIT | Raison |
+|-------------------------|--------|
+| Modifier `/etc/nginx/sites-enabled/helios` | Config nginx principale = Helios uniquement |
+| Modifier `/etc/nginx/conf.d/*` | Configs partagées = Helios uniquement |
+| Toucher à `/var/www/helios` ou `/var/www/stabilis-it` | Autres projets |
+| Ajouter des headers CSP globaux dans nginx | Affecterait tous les projets |
+| Scripts qui modifient des fichiers hors de `/var/www/tripsalama` | Risque d'interférence |
+
+### CE QUE TRIPSALAMA PEUT MODIFIER
+
+| ✅ AUTORISÉ | Chemin |
+|-------------|--------|
+| Code PHP TripSalama | `/var/www/tripsalama/backend/php/*` |
+| Assets TripSalama | `/var/www/tripsalama/public/assets/*` |
+| Snippet nginx TripSalama | `/etc/nginx/snippets/tripsalama.conf` |
+| Base de données TripSalama | MySQL `tripsalama.*` |
+
+**Si un changement risque d'affecter d'autres projets → STOP, demander à l'utilisateur.**
+
+---
+
 ## 🛑 STOP - AVANT D'ÉCRIRE LA MOINDRE LIGNE DE CODE
 
 **JE LIS CETTE SECTION EN ENTIER AVANT CHAQUE MODIFICATION. C'est une obligation, pas une suggestion.**
