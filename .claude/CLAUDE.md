@@ -296,25 +296,89 @@ npm run test:tracking
 
 ---
 
-## DÉPLOIEMENT
+## DÉPLOIEMENT - RÈGLES STRICTES (BLOQUANTES)
 
 ### Environnements
 
 | Env | URL | Branch |
 |-----|-----|--------|
 | Local | http://127.0.0.1:8080 | feature/* |
-| Staging | https://staging.tripsalama.com | develop |
-| Production | https://tripsalama.com | main |
+| **Production** | https://stabilis-it.ch/internal/tripsalama | main |
 
-### Workflow
+### Infrastructure Production
 
-1. Push sur feature branch
-2. GitHub Actions : lint + tests
-3. PR vers develop
-4. Auto-deploy staging
-5. Tests manuels
-6. Merge vers main
-7. Auto-deploy production
+| Composant | Configuration |
+|-----------|---------------|
+| **VPS** | 83.228.205.222 (OVH) |
+| **PHP** | 8.4-FPM (direct, pas Docker) |
+| **Nginx** | Certbot SSL, config dans `/etc/nginx/sites-enabled/helios` |
+| **MySQL** | Local, DB `tripsalama`, user `tripsalama` |
+| **Déploiement** | GitHub Actions → rsync vers `/var/www/tripsalama` |
+
+### Workflow de déploiement (AUTOMATIQUE)
+
+```
+Push main → GitHub Actions → Validation PHP → Rsync VPS → Config nginx → Vérification HTTP
+```
+
+**Le workflow `deploy-vps.yml` fait TOUT automatiquement :**
+1. Validation syntaxe PHP
+2. Déploiement backend via rsync
+3. Déploiement public via rsync
+4. Configuration MySQL (user + DB)
+5. Configuration nginx (snippet `/etc/nginx/snippets/tripsalama.conf`)
+6. Vérification HTTP 200/301/302
+
+### Checklist BLOQUANTE - AVANT chaque push sur main
+
+| # | Vérification | Commande |
+|---|--------------|----------|
+| 1 | **Tests locaux passent** | `cd tests/puppeteer && npm run test:smoke` |
+| 2 | **Pre-commit hook OK** | Automatique au commit |
+| 3 | **Pas de credentials hardcodés** | Grep `.env`, `password`, `secret` |
+| 4 | **YAML workflow valide** | `node -e "require('js-yaml').load(require('fs').readFileSync('.github/workflows/deploy-vps.yml'))"` |
+
+### Checklist BLOQUANTE - APRÈS un deploy
+
+| # | Action | Commande |
+|---|--------|----------|
+| 1 | **Attendre GitHub Actions** | `gh run list --limit 3` |
+| 2 | **Vérifier status success** | `gh run view <run_id>` |
+| 3 | **Vérifier HTTP 200** | `curl -sI https://stabilis-it.ch/internal/tripsalama/login` |
+| 4 | **Test Puppeteer PROD** | `node tests/puppeteer/smoke-tests.js --env=production` |
+
+### Configuration Nginx (pour référence)
+
+Le fichier `/etc/nginx/snippets/tripsalama.conf` est déployé automatiquement et inclus dans le site principal via :
+```nginx
+include /etc/nginx/snippets/tripsalama.conf;
+```
+
+**JAMAIS modifier manuellement nginx sur le VPS.** Tout passe par le workflow GitHub Actions.
+
+### En cas d'échec de déploiement
+
+1. Consulter les logs : `gh run view <run_id> --log`
+2. Identifier l'étape en échec
+3. Corriger le code ou workflow
+4. Pusher le fix
+5. **NE JAMAIS bypasser le workflow pour déployer manuellement**
+
+### Secrets GitHub requis
+
+| Secret | Usage |
+|--------|-------|
+| `SSH_PRIVATE_KEY` | Accès SSH au VPS (debian@83.228.205.222) |
+
+### INTERDICTIONS ABSOLUES
+
+| ❌ INTERDIT | ✅ OBLIGATOIRE |
+|-------------|----------------|
+| `ssh debian@vps` pour déployer manuellement | Push sur main → GitHub Actions |
+| Modifier nginx sur le VPS directement | Modifier `docker/nginx-tripsalama.conf` + push |
+| Bypasser les tests avant push | `npm run test:smoke` localement |
+| Push avec pre-commit en échec | Corriger les erreurs signalées |
+| `docker-compose down -v` sur VPS | Préserver les uploads |
 
 ---
 

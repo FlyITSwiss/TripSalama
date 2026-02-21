@@ -211,6 +211,7 @@ jobs:
       - name: Configure nginx
         run: |
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} 'bash -s' << 'ENDSSH'
+            set -e
             echo "=== Configuring nginx for TripSalama ==="
 
             # Move nginx config to snippets
@@ -219,61 +220,91 @@ jobs:
             echo "Created /etc/nginx/snippets/tripsalama.conf"
 
             # Find the active nginx config (Certbot-managed)
-            NGINX_CONFIG=""
-            if [ -f /etc/nginx/sites-enabled/helios ]; then
-              NGINX_CONFIG="/etc/nginx/sites-enabled/helios"
-              echo "Found Certbot-managed config: $NGINX_CONFIG"
-            elif [ -f /etc/nginx/sites-available/stabilis-it.ch ]; then
-              NGINX_CONFIG="/etc/nginx/sites-available/stabilis-it.ch"
-            elif [ -f /etc/nginx/sites-available/default ]; then
-              NGINX_CONFIG="/etc/nginx/sites-available/default"
+            NGINX_CONFIG="/etc/nginx/sites-enabled/helios"
+            if [ ! -f "$NGINX_CONFIG" ]; then
+              echo "Config $NGINX_CONFIG not found, trying alternatives..."
+              for f in /etc/nginx/sites-available/stabilis-it.ch /etc/nginx/sites-available/default; do
+                if [ -f "$f" ]; then
+                  NGINX_CONFIG="$f"
+                  break
+                fi
+              done
             fi
 
-            if [ -z "$NGINX_CONFIG" ]; then
+            if [ ! -f "$NGINX_CONFIG" ]; then
               echo "No nginx config found!"
               exit 1
             fi
+            echo "Using: $NGINX_CONFIG"
 
-            echo "Using nginx config: $NGINX_CONFIG"
+            # Backup
+            sudo cp "$NGINX_CONFIG" /tmp/nginx-helios-backup.conf
 
-            # Backup config
-            sudo cp "$NGINX_CONFIG" /tmp/nginx-tripsalama-backup.conf
+            # Check if snippet is already correctly included
+            if grep -q "include /etc/nginx/snippets/tripsalama.conf" "$NGINX_CONFIG"; then
+              echo "Snippet already included - checking for inline duplicates..."
 
-            # FIRST: Remove any existing inline TripSalama location blocks (cleanup old config)
-            # This prevents "duplicate location" errors
-            if grep -q "location /internal/tripsalama" "$NGINX_CONFIG"; then
-              echo "Removing old inline TripSalama config..."
-              # Remove lines between "location /internal/tripsalama" and closing brace
-              sudo sed -i '/location \/internal\/tripsalama/,/^[[:space:]]*}/d' "$NGINX_CONFIG"
-              echo "Old config removed"
-            fi
+              # Count occurrences of location /internal/tripsalama
+              LOCATIONS=$(grep -c "location /internal/tripsalama" "$NGINX_CONFIG" 2>/dev/null || echo "0")
+              echo "Found $LOCATIONS inline location blocks"
 
-            # Check if TripSalama snippet is already included
-            if grep -q "include.*snippets/tripsalama" "$NGINX_CONFIG"; then
-              echo "TripSalama snippet already included in nginx config"
+              if [ "$LOCATIONS" -gt "0" ]; then
+                echo "Removing inline location blocks (keeping snippet include)..."
+                # Create temp file without inline locations but keeping includes
+                sudo awk '
+                  /location \/internal\/tripsalama \{/ && !/include/ {
+                    skip=1
+                    brace=1
+                    next
+                  }
+                  skip && /\{/ { brace++ }
+                  skip && /\}/ { brace--; if(brace==0) {skip=0}; next }
+                  !skip { print }
+                ' "$NGINX_CONFIG" | sudo tee /tmp/nginx-cleaned.conf > /dev/null
+                sudo mv /tmp/nginx-cleaned.conf "$NGINX_CONFIG"
+                echo "Inline locations removed"
+              fi
             else
-              echo "Adding TripSalama include to nginx config..."
-              sudo sed -i '/server_name.*stabilis-it.ch/a\    include /etc/nginx/snippets/tripsalama.conf;' "$NGINX_CONFIG" 2>/dev/null || \
-              sudo sed -i '/server_name/a\    include /etc/nginx/snippets/tripsalama.conf;' "$NGINX_CONFIG"
-              echo "Added TripSalama include"
+              echo "Snippet not included yet - checking for inline config..."
+
+              # If there's an inline location, remove it first
+              if grep -q "location /internal/tripsalama" "$NGINX_CONFIG"; then
+                echo "Removing old inline config..."
+                sudo awk '
+                  /location \/internal\/tripsalama/ {
+                    skip=1
+                    brace=1
+                    next
+                  }
+                  skip && /\{/ { brace++ }
+                  skip && /\}/ { brace--; if(brace==0) {skip=0}; next }
+                  !skip { print }
+                ' "$NGINX_CONFIG" | sudo tee /tmp/nginx-cleaned.conf > /dev/null
+                sudo mv /tmp/nginx-cleaned.conf "$NGINX_CONFIG"
+              fi
+
+              # Add snippet include after first server_name
+              echo "Adding snippet include..."
+              sudo sed -i '0,/server_name/s/server_name.*/&\n    include \/etc\/nginx\/snippets\/tripsalama.conf;/' "$NGINX_CONFIG"
+              echo "Include added"
             fi
 
-            # Test nginx syntax
+            # Test nginx
+            echo "Testing nginx config..."
             if sudo nginx -t 2>&1; then
-              echo "Nginx syntax OK"
+              echo "Nginx OK - reloading..."
               sudo systemctl reload nginx
-              echo "Nginx reloaded"
+              echo "Done!"
             else
-              echo "Nginx syntax error - restoring backup"
-              sudo cp /tmp/nginx-tripsalama-backup.conf "$NGINX_CONFIG"
+              echo "Nginx error - restoring backup..."
+              sudo cp /tmp/nginx-helios-backup.conf "$NGINX_CONFIG"
               sudo nginx -t && sudo systemctl reload nginx
-              echo "Restored original config"
               exit 1
             fi
 
-            # Show final config
-            echo "=== TripSalama in nginx ==="
-            grep -n "tripsalama" "$NGINX_CONFIG" | head -5
+            # Show result
+            echo "=== Final config ==="
+            grep -n "tripsalama" "$NGINX_CONFIG" | head -3
           ENDSSH
 
       - name: Verify deployment
