@@ -39,7 +39,7 @@ class UserController
         // Si conductrice, charger les infos véhicule
         $vehicle = null;
         if ($user['role'] === 'driver') {
-            $stmt = $this->db->prepare('SELECT * FROM vehicles WHERE user_id = ?');
+            $stmt = $this->db->prepare('SELECT * FROM vehicles WHERE driver_id = ?');
             $stmt->execute([$user['id']]);
             $vehicle = $stmt->fetch(PDO::FETCH_ASSOC);
         }
@@ -81,7 +81,7 @@ class UserController
 
         $vehicle = null;
         if ($user['role'] === 'driver') {
-            $stmt = $this->db->prepare('SELECT * FROM vehicles WHERE user_id = ?');
+            $stmt = $this->db->prepare('SELECT * FROM vehicles WHERE driver_id = ?');
             $stmt->execute([$user['id']]);
             $vehicle = $stmt->fetch(PDO::FETCH_ASSOC);
         }
