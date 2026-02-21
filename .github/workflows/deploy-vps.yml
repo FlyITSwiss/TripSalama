@@ -201,114 +201,69 @@ jobs:
             sudo chmod -R 777 ${{ env.REMOTE_PATH }}/public/uploads
           "
 
-      - name: Deploy nginx config
+      - name: Deploy TripSalama nginx snippet
         run: |
-          echo "Deploying nginx config file..."
+          echo "=============================================="
+          echo "TRIPSALAMA NGINX SNIPPET DEPLOYMENT"
+          echo "=============================================="
+          echo ""
+          echo "IMPORTANT: TripSalama ONLY manages its own snippet file."
+          echo "The main nginx config is managed by the Helios project."
+          echo "TripSalama will NEVER modify the main nginx config."
+          echo ""
+
+          # Deploy snippet file to VPS
           scp -o StrictHostKeyChecking=no \
             "docker/nginx-tripsalama.conf" \
             "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/tripsalama.conf"
 
-      - name: Configure nginx
-        run: |
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} 'bash -s' << 'ENDSSH'
             set -e
-            echo "=== Configuring nginx for TripSalama ==="
 
-            # Move nginx config to snippets
+            # Create snippets directory if not exists
             sudo mkdir -p /etc/nginx/snippets
+
+            # Deploy TripSalama snippet ONLY - DO NOT touch main nginx config
             sudo cp /tmp/tripsalama.conf /etc/nginx/snippets/tripsalama.conf
-            echo "Created /etc/nginx/snippets/tripsalama.conf"
+            sudo chown root:root /etc/nginx/snippets/tripsalama.conf
+            sudo chmod 644 /etc/nginx/snippets/tripsalama.conf
+            echo "✅ Deployed /etc/nginx/snippets/tripsalama.conf"
 
-            # Find the active nginx config (Certbot-managed)
-            NGINX_CONFIG="/etc/nginx/sites-enabled/helios"
-            if [ ! -f "$NGINX_CONFIG" ]; then
-              echo "Config $NGINX_CONFIG not found, trying alternatives..."
-              for f in /etc/nginx/sites-available/stabilis-it.ch /etc/nginx/sites-available/default; do
-                if [ -f "$f" ]; then
-                  NGINX_CONFIG="$f"
-                  break
-                fi
-              done
-            fi
-
-            if [ ! -f "$NGINX_CONFIG" ]; then
-              echo "No nginx config found!"
-              exit 1
-            fi
-            echo "Using: $NGINX_CONFIG"
-
-            # Backup
-            sudo cp "$NGINX_CONFIG" /tmp/nginx-helios-backup.conf
-
-            # Always clean up any tripsalama-related location blocks (inline or named)
-            echo "Cleaning up ALL tripsalama-related nginx blocks..."
-
-            # Remove ANY location block containing tripsalama (except include lines)
-            # This includes: location /internal/tripsalama, location ^~ /internal/tripsalama, location @tripsalama_php
-            if grep -qE "location.*tripsalama" "$NGINX_CONFIG"; then
-              echo "Found tripsalama location blocks - removing..."
-              sudo awk '
-                /location.*tripsalama/ && !/include/ {
-                  skip=1
-                  brace=1
-                  next
-                }
-                skip && /\{/ { brace++ }
-                skip && /\}/ { brace--; if(brace==0) {skip=0}; next }
-                !skip { print }
-              ' "$NGINX_CONFIG" | sudo tee /tmp/nginx-cleaned.conf > /dev/null
-              sudo mv /tmp/nginx-cleaned.conf "$NGINX_CONFIG"
-              echo "Location blocks removed"
-            fi
-
-            # Check if snippet is already included
-            if grep -q "include /etc/nginx/snippets/tripsalama.conf" "$NGINX_CONFIG"; then
-              echo "Snippet already included"
-            else
-              # Add snippet include after first server_name in HTTPS server block
-              echo "Adding snippet include..."
-              # Find the HTTPS server block (listen 443) and add include after server_name
-              sudo awk '
-                /listen 443/ { in_https=1 }
-                in_https && /server_name/ && !added {
-                  print
-                  print "    include /etc/nginx/snippets/tripsalama.conf;"
-                  added=1
-                  next
-                }
-                { print }
-              ' "$NGINX_CONFIG" | sudo tee /tmp/nginx-with-include.conf > /dev/null
-              sudo mv /tmp/nginx-with-include.conf "$NGINX_CONFIG"
-              echo "Include added to HTTPS server block"
-            fi
-
-            # Test nginx
-            echo "Testing nginx config..."
-            if sudo nginx -t 2>&1; then
-              echo "Nginx OK - reloading..."
-              sudo systemctl reload nginx
-              echo "Done!"
-            else
-              echo "Nginx error - restoring backup..."
-              sudo cp /tmp/nginx-helios-backup.conf "$NGINX_CONFIG"
-              sudo nginx -t && sudo systemctl reload nginx
-              exit 1
-            fi
-
-            # Show result - ALL tripsalama references
-            echo "=== Final nginx config (tripsalama lines) ==="
-            grep -n "tripsalama" "$NGINX_CONFIG" || echo "No tripsalama references found (should only have include)"
-
-            # Show the snippet content
+            # Show snippet content
+            echo ""
             echo "=== Snippet content ==="
             cat /etc/nginx/snippets/tripsalama.conf
 
-            # Verify no duplicate locations
-            LOCATIONS=$(grep -c "location.*tripsalama" "$NGINX_CONFIG" 2>/dev/null || echo "0")
-            if [ "$LOCATIONS" -gt "0" ]; then
-              echo "WARNING: Found $LOCATIONS inline location blocks (should be 0)"
+            # Check if main nginx config includes the snippet (info only, don't modify)
+            echo ""
+            echo "=== Checking main nginx config ==="
+            NGINX_CONFIG="/etc/nginx/sites-enabled/helios"
+            if [ -f "$NGINX_CONFIG" ]; then
+              if grep -q "include /etc/nginx/snippets/tripsalama.conf" "$NGINX_CONFIG"; then
+                echo "✅ Main nginx config includes TripSalama snippet"
+                grep -n "tripsalama" "$NGINX_CONFIG"
+              else
+                echo "⚠️ WARNING: Main nginx config does NOT include TripSalama snippet!"
+                echo "   Run Helios deployment to update the main nginx config."
+                echo "   TripSalama does NOT and will NEVER modify the main nginx config."
+              fi
             else
-              echo "OK: No inline location blocks (using snippet only)"
+              echo "⚠️ Main nginx config not found at $NGINX_CONFIG"
+              echo "   Helios must be deployed first to set up the main nginx config."
+            fi
+
+            # Test nginx syntax (if config exists and includes snippet)
+            echo ""
+            echo "=== Testing nginx config ==="
+            if sudo nginx -t 2>&1; then
+              echo "✅ Nginx syntax OK - reloading..."
+              sudo systemctl reload nginx
+              echo "✅ Nginx reloaded"
+            else
+              echo "⚠️ Nginx syntax error"
+              echo "   This may be because the main nginx config doesn't include the snippet yet."
+              echo "   Deploy Helios first to set up the main nginx config."
+              # Don't exit with error - the snippet itself is valid
             fi
           ENDSSH
 

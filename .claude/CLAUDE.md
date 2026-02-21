@@ -382,31 +382,60 @@ include /etc/nginx/snippets/tripsalama.conf;
 | Location nginx sans `^~` | Toujours `location ^~ /internal/tripsalama` |
 | Inline location dans config nginx principale | Snippet via include uniquement |
 
+### ARCHITECTURE MULTI-PROJETS (CRITIQUE)
+
+Le VPS stabilis-it.ch héberge plusieurs projets :
+
+| URL | Projet | Routage |
+|-----|--------|---------|
+| `/` | Site principal | Géré par Helios |
+| `/helios` | Landing page | Géré par Helios |
+| `/internal/helios` | App Helios | Géré par Helios (Docker) |
+| `/internal/tripsalama` | App TripSalama | Géré par TripSalama (snippet) |
+
+### RÈGLES DE NON-INTERFÉRENCE (BLOQUANTES)
+
+| ❌ INTERDIT | ✅ OBLIGATOIRE |
+|-------------|----------------|
+| TripSalama modifie `/etc/nginx/sites-enabled/helios` | Modifier UNIQUEMENT `/etc/nginx/snippets/tripsalama.conf` |
+| TripSalama ajoute/supprime des locations | Le snippet contient UNE seule location : `/internal/tripsalama` |
+| TripSalama touche aux routes de Helios | Chaque projet gère UNIQUEMENT ses propres routes |
+| Scripts AWK qui modifient la config principale | AUCUNE modification de la config principale |
+
+### Workflow de déploiement TripSalama
+
+```
+TripSalama déploie UNIQUEMENT:
+├── /etc/nginx/snippets/tripsalama.conf (snippet)
+└── /var/www/tripsalama (app PHP)
+
+TripSalama NE touche JAMAIS:
+├── /etc/nginx/sites-enabled/helios (géré par Helios)
+├── /var/www/stabilis-it (géré par Helios)
+└── /var/www/helios (géré par Helios)
+```
+
 ### Troubleshooting Nginx
 
 **Symptôme : URL redirige vers stabilis-it.ch au lieu de TripSalama**
 
 Causes possibles :
-1. **Location sans priorité** - Le `^~` est manquant, une autre location regex prend le dessus
-2. **Duplicate location blocks** - Il y a des locations inline en plus du snippet
-3. **Named location orpheline** - `@tripsalama_php` traîne dans la config
+1. **Snippet non inclus** - La config principale Helios doit avoir `include /etc/nginx/snippets/tripsalama.conf`
+2. **Location sans priorité** - Le `^~` est manquant dans le snippet
 
-**Vérifications (via logs GitHub Actions) :**
+**Vérifications :**
 ```bash
-# Doit afficher UNIQUEMENT la ligne include, pas de location inline
+# Vérifier que le snippet existe
+cat /etc/nginx/snippets/tripsalama.conf
+
+# Vérifier que la config principale l'inclut
 grep -n "tripsalama" /etc/nginx/sites-enabled/helios
 
-# Doit afficher "location ^~ /internal/tripsalama"
-cat /etc/nginx/snippets/tripsalama.conf | head -10
-
-# Test externe doit retourner 200 ou 302, PAS 301 vers autre domaine
+# Test externe
 curl -sI https://stabilis-it.ch/internal/tripsalama/login
 ```
 
-**Solution :** Le workflow AWK nettoie automatiquement les blocks inline. Si le problème persiste :
-1. Vérifier les logs de l'étape "Configure nginx"
-2. S'assurer que le snippet a bien `location ^~`
-3. Vérifier qu'aucune autre location ne capture `/internal/`
+**Solution :** Si le snippet n'est pas inclus, déployer Helios d'abord. TripSalama ne modifie JAMAIS la config principale.
 
 ---
 
