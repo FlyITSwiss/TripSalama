@@ -43,7 +43,9 @@
             apiPath: "/api",
             lang: <?= json_encode($_SESSION['lang'] ?? 'fr') ?>,
             csrfToken: <?= json_encode(csrf_token()) ?>,
-            debug: <?= json_encode(config('debug', false)) ?>
+            debug: <?= json_encode(config('debug', false)) ?>,
+            defaultCountry: <?= json_encode(config('default_country', 'FR')) ?>,
+            currentCountry: <?= json_encode($_SESSION['country'] ?? config('default_country', 'FR')) ?>
         };
     </script>
 </head>
@@ -188,6 +190,7 @@
     <script src="<?= versioned_asset('js/core/state-manager.js') ?>"></script>
     <script src="<?= versioned_asset('js/core/i18n.js') ?>"></script>
     <script src="<?= versioned_asset('js/core/geolocation-service.js') ?>"></script>
+    <script src="<?= versioned_asset('js/core/country-detection-service.js') ?>"></script>
     <script src="<?= versioned_asset('js/core/tracking-service.js') ?>"></script>
 
     <!-- Uber Interactions -->

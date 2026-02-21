@@ -166,13 +166,24 @@
         /**
          * Formater un montant en devise
          * @param {number} amount - Montant
-         * @param {string} currency - Code devise (defaut: MAD)
+         * @param {string} currency - Code devise (auto-detecté si non fourni)
          * @returns {string}
          */
-        formatCurrency: function(amount, currency = 'MAD') {
-            const formatter = new Intl.NumberFormat(currentLang === 'fr' ? 'fr-MA' : 'en-US', {
+        formatCurrency: function(amount, currency = null) {
+            // Utiliser CountryDetectionService si disponible et pas de devise forcée
+            if (!currency && typeof CountryDetectionService !== 'undefined') {
+                return CountryDetectionService.formatPrice(amount);
+            }
+
+            // Fallback sur formatage standard
+            const curr = currency || 'EUR';
+            const locale = curr === 'MAD' ? (currentLang === 'fr' ? 'fr-MA' : 'ar-MA') :
+                           curr === 'EUR' ? (currentLang === 'fr' ? 'fr-FR' : 'en-US') :
+                           (currentLang === 'fr' ? 'fr-FR' : 'en-US');
+
+            const formatter = new Intl.NumberFormat(locale, {
                 style: 'currency',
-                currency: currency,
+                currency: curr,
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });

@@ -456,4 +456,22 @@ return [
         'not_available' => 'Appel non disponible',
         'call_ended' => 'Appel terminé',
     ],
+
+    // Pays et devises
+    'country' => [
+        'title' => 'Pays',
+        'detect_auto' => 'Détection automatique du pays',
+        'detecting' => 'Détection en cours...',
+        'detected' => 'Pays détecté : :country',
+        'not_detected' => 'Impossible de détecter le pays',
+        'not_supported' => 'Ce pays n\'est pas encore supporté',
+        'updated' => 'Pays mis à jour',
+        'change' => 'Changer de pays',
+        'current' => 'Pays actuel',
+        'select' => 'Sélectionner un pays',
+        'france' => 'France',
+        'morocco' => 'Maroc',
+        'currency_eur' => 'Euro (€)',
+        'currency_mad' => 'Dirham marocain (DH)',
+    ],
 ];

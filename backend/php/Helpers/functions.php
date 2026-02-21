@@ -203,10 +203,57 @@ function format_duration(int $minutes): string
 }
 
 /**
- * Formater un prix
+ * Formater un prix selon le pays détecté
  */
 function format_price(float $amount): string
 {
-    $currency = config('pricing.currency', 'CHF');
-    return number_format($amount, 2, '.', "'") . ' ' . $currency;
+    static $countryService = null;
+
+    if ($countryService === null) {
+        $countryService = new \TripSalama\Services\CountryDetectionService();
+    }
+
+    return $countryService->formatPrice($amount);
+}
+
+/**
+ * Obtenir la configuration pricing du pays actuel
+ */
+function get_country_pricing(): array
+{
+    static $countryService = null;
+
+    if ($countryService === null) {
+        $countryService = new \TripSalama\Services\CountryDetectionService();
+    }
+
+    return $countryService->getCurrentPricing();
+}
+
+/**
+ * Obtenir le code pays actuel
+ */
+function get_current_country(): string
+{
+    static $countryService = null;
+
+    if ($countryService === null) {
+        $countryService = new \TripSalama\Services\CountryDetectionService();
+    }
+
+    return $countryService->getCurrentCountryCode();
+}
+
+/**
+ * Obtenir la devise actuelle
+ */
+function get_current_currency(): string
+{
+    static $countryService = null;
+
+    if ($countryService === null) {
+        $countryService = new \TripSalama\Services\CountryDetectionService();
+    }
+
+    return $countryService->getCurrentCurrency();
 }

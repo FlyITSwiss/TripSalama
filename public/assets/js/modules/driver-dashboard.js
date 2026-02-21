@@ -48,6 +48,12 @@ const DriverDashboard = (function() {
             if (isAvailable) {
                 try {
                     position = await MapController.getCurrentLocation();
+
+                    // Détecter automatiquement le pays à partir de la position
+                    if (typeof CountryDetectionService !== 'undefined' && position) {
+                        CountryDetectionService.detectFromCoordinates(position.lat, position.lng);
+                        AppConfig.debug('Country detected for driver:', CountryDetectionService.getCurrentCountry());
+                    }
                 } catch (err) {
                     // Position par defaut si geolocalisation refuse
                     position = { lat: 46.2044, lng: 6.1432 };

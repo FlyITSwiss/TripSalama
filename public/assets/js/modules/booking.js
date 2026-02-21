@@ -175,6 +175,12 @@ const Booking = (function() {
             // Reverse geocoding
             const address = await GeoLocationService.reverseGeocode(position.lat, position.lng);
 
+            // Détecter le pays automatiquement à partir des coordonnées
+            if (typeof CountryDetectionService !== 'undefined') {
+                CountryDetectionService.detectFromCoordinates(position.lat, position.lng);
+                AppConfig.debug('Country detection from coordinates:', CountryDetectionService.getCurrentCountry());
+            }
+
             selectLocation('pickup', {
                 lat: position.lat,
                 lng: position.lng,
@@ -523,9 +529,15 @@ const Booking = (function() {
     }
 
     /**
-     * Calculer le prix
+     * Calculer le prix selon le pays détecté
      */
     function calculatePrice(distanceKm, durationMin) {
+        // Utiliser CountryDetectionService si disponible
+        if (typeof CountryDetectionService !== 'undefined') {
+            return CountryDetectionService.calculateEstimatedPrice(distanceKm, durationMin);
+        }
+
+        // Fallback sur valeurs par défaut
         const basePrice = 3.50;
         const pricePerKm = 1.20;
         const pricePerMin = 0.25;

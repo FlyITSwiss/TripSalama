@@ -199,5 +199,21 @@
         "no_face_detected": "Aucun visage détecté. Veuillez réessayer.",
         "multiple_faces": "Plusieurs visages détectés. Assurez-vous d'être seule dans le cadre.",
         "detection_failed": "Échec de la détection. Vérifiez l'éclairage et réessayez."
+    },
+    "country": {
+        "title": "Pays",
+        "detect_auto": "Détection automatique du pays",
+        "detecting": "Détection en cours...",
+        "detected": "Pays détecté : :country",
+        "not_detected": "Impossible de détecter le pays",
+        "not_supported": "Ce pays n'est pas encore supporté",
+        "updated": "Pays mis à jour",
+        "change": "Changer de pays",
+        "current": "Pays actuel",
+        "select": "Sélectionner un pays",
+        "france": "France",
+        "morocco": "Maroc",
+        "currency_eur": "Euro (€)",
+        "currency_mad": "Dirham marocain (DH)"
     }
 }

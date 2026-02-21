@@ -451,4 +451,22 @@ return [
         'not_available' => 'Call not available',
         'call_ended' => 'Call ended',
     ],
+
+    // Country and currency
+    'country' => [
+        'title' => 'Country',
+        'detect_auto' => 'Automatic country detection',
+        'detecting' => 'Detecting...',
+        'detected' => 'Country detected: :country',
+        'not_detected' => 'Unable to detect country',
+        'not_supported' => 'This country is not supported yet',
+        'updated' => 'Country updated',
+        'change' => 'Change country',
+        'current' => 'Current country',
+        'select' => 'Select a country',
+        'france' => 'France',
+        'morocco' => 'Morocco',
+        'currency_eur' => 'Euro (€)',
+        'currency_mad' => 'Moroccan Dirham (DH)',
+    ],
 ];

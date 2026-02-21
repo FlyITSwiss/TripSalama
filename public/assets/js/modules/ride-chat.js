@@ -1,6 +1,7 @@
 /**
  * TripSalama - Ride Chat Module
  * Communication conductrice-passagère (style Uber)
+ * Mobile-ready pour Android/iOS (Capacitor compatible)
  *
  * Design System φ = 1.618
  * Spacing Fibonacci: 4, 6, 10, 17, 27, 44, 71 px
@@ -17,6 +18,8 @@
         messages: [],
         isOpen: false,
         lastMessageId: 0,
+        isBackground: false,
+        notificationPermission: null,
 
         /**
          * Initialiser le chat pour une course
@@ -34,7 +37,59 @@
             this.loadMessages();
             this.startPolling();
 
+            // Mobile: Demander permission notifications
+            this.requestNotificationPermission();
+
+            // Mobile: Gérer le lifecycle app (foreground/background)
+            this.setupMobileLifecycle();
+
             AppConfig && AppConfig.log && AppConfig.log('RideChat initialized for ride ' + rideId);
+        },
+
+        /**
+         * Demander la permission pour les notifications (mobile)
+         */
+        requestNotificationPermission: function() {
+            var self = this;
+
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().then(function(permission) {
+                    self.notificationPermission = permission;
+                    AppConfig && AppConfig.log && AppConfig.log('Notification permission:', permission);
+                });
+            } else if ('Notification' in window) {
+                this.notificationPermission = Notification.permission;
+            }
+        },
+
+        /**
+         * Gérer le lifecycle mobile (foreground/background)
+         */
+        setupMobileLifecycle: function() {
+            var self = this;
+
+            // Visibility API - détecter quand l'app passe en arrière-plan
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden) {
+                    self.isBackground = true;
+                    AppConfig && AppConfig.log && AppConfig.log('App went to background');
+                } else {
+                    self.isBackground = false;
+                    // Recharger les messages en revenant au premier plan
+                    self.loadMessages();
+                    AppConfig && AppConfig.log && AppConfig.log('App returned to foreground');
+                }
+            });
+
+            // Capacitor App plugin support (si disponible)
+            if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.App) {
+                Capacitor.Plugins.App.addListener('appStateChange', function(state) {
+                    self.isBackground = !state.isActive;
+                    if (state.isActive) {
+                        self.loadMessages();
+                    }
+                });
+            }
         },
 
         /**
@@ -385,7 +440,15 @@
                 ride_id: this.rideId
             }).then(function(response) {
                 if (response.success && response.data.unread_count > 0) {
-                    self.updateUnreadBadge(response.data.unread_count);
+                    var previousCount = parseInt(document.getElementById('chatUnreadBadge')?.textContent) || 0;
+                    var newCount = response.data.unread_count;
+
+                    self.updateUnreadBadge(newCount);
+
+                    // Nouveau message reçu
+                    if (newCount > previousCount) {
+                        self.onNewMessageReceived(newCount - previousCount);
+                    }
 
                     // Si panel ouvert, recharger
                     if (self.isOpen) {
@@ -395,6 +458,109 @@
             }).catch(function() {
                 // Silently fail
             });
+        },
+
+        /**
+         * Callback quand un nouveau message est reçu
+         * @param {number} count - Nombre de nouveaux messages
+         */
+        onNewMessageReceived: function(count) {
+            var self = this;
+            var i18n = window.ChatI18n || {};
+
+            // Vibration (mobile)
+            this.vibrate([100, 50, 100]);
+
+            // Haptic feedback (Capacitor)
+            this.hapticFeedback('medium');
+
+            // Notification si app en arrière-plan ou panel fermé
+            if (this.isBackground || !this.isOpen) {
+                this.showNotification(
+                    i18n.new_message || 'New message',
+                    count + ' ' + (i18n.new_messages_body || 'new message(s)')
+                );
+            }
+
+            // Émettre événement pour d'autres modules
+            if (typeof EventBus !== 'undefined') {
+                EventBus.emit('chat:new-message', { rideId: this.rideId, count: count });
+            }
+        },
+
+        /**
+         * Vibration (mobile native)
+         * @param {number|number[]} pattern - Pattern de vibration en ms
+         */
+        vibrate: function(pattern) {
+            // Vibration API standard
+            if ('vibrate' in navigator) {
+                navigator.vibrate(pattern);
+                return;
+            }
+
+            // Capacitor Haptics fallback
+            this.hapticFeedback('medium');
+        },
+
+        /**
+         * Haptic feedback (Capacitor)
+         * @param {string} style - 'light', 'medium', 'heavy'
+         */
+        hapticFeedback: function(style) {
+            if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.Haptics) {
+                var impact = {
+                    light: 'LIGHT',
+                    medium: 'MEDIUM',
+                    heavy: 'HEAVY'
+                };
+                Capacitor.Plugins.Haptics.impact({ style: impact[style] || 'MEDIUM' });
+            }
+        },
+
+        /**
+         * Afficher une notification (mobile)
+         * @param {string} title - Titre
+         * @param {string} body - Corps du message
+         */
+        showNotification: function(title, body) {
+            var self = this;
+
+            // Capacitor Push Notifications
+            if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.LocalNotifications) {
+                Capacitor.Plugins.LocalNotifications.schedule({
+                    notifications: [{
+                        title: title,
+                        body: body,
+                        id: Date.now(),
+                        schedule: { at: new Date() },
+                        sound: 'default',
+                        extra: { rideId: this.rideId }
+                    }]
+                });
+                return;
+            }
+
+            // Web Notification API fallback
+            if ('Notification' in window && Notification.permission === 'granted') {
+                var notification = new Notification(title, {
+                    body: body,
+                    icon: '/assets/images/icons/icon-192x192.png',
+                    badge: '/assets/images/icons/badge-72x72.png',
+                    tag: 'tripsalama-chat-' + this.rideId,
+                    vibrate: [100, 50, 100],
+                    requireInteraction: false
+                });
+
+                notification.onclick = function() {
+                    window.focus();
+                    self.open();
+                    notification.close();
+                };
+
+                // Auto-close après 5 secondes
+                setTimeout(function() { notification.close(); }, 5000);
+            }
         },
 
         /**
@@ -419,19 +585,73 @@
             var self = this;
             var i18n = window.ChatI18n || {};
 
+            // Haptic feedback sur le bouton
+            this.hapticFeedback('light');
+
             ApiService.get('chat', {
                 action: 'call-info',
                 ride_id: this.rideId
             }).then(function(response) {
                 if (response.success && response.data.phone) {
-                    // Ouvrir tel:
-                    window.location.href = 'tel:' + response.data.phone;
+                    self.makePhoneCall(response.data.phone, response.data.name);
                 } else {
                     Toast && Toast.error && Toast.error(i18n.call_not_available || 'Call not available');
                 }
             }).catch(function(error) {
                 Toast && Toast.error && Toast.error(error.message);
             });
+        },
+
+        /**
+         * Effectuer l'appel téléphonique
+         * @param {string} phoneNumber - Numéro de téléphone
+         * @param {string} contactName - Nom du contact (optionnel)
+         */
+        makePhoneCall: function(phoneNumber, contactName) {
+            var self = this;
+            var i18n = window.ChatI18n || {};
+
+            // Capacitor CallNumber plugin (pour apps natives)
+            if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.CallNumber) {
+                Capacitor.Plugins.CallNumber.call({
+                    number: phoneNumber,
+                    displayPrompt: true
+                }).then(function() {
+                    AppConfig && AppConfig.log && AppConfig.log('Call initiated to:', phoneNumber);
+                }).catch(function(error) {
+                    // Fallback sur tel: protocol
+                    self.openTelProtocol(phoneNumber);
+                });
+                return;
+            }
+
+            // Web: utiliser le protocole tel:
+            this.openTelProtocol(phoneNumber);
+        },
+
+        /**
+         * Ouvrir le protocole tel: (web standard)
+         * @param {string} phoneNumber - Numéro de téléphone
+         */
+        openTelProtocol: function(phoneNumber) {
+            // Vérifier si on est sur mobile
+            var isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+            if (isMobile) {
+                // Sur mobile, ouvrir directement l'app téléphone
+                window.location.href = 'tel:' + phoneNumber;
+            } else {
+                // Sur desktop, essayer d'ouvrir (certains OS supportent)
+                var link = document.createElement('a');
+                link.href = 'tel:' + phoneNumber;
+                link.click();
+
+                // Afficher aussi le numéro pour copie manuelle
+                var i18n = window.ChatI18n || {};
+                Toast && Toast.info && Toast.info(
+                    (i18n.call_number || 'Phone number') + ': ' + phoneNumber
+                );
+            }
         },
 
         /**

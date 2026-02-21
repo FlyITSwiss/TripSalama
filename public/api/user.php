@@ -7,7 +7,9 @@ declare(strict_types=1);
  *
  * Endpoints:
  * - POST ?action=upload-avatar : Upload photo de profil
+ * - POST ?action=set-country : Définir le pays de l'utilisateur
  * - GET ?action=profile : Obtenir le profil
+ * - GET ?action=country-config : Obtenir la config pays actuelle
  */
 
 require_once '_bootstrap.php';
@@ -33,6 +35,21 @@ try {
                 errorResponse(__('error.generic'), 405);
             }
             handleGetProfile();
+            break;
+
+        case 'set-country':
+            if ($method !== 'POST') {
+                errorResponse(__('error.generic'), 405);
+            }
+            requireCsrf();
+            handleSetCountry();
+            break;
+
+        case 'country-config':
+            if ($method !== 'GET') {
+                errorResponse(__('error.generic'), 405);
+            }
+            handleGetCountryConfig();
             break;
 
         default:
@@ -227,4 +244,54 @@ function resizeImage(string $filepath, int $maxWidth, int $maxHeight): void
 
     imagedestroy($source);
     imagedestroy($destination);
+}
+
+/**
+ * Définir le pays de l'utilisateur
+ */
+function handleSetCountry(): never
+{
+    $input = getJsonInput();
+    $countryCode = isset($input['country']) ? strtoupper(trim($input['country'])) : '';
+
+    if (empty($countryCode)) {
+        errorResponse(__('validation.required_field'), 400);
+    }
+
+    $countryService = new \TripSalama\Services\CountryDetectionService();
+
+    if (!$countryService->isSupported($countryCode)) {
+        errorResponse(__('country.not_supported'), 400);
+    }
+
+    $countryService->setCountry($countryCode);
+
+    $config = $countryService->getCurrentCountryConfig();
+
+    successResponse([
+        'country' => $countryCode,
+        'currency' => $config['currency'],
+        'currency_symbol' => $config['currency_symbol'],
+        'pricing' => $config['pricing'],
+    ], __('country.updated'));
+}
+
+/**
+ * Obtenir la configuration pays actuelle
+ */
+function handleGetCountryConfig(): never
+{
+    $countryService = new \TripSalama\Services\CountryDetectionService();
+
+    $config = $countryService->getCurrentCountryConfig();
+    $countryCode = $countryService->getCurrentCountryCode();
+
+    successResponse([
+        'country' => $countryCode,
+        'name' => $config['name'] ?? '',
+        'currency' => $config['currency'] ?? 'EUR',
+        'currency_symbol' => $config['currency_symbol'] ?? '€',
+        'pricing' => $config['pricing'] ?? [],
+        'supported_countries' => $countryService->getSupportedCountries(),
+    ]);
 }
