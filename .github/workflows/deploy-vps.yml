@@ -239,9 +239,18 @@ jobs:
             # Backup config
             sudo cp "$NGINX_CONFIG" /tmp/nginx-tripsalama-backup.conf
 
-            # Check if TripSalama is already included
-            if grep -q "include.*tripsalama" "$NGINX_CONFIG"; then
-              echo "TripSalama already included in nginx config"
+            # FIRST: Remove any existing inline TripSalama location blocks (cleanup old config)
+            # This prevents "duplicate location" errors
+            if grep -q "location /internal/tripsalama" "$NGINX_CONFIG"; then
+              echo "Removing old inline TripSalama config..."
+              # Remove lines between "location /internal/tripsalama" and closing brace
+              sudo sed -i '/location \/internal\/tripsalama/,/^[[:space:]]*}/d' "$NGINX_CONFIG"
+              echo "Old config removed"
+            fi
+
+            # Check if TripSalama snippet is already included
+            if grep -q "include.*snippets/tripsalama" "$NGINX_CONFIG"; then
+              echo "TripSalama snippet already included in nginx config"
             else
               echo "Adding TripSalama include to nginx config..."
               sudo sed -i '/server_name.*stabilis-it.ch/a\    include /etc/nginx/snippets/tripsalama.conf;' "$NGINX_CONFIG" 2>/dev/null || \
@@ -263,8 +272,8 @@ jobs:
             fi
 
             # Show final config
-            echo "=== TripSalama location in nginx ==="
-            grep -A 3 "tripsalama" "$NGINX_CONFIG" | head -6
+            echo "=== TripSalama in nginx ==="
+            grep -n "tripsalama" "$NGINX_CONFIG" | head -5
           ENDSSH
 
       - name: Verify deployment
