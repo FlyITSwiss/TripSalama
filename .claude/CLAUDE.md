@@ -379,6 +379,34 @@ include /etc/nginx/snippets/tripsalama.conf;
 | Bypasser les tests avant push | `npm run test:smoke` localement |
 | Push avec pre-commit en échec | Corriger les erreurs signalées |
 | `docker-compose down -v` sur VPS | Préserver les uploads |
+| Location nginx sans `^~` | Toujours `location ^~ /internal/tripsalama` |
+| Inline location dans config nginx principale | Snippet via include uniquement |
+
+### Troubleshooting Nginx
+
+**Symptôme : URL redirige vers stabilis-it.ch au lieu de TripSalama**
+
+Causes possibles :
+1. **Location sans priorité** - Le `^~` est manquant, une autre location regex prend le dessus
+2. **Duplicate location blocks** - Il y a des locations inline en plus du snippet
+3. **Named location orpheline** - `@tripsalama_php` traîne dans la config
+
+**Vérifications (via logs GitHub Actions) :**
+```bash
+# Doit afficher UNIQUEMENT la ligne include, pas de location inline
+grep -n "tripsalama" /etc/nginx/sites-enabled/helios
+
+# Doit afficher "location ^~ /internal/tripsalama"
+cat /etc/nginx/snippets/tripsalama.conf | head -10
+
+# Test externe doit retourner 200 ou 302, PAS 301 vers autre domaine
+curl -sI https://stabilis-it.ch/internal/tripsalama/login
+```
+
+**Solution :** Le workflow AWK nettoie automatiquement les blocks inline. Si le problème persiste :
+1. Vérifier les logs de l'étape "Configure nginx"
+2. S'assurer que le snippet a bien `location ^~`
+3. Vérifier qu'aucune autre location ne capture `/internal/`
 
 ---
 

@@ -240,53 +240,46 @@ jobs:
             # Backup
             sudo cp "$NGINX_CONFIG" /tmp/nginx-helios-backup.conf
 
-            # Check if snippet is already correctly included
+            # Always clean up any tripsalama-related location blocks (inline or named)
+            echo "Cleaning up ALL tripsalama-related nginx blocks..."
+
+            # Remove ANY location block containing tripsalama (except include lines)
+            # This includes: location /internal/tripsalama, location ^~ /internal/tripsalama, location @tripsalama_php
+            if grep -qE "location.*tripsalama" "$NGINX_CONFIG"; then
+              echo "Found tripsalama location blocks - removing..."
+              sudo awk '
+                /location.*tripsalama/ && !/include/ {
+                  skip=1
+                  brace=1
+                  next
+                }
+                skip && /\{/ { brace++ }
+                skip && /\}/ { brace--; if(brace==0) {skip=0}; next }
+                !skip { print }
+              ' "$NGINX_CONFIG" | sudo tee /tmp/nginx-cleaned.conf > /dev/null
+              sudo mv /tmp/nginx-cleaned.conf "$NGINX_CONFIG"
+              echo "Location blocks removed"
+            fi
+
+            # Check if snippet is already included
             if grep -q "include /etc/nginx/snippets/tripsalama.conf" "$NGINX_CONFIG"; then
-              echo "Snippet already included - checking for inline duplicates..."
-
-              # Count occurrences of location with /internal/tripsalama (including ^~ prefix)
-              LOCATIONS=$(grep -c "location.*\/internal\/tripsalama" "$NGINX_CONFIG" 2>/dev/null || echo "0")
-              echo "Found $LOCATIONS total location blocks"
-
-              if [ "$LOCATIONS" -gt "0" ]; then
-                echo "Removing inline location blocks (keeping snippet include)..."
-                # Create temp file without ANY inline location /internal/tripsalama blocks
-                sudo awk '
-                  /location.*\/internal\/tripsalama/ && !/include/ {
-                    skip=1
-                    brace=1
-                    next
-                  }
-                  skip && /\{/ { brace++ }
-                  skip && /\}/ { brace--; if(brace==0) {skip=0}; next }
-                  !skip { print }
-                ' "$NGINX_CONFIG" | sudo tee /tmp/nginx-cleaned.conf > /dev/null
-                sudo mv /tmp/nginx-cleaned.conf "$NGINX_CONFIG"
-                echo "Inline locations removed"
-              fi
+              echo "Snippet already included"
             else
-              echo "Snippet not included yet - checking for inline config..."
-
-              # If there's an inline location, remove it first (including ^~ prefix)
-              if grep -q "location.*\/internal\/tripsalama" "$NGINX_CONFIG"; then
-                echo "Removing old inline config..."
-                sudo awk '
-                  /location.*\/internal\/tripsalama/ {
-                    skip=1
-                    brace=1
-                    next
-                  }
-                  skip && /\{/ { brace++ }
-                  skip && /\}/ { brace--; if(brace==0) {skip=0}; next }
-                  !skip { print }
-                ' "$NGINX_CONFIG" | sudo tee /tmp/nginx-cleaned.conf > /dev/null
-                sudo mv /tmp/nginx-cleaned.conf "$NGINX_CONFIG"
-              fi
-
-              # Add snippet include after first server_name
+              # Add snippet include after first server_name in HTTPS server block
               echo "Adding snippet include..."
-              sudo sed -i '0,/server_name/s/server_name.*/&\n    include \/etc\/nginx\/snippets\/tripsalama.conf;/' "$NGINX_CONFIG"
-              echo "Include added"
+              # Find the HTTPS server block (listen 443) and add include after server_name
+              sudo awk '
+                /listen 443/ { in_https=1 }
+                in_https && /server_name/ && !added {
+                  print
+                  print "    include /etc/nginx/snippets/tripsalama.conf;"
+                  added=1
+                  next
+                }
+                { print }
+              ' "$NGINX_CONFIG" | sudo tee /tmp/nginx-with-include.conf > /dev/null
+              sudo mv /tmp/nginx-with-include.conf "$NGINX_CONFIG"
+              echo "Include added to HTTPS server block"
             fi
 
             # Test nginx
@@ -302,9 +295,21 @@ jobs:
               exit 1
             fi
 
-            # Show result
-            echo "=== Final config ==="
-            grep -n "tripsalama" "$NGINX_CONFIG" | head -3
+            # Show result - ALL tripsalama references
+            echo "=== Final nginx config (tripsalama lines) ==="
+            grep -n "tripsalama" "$NGINX_CONFIG" || echo "No tripsalama references found (should only have include)"
+
+            # Show the snippet content
+            echo "=== Snippet content ==="
+            cat /etc/nginx/snippets/tripsalama.conf
+
+            # Verify no duplicate locations
+            LOCATIONS=$(grep -c "location.*tripsalama" "$NGINX_CONFIG" 2>/dev/null || echo "0")
+            if [ "$LOCATIONS" -gt "0" ]; then
+              echo "WARNING: Found $LOCATIONS inline location blocks (should be 0)"
+            else
+              echo "OK: No inline location blocks (using snippet only)"
+            fi
           ENDSSH
 
       - name: Verify deployment
@@ -326,14 +331,27 @@ jobs:
           echo "--- Checking index.php ---"
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "head -5 ${{ env.REMOTE_PATH }}/public/index.php 2>/dev/null || echo 'index.php NOT FOUND!'"
 
-          # Check HTTP response (use -k to ignore SSL issues with localhost)
-          echo "--- HTTP Check ---"
+          # Check HTTP response - internal (via localhost)
+          echo "--- HTTP Check (internal via localhost) ---"
           HTTP=$(ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -skL -o /dev/null -w '%{http_code}' http://127.0.0.1${{ env.BASE_PATH }}/login")
-          echo "HTTP Status (following redirects): $HTTP"
+          echo "HTTP Status (localhost, following redirects): $HTTP"
 
-          # Also check without following redirects
-          HTTP_DIRECT=$(ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -sk -o /dev/null -w '%{http_code}' http://127.0.0.1${{ env.BASE_PATH }}/login")
-          echo "HTTP Status (direct): $HTTP_DIRECT"
+          # Check HTTP response - external (via domain)
+          echo "--- HTTP Check (external via domain) ---"
+          HTTP_EXT=$(curl -skL -o /dev/null -w '%{http_code}' "https://stabilis-it.ch${{ env.BASE_PATH }}/login")
+          echo "HTTP Status (external): $HTTP_EXT"
+
+          # Check if external request is being redirected elsewhere
+          echo "--- Redirect check ---"
+          REDIRECT_URL=$(curl -sk -o /dev/null -w '%{redirect_url}' "https://stabilis-it.ch${{ env.BASE_PATH }}/")
+          if [ -n "$REDIRECT_URL" ]; then
+            echo "Redirects to: $REDIRECT_URL"
+            if echo "$REDIRECT_URL" | grep -qv "tripsalama"; then
+              echo "WARNING: Redirect goes outside tripsalama!"
+            fi
+          else
+            echo "No redirect (good)"
+          fi
 
           # If error, show logs
           if [ "$HTTP" = "500" ] || [ "$HTTP" = "404" ] || [ "$HTTP" = "502" ]; then
@@ -352,13 +370,19 @@ jobs:
             ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -svk http://127.0.0.1${{ env.BASE_PATH }}/ 2>&1 | head -30"
           fi
 
-          # Success conditions: 200, 301, 302 are all OK
+          # Success conditions: both internal and external must return 200, 301, or 302
           if [ "$HTTP" = "200" ] || [ "$HTTP" = "301" ] || [ "$HTTP" = "302" ]; then
-            echo "success=true" >> $GITHUB_OUTPUT
-            echo "::notice::Deployment verified (HTTP $HTTP)"
+            if [ "$HTTP_EXT" = "200" ] || [ "$HTTP_EXT" = "301" ] || [ "$HTTP_EXT" = "302" ]; then
+              echo "success=true" >> $GITHUB_OUTPUT
+              echo "::notice::Deployment verified (internal: $HTTP, external: $HTTP_EXT)"
+            else
+              echo "success=false" >> $GITHUB_OUTPUT
+              echo "::error::External access failed (internal: $HTTP, external: $HTTP_EXT)"
+              exit 1
+            fi
           else
             echo "success=false" >> $GITHUB_OUTPUT
-            echo "::error::Deployment verification failed (HTTP $HTTP)"
+            echo "::error::Internal access failed (HTTP $HTTP)"
             exit 1
           fi
 
