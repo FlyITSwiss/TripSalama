@@ -35,7 +35,7 @@ class SecurityHeadersMiddleware
             "default-src 'self'",
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com",
-            "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.tile.openstreetmap.de https://unpkg.com https://*.basemaps.cartocdn.com",
+            "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.tile.openstreetmap.de https://unpkg.com https://*.basemaps.cartocdn.com https://*.global.ssl.fastly.net",
             "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
             "connect-src 'self' https://nominatim.openstreetmap.org https://router.project-osrm.org https://unpkg.com wss:",
             "frame-ancestors 'self'",
