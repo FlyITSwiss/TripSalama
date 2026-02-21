@@ -244,15 +244,15 @@ jobs:
             if grep -q "include /etc/nginx/snippets/tripsalama.conf" "$NGINX_CONFIG"; then
               echo "Snippet already included - checking for inline duplicates..."
 
-              # Count occurrences of location /internal/tripsalama
-              LOCATIONS=$(grep -c "location /internal/tripsalama" "$NGINX_CONFIG" 2>/dev/null || echo "0")
-              echo "Found $LOCATIONS inline location blocks"
+              # Count occurrences of location with /internal/tripsalama (including ^~ prefix)
+              LOCATIONS=$(grep -c "location.*\/internal\/tripsalama" "$NGINX_CONFIG" 2>/dev/null || echo "0")
+              echo "Found $LOCATIONS total location blocks"
 
               if [ "$LOCATIONS" -gt "0" ]; then
                 echo "Removing inline location blocks (keeping snippet include)..."
-                # Create temp file without inline locations but keeping includes
+                # Create temp file without ANY inline location /internal/tripsalama blocks
                 sudo awk '
-                  /location \/internal\/tripsalama \{/ && !/include/ {
+                  /location.*\/internal\/tripsalama/ && !/include/ {
                     skip=1
                     brace=1
                     next
@@ -267,11 +267,11 @@ jobs:
             else
               echo "Snippet not included yet - checking for inline config..."
 
-              # If there's an inline location, remove it first
-              if grep -q "location /internal/tripsalama" "$NGINX_CONFIG"; then
+              # If there's an inline location, remove it first (including ^~ prefix)
+              if grep -q "location.*\/internal\/tripsalama" "$NGINX_CONFIG"; then
                 echo "Removing old inline config..."
                 sudo awk '
-                  /location \/internal\/tripsalama/ {
+                  /location.*\/internal\/tripsalama/ {
                     skip=1
                     brace=1
                     next
