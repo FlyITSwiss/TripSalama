@@ -204,44 +204,99 @@ jobs:
       - name: Configure nginx
         run: |
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} '
-            # Create nginx config for TripSalama - Fixed alias + PHP handling
-            sudo tee /etc/nginx/sites-available/tripsalama << "NGINX"
-          # TripSalama - Fixed configuration for alias + PHP
-          location /internal/tripsalama {
-              alias /var/www/tripsalama/public;
-              index index.php;
+            echo "=== Configuring nginx for TripSalama ==="
 
-              # Important: Try files then fallback to index.php
-              try_files $uri $uri/ @tripsalama_router;
-          }
+            # Create nginx snippet for TripSalama (PHP-FPM direct, no Docker)
+            sudo tee /etc/nginx/snippets/tripsalama.conf << "NGINX"
+# ================================================
+# TripSalama - PHP 8.4 FPM Configuration
+# ================================================
 
-          # PHP handler for TripSalama (with correct SCRIPT_FILENAME for alias)
-          location ~ ^/internal/tripsalama/(.+\.php)$ {
-              alias /var/www/tripsalama/public/$1;
-              fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
-              fastcgi_index index.php;
-              fastcgi_param SCRIPT_FILENAME /var/www/tripsalama/public/$1;
-              include fastcgi_params;
-          }
+# Main location for TripSalama
+location /internal/tripsalama {
+    alias /var/www/tripsalama/public;
+    index index.php;
 
-          # Fallback router - all non-file requests go to index.php
-          location @tripsalama_router {
-              fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
-              fastcgi_index index.php;
-              fastcgi_param SCRIPT_FILENAME /var/www/tripsalama/public/index.php;
-              fastcgi_param QUERY_STRING $query_string;
-              include fastcgi_params;
-          }
-          NGINX
+    # Try static files first, then route to PHP
+    location ~ \.php$ {
+        # Prevent processing of non-existing PHP files
+        try_files $uri =404;
 
-            # Include in main site config if not already
-            if ! grep -q "include.*tripsalama" /etc/nginx/sites-available/default 2>/dev/null; then
-              echo "Adding TripSalama to nginx..."
-              sudo sed -i "/server_name/a\\    include /etc/nginx/sites-available/tripsalama;" /etc/nginx/sites-available/default 2>/dev/null || true
+        # Fix SCRIPT_FILENAME for alias directive
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+
+        # Use the full path from alias
+        set $script_path /var/www/tripsalama/public;
+        if ($uri ~ "^/internal/tripsalama/(.*)$") {
+            set $script_path /var/www/tripsalama/public/$1;
+        }
+
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $script_path;
+        fastcgi_param DOCUMENT_ROOT /var/www/tripsalama/public;
+        include fastcgi_params;
+    }
+
+    # Try files, fallback to index.php for routing
+    try_files $uri $uri/ /internal/tripsalama/index.php?$query_string;
+}
+NGINX
+
+            echo "✅ Created /etc/nginx/snippets/tripsalama.conf"
+
+            # Find the active nginx config (Certbot-managed)
+            NGINX_CONFIG=""
+            if [ -f /etc/nginx/sites-enabled/helios ]; then
+              NGINX_CONFIG="/etc/nginx/sites-enabled/helios"
+              echo "Found Certbot-managed config: $NGINX_CONFIG"
+            elif [ -f /etc/nginx/sites-available/stabilis-it.ch ]; then
+              NGINX_CONFIG="/etc/nginx/sites-available/stabilis-it.ch"
+            elif [ -f /etc/nginx/sites-available/default ]; then
+              NGINX_CONFIG="/etc/nginx/sites-available/default"
             fi
 
-            # Test and reload nginx
-            sudo nginx -t && sudo systemctl reload nginx
+            if [ -z "$NGINX_CONFIG" ]; then
+              echo "❌ No nginx config found!"
+              exit 1
+            fi
+
+            echo "Using nginx config: $NGINX_CONFIG"
+
+            # Backup config
+            sudo cp "$NGINX_CONFIG" /tmp/nginx-tripsalama-backup.conf
+
+            # Check if TripSalama is already included
+            if grep -q "include.*tripsalama" "$NGINX_CONFIG"; then
+              echo "✅ TripSalama already included in nginx config"
+            else
+              echo "Adding TripSalama include to nginx config..."
+
+              # Find the first server block and add include after server_name
+              sudo sed -i "/server_name.*stabilis-it.ch/a\\    # TripSalama application\\n    include /etc/nginx/snippets/tripsalama.conf;" "$NGINX_CONFIG" 2>/dev/null || {
+                # Fallback: add after any server_name line
+                sudo sed -i "/server_name/a\\    include /etc/nginx/snippets/tripsalama.conf;" "$NGINX_CONFIG"
+              }
+
+              echo "✅ Added TripSalama include"
+            fi
+
+            # Test nginx syntax
+            if sudo nginx -t 2>&1; then
+              echo "✅ Nginx syntax OK"
+              sudo systemctl reload nginx
+              echo "✅ Nginx reloaded"
+            else
+              echo "❌ Nginx syntax error - restoring backup"
+              sudo cp /tmp/nginx-tripsalama-backup.conf "$NGINX_CONFIG"
+              sudo nginx -t && sudo systemctl reload nginx
+              echo "Restored original config"
+              exit 1
+            fi
+
+            # Show final config snippet
+            echo "=== TripSalama location in nginx ==="
+            grep -A 5 "tripsalama" "$NGINX_CONFIG" | head -10
           '
 
       - name: Verify deployment
@@ -249,28 +304,54 @@ jobs:
         run: |
           sleep 3
 
+          echo "=== Deployment Verification ==="
+
           # Show .env file (redact password)
-          echo "=== .env file (redacted) ==="
+          echo "--- .env file (redacted) ---"
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "cat ${{ env.REMOTE_PATH }}/.env | sed 's/DB_PASSWORD=.*/DB_PASSWORD=***REDACTED***/'"
 
-          # Check HTTP response
-          HTTP=$(ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1${{ env.BASE_PATH }}/login")
-          echo "HTTP Status: $HTTP"
+          # Check directory structure
+          echo "--- Directory structure ---"
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "ls -la ${{ env.REMOTE_PATH }}/public/ | head -15"
 
-          # If error, show PHP error log
-          if [ "$HTTP" = "500" ]; then
-            echo "=== PHP Error Log (last 20 lines) ==="
-            ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "sudo tail -20 /var/log/php8.4-fpm.log 2>/dev/null || sudo tail -20 /var/log/nginx/error.log 2>/dev/null || echo 'No error logs found'"
+          # Check index.php exists
+          echo "--- Checking index.php ---"
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "head -5 ${{ env.REMOTE_PATH }}/public/index.php 2>/dev/null || echo 'index.php NOT FOUND!'"
+
+          # Check HTTP response with follow redirects
+          echo "--- HTTP Check ---"
+          HTTP=$(ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -sL -o /dev/null -w '%{http_code}' http://127.0.0.1${{ env.BASE_PATH }}/login")
+          echo "HTTP Status (following redirects): $HTTP"
+
+          # Also check without following redirects
+          HTTP_DIRECT=$(ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1${{ env.BASE_PATH }}/login")
+          echo "HTTP Status (direct): $HTTP_DIRECT"
+
+          # If error, show logs
+          if [ "$HTTP" = "500" ] || [ "$HTTP" = "404" ] || [ "$HTTP" = "502" ]; then
+            echo "=== Error Logs ==="
+            ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "sudo tail -30 /var/log/nginx/error.log 2>/dev/null | grep -i tripsalama || sudo tail -20 /var/log/nginx/error.log"
+            ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "sudo tail -10 /var/log/php8.4-fpm.log 2>/dev/null || echo 'No PHP-FPM log'"
           fi
 
-          if [ "$HTTP" = "200" ] || [ "$HTTP" = "302" ]; then
+          # Check nginx config is valid
+          echo "--- Nginx TripSalama config ---"
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "cat /etc/nginx/snippets/tripsalama.conf 2>/dev/null | head -20 || echo 'Config not found'"
+
+          # Verify with curl verbose for debugging
+          if [ "$HTTP" != "200" ]; then
+            echo "--- Curl verbose debug ---"
+            ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -sv http://127.0.0.1${{ env.BASE_PATH }}/ 2>&1 | head -30"
+          fi
+
+          # Success conditions: 200, 301, 302 are all OK
+          if [ "$HTTP" = "200" ] || [ "$HTTP" = "301" ] || [ "$HTTP" = "302" ]; then
             echo "success=true" >> $GITHUB_OUTPUT
             echo "::notice::Deployment verified (HTTP $HTTP)"
           else
             echo "success=false" >> $GITHUB_OUTPUT
-            echo "::warning::Deployment returned HTTP $HTTP"
-            # Don't fail - might need manual nginx config
-            echo "success=true" >> $GITHUB_OUTPUT
+            echo "::error::Deployment verification failed (HTTP $HTTP)"
+            exit 1
           fi
 
   # ========================================

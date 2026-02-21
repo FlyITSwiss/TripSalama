@@ -48,9 +48,14 @@
     </script>
 </head>
 <body>
+    <!-- Skip to main content link for accessibility -->
+    <a href="#main-content" class="skip-link" aria-label="<?= __('nav.skip_to_content') ?>">
+        <?= __('nav.skip_to_content') ?>
+    </a>
+
     <?php if (is_authenticated()): ?>
     <!-- Uber Header -->
-    <header class="uber-header">
+    <header class="uber-header" role="banner">
         <div class="header-inner">
             <a href="<?= base_url(has_role('driver') ? 'driver/dashboard' : 'passenger/dashboard') ?>" class="logo">
                 <span class="logo-text">Trip<span>Salama</span></span>
@@ -116,9 +121,9 @@
     <?php endif; ?>
 
     <!-- App Container -->
-    <div class="app-container">
+    <div class="app-container" role="application">
         <!-- Main Content -->
-        <main id="main-content" class="main-content page">
+        <main id="main-content" class="main-content page" role="main" aria-label="<?= __('nav.skip_to_content') ?>">
             <?= $content ?? '' ?>
         </main>
 

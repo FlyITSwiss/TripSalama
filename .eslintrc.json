@@ -1,0 +1,52 @@
+{
+    "env": {
+        "browser": true,
+        "es2021": true
+    },
+    "extends": [
+        "eslint:recommended"
+    ],
+    "plugins": [
+        "security"
+    ],
+    "parserOptions": {
+        "ecmaVersion": "latest",
+        "sourceType": "module"
+    },
+    "globals": {
+        "AppConfig": "readonly",
+        "L": "readonly",
+        "ApiService": "readonly",
+        "EventBus": "readonly",
+        "StateManager": "readonly",
+        "Toast": "readonly",
+        "Modal": "readonly",
+        "GeolocationService": "readonly",
+        "TrackingService": "readonly",
+        "__": "readonly"
+    },
+    "rules": {
+        "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+        "no-console": ["warn", { "allow": ["warn", "error"] }],
+        "prefer-const": "warn",
+        "no-var": "error",
+        "eqeqeq": ["error", "always", { "null": "ignore" }],
+        "curly": ["error", "all"],
+        "brace-style": ["error", "1tbs"],
+        "indent": ["warn", 4, { "SwitchCase": 1 }],
+        "quotes": ["warn", "single", { "avoidEscape": true }],
+        "semi": ["error", "always"],
+        "comma-dangle": ["warn", "only-multiline"],
+        "no-multiple-empty-lines": ["warn", { "max": 2 }],
+        "security/detect-object-injection": "warn",
+        "security/detect-non-literal-regexp": "warn",
+        "security/detect-unsafe-regex": "error",
+        "security/detect-eval-with-expression": "error"
+    },
+    "ignorePatterns": [
+        "node_modules/",
+        "vendor/",
+        "tests/puppeteer/node_modules/",
+        "*.min.js"
+    ]
+}

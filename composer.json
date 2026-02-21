@@ -1,0 +1,37 @@
+{
+    "name": "tripsalama/app",
+    "description": "TripSalama - Service de VTC réservé aux femmes",
+    "type": "project",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "TripSalama Team",
+            "email": "dev@tripsalama.ma"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "ext-pdo": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.10",
+        "phpstan/phpstan-strict-rules": "^1.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "TripSalama\\": "backend/php/"
+        }
+    },
+    "scripts": {
+        "phpstan": "phpstan analyse --configuration=phpstan.neon",
+        "phpstan:baseline": "phpstan analyse --configuration=phpstan.neon --generate-baseline",
+        "test": "echo 'No tests configured'"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable"
+}

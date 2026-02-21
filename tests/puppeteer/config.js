@@ -51,7 +51,8 @@ module.exports = {
 
     // Sélecteurs communs
     selectors: {
-        loginForm: '#loginForm, form[action*="login"]',
+        loginForm: '#loginForm, form[action*="login"], form.login-form',
+        registerForm: '#registerForm, form[action*="register"], form.register-form',
         emailInput: '#email, input[name="email"]',
         passwordInput: '#password, input[name="password"]',
         submitBtn: 'button[type="submit"]',

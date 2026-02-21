@@ -79,6 +79,10 @@ require_once BACKEND_PATH . '/Helpers/UrlHelper.php';
 require_once BACKEND_PATH . '/Helpers/ValidationHelper.php';
 require_once BACKEND_PATH . '/Helpers/functions.php';
 
+// Appliquer les headers de sécurité
+require_once BACKEND_PATH . '/Middleware/SecurityHeadersMiddleware.php';
+\TripSalama\Middleware\SecurityHeadersMiddleware::apply();
+
 // Connexion BDD
 function getDbConnection(): PDO
 {

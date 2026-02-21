@@ -141,11 +141,9 @@ class IdentityVerificationService
             }
 
             // Message selon le résultat
-            $message = match ($finalStatus) {
-                'verified' => __('verification.success_message'),
-                'manual_review' => __('verification.pending_message'),
-                default => __('verification.failed_message'),
-            };
+            $message = $finalStatus === 'verified'
+                ? __('verification.success_message')
+                : __('verification.pending_message');
 
             return [
                 'success' => true,

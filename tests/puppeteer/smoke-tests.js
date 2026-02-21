@@ -1,6 +1,6 @@
 /**
  * TripSalama - Smoke Tests
- * Tests rapides de santé de l'application
+ * Quick health checks for the application
  */
 
 const puppeteer = require('puppeteer');
@@ -18,13 +18,13 @@ async function runSmokeTests() {
     let page;
 
     try {
-        console.log('\n🚀 Démarrage des Smoke Tests TripSalama\n');
+        console.log('\n Starting TripSalama Smoke Tests\n');
 
         browser = await puppeteer.launch(config.puppeteer);
         page = await browser.newPage();
 
-        // Test 1: Page d'accueil accessible
-        await reporter.test('Page d\'accueil accessible', async () => {
+        // Test 1: Homepage accessible
+        await reporter.test('Homepage accessible', async () => {
             const response = await page.goto(config.baseUrl, {
                 waitUntil: 'networkidle0',
                 timeout: config.timeouts.navigation
@@ -35,8 +35,8 @@ async function runSmokeTests() {
             }
         });
 
-        // Test 2: Page de login accessible
-        await reporter.test('Page de login accessible', async () => {
+        // Test 2: Login page accessible
+        await reporter.test('Login page accessible', async () => {
             const response = await page.goto(`${config.baseUrl}/login`, {
                 waitUntil: 'networkidle0'
             });
@@ -47,12 +47,12 @@ async function runSmokeTests() {
 
             const hasForm = await waitForElement(page, config.selectors.loginForm);
             if (!hasForm) {
-                throw new Error('Formulaire de login non trouvé');
+                throw new Error('Login form not found');
             }
         });
 
-        // Test 3: Page d'inscription accessible
-        await reporter.test('Page inscription passagère accessible', async () => {
+        // Test 3: Registration page accessible
+        await reporter.test('Passenger registration page accessible', async () => {
             const response = await page.goto(`${config.baseUrl}/register/passenger`, {
                 waitUntil: 'networkidle0'
             });
@@ -63,26 +63,29 @@ async function runSmokeTests() {
 
             const hasForm = await waitForElement(page, config.selectors.registerForm);
             if (!hasForm) {
-                throw new Error('Formulaire d\'inscription non trouvé');
+                throw new Error('Registration form not found');
             }
         });
 
-        // Test 4: CSS chargé
-        await reporter.test('Design System CSS chargé', async () => {
+        // Test 4: CSS loaded
+        await reporter.test('Design System CSS loaded', async () => {
             await page.goto(`${config.baseUrl}/login`);
 
             const hasCSSVariables = await page.evaluate(() => {
                 const style = getComputedStyle(document.documentElement);
-                return style.getPropertyValue('--primary') !== '';
+                // Check for Uber Design System or TripSalama variables
+                return style.getPropertyValue('--uber-black') !== '' ||
+                       style.getPropertyValue('--primary') !== '' ||
+                       style.getPropertyValue('--color-bg') !== '';
             });
 
             if (!hasCSSVariables) {
-                throw new Error('Variables CSS non chargées');
+                throw new Error('CSS variables not loaded');
             }
         });
 
-        // Test 5: JS chargé
-        await reporter.test('JavaScript core chargé', async () => {
+        // Test 5: JS loaded
+        await reporter.test('JavaScript core loaded', async () => {
             await page.goto(`${config.baseUrl}/login`);
 
             const hasAppConfig = await page.evaluate(() => {
@@ -90,45 +93,45 @@ async function runSmokeTests() {
             });
 
             if (!hasAppConfig) {
-                throw new Error('AppConfig non disponible');
+                throw new Error('AppConfig not available');
             }
         });
 
-        // Test 6: API de santé
-        await reporter.test('API répond', async () => {
+        // Test 6: API health
+        await reporter.test('API responds', async () => {
             const response = await page.goto(`${config.baseUrl}/api/auth.php?action=me`, {
                 waitUntil: 'networkidle0'
             });
 
-            // Devrait retourner 401 (non authentifié) ou 200
+            // Should return 401 (not authenticated) or 200
             if (response.status() !== 401 && response.status() !== 200) {
                 throw new Error(`API status: ${response.status()}`);
             }
         });
 
-        // Test 7: Assets statiques
-        await reporter.test('Assets CSS accessibles', async () => {
+        // Test 7: Static assets
+        await reporter.test('CSS assets accessible', async () => {
             const response = await page.goto(`${config.baseUrl}/assets/css/tripsalama-core.css`);
 
             if (response.status() !== 200) {
-                throw new Error(`CSS non accessible: ${response.status()}`);
+                throw new Error(`CSS not accessible: ${response.status()}`);
             }
         });
 
-        // Test 8: i18n chargé
-        await reporter.test('Traductions chargées', async () => {
+        // Test 8: i18n loaded
+        await reporter.test('Translations loaded', async () => {
             await page.goto(`${config.baseUrl}/login`);
 
-            // Vérifier que la page est en français par défaut
+            // Check that the page has translation content
             const pageContent = await page.content();
 
             if (!pageContent.includes('Connexion') && !pageContent.includes('Login')) {
-                throw new Error('Textes de traduction non trouvés');
+                throw new Error('Translation texts not found');
             }
         });
 
         // Test 9: Responsive meta tag
-        await reporter.test('Viewport mobile configuré', async () => {
+        await reporter.test('Mobile viewport configured', async () => {
             await page.goto(`${config.baseUrl}/login`);
 
             const hasViewport = await page.evaluate(() => {
@@ -137,12 +140,12 @@ async function runSmokeTests() {
             });
 
             if (!hasViewport) {
-                throw new Error('Meta viewport non configuré');
+                throw new Error('Meta viewport not configured');
             }
         });
 
-        // Test 10: CSRF token présent
-        await reporter.test('CSRF token généré', async () => {
+        // Test 10: CSRF token present
+        await reporter.test('CSRF token generated', async () => {
             await page.goto(`${config.baseUrl}/login`);
 
             const hasCsrf = await page.evaluate(() => {
@@ -151,12 +154,12 @@ async function runSmokeTests() {
             });
 
             if (!hasCsrf) {
-                throw new Error('CSRF token non trouvé');
+                throw new Error('CSRF token not found');
             }
         });
 
     } catch (error) {
-        console.error('Erreur fatale:', error);
+        console.error('Fatal error:', error);
     } finally {
         if (browser) {
             await browser.close();
@@ -167,7 +170,7 @@ async function runSmokeTests() {
     process.exit(success ? 0 : 1);
 }
 
-// Exécuter si appelé directement
+// Run if called directly
 if (require.main === module) {
     runSmokeTests();
 }

@@ -31,6 +31,12 @@ jobs:
           find backend/php -name "*.php" -exec php -l {} \;
           find public -name "*.php" -exec php -l {} \;
 
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run PHPStan
+        run: vendor/bin/phpstan analyse --configuration=phpstan.neon --no-progress
+
       - name: Check for hardcoded French text
         run: |
           ! grep -rE "'(Erreur|Succès|Veuillez|Chargement)[^']*'" --include="*.php" --include="*.phtml" --include="*.js" backend/ public/ | grep -v '__(' || true

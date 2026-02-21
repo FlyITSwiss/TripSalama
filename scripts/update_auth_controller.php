@@ -1,4 +1,10 @@
 <?php
+/**
+ * Script de mise à jour AuthController avec Rate Limiting
+ */
+
+$content = <<<'PHP'
+<?php
 
 declare(strict_types=1);
 
@@ -318,3 +324,8 @@ class AuthController
         successResponse($user);
     }
 }
+PHP;
+
+$targetPath = __DIR__ . '/../backend/php/Controllers/AuthController.php';
+file_put_contents($targetPath, $content);
+echo "AuthController updated successfully!\n";

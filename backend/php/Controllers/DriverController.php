@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TripSalama\Controllers;
 
 use PDO;
+use TripSalama\Models\DriverStatus;
 use TripSalama\Models\Ride;
 use TripSalama\Models\Vehicle;
 use TripSalama\Helpers\PathHelper;
@@ -123,26 +124,8 @@ class DriverController
      */
     private function getDriverStatus(int $driverId): array
     {
-        $stmt = $this->db->prepare('SELECT * FROM driver_status WHERE driver_id = :id');
-        $stmt->execute(['id' => $driverId]);
-        $status = $stmt->fetch();
-
-        if (!$status) {
-            // Creer un statut par defaut
-            $stmt = $this->db->prepare('
-                INSERT INTO driver_status (driver_id, is_available, current_lat, current_lng)
-                VALUES (:id, 0, NULL, NULL)
-            ');
-            $stmt->execute(['id' => $driverId]);
-
-            return [
-                'is_available' => false,
-                'current_lat' => null,
-                'current_lng' => null,
-            ];
-        }
-
-        return $status;
+        $driverStatusModel = new DriverStatus($this->db);
+        return $driverStatusModel->getOrCreate($driverId);
     }
 
     /**

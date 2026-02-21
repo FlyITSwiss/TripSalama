@@ -188,6 +188,7 @@ return [
         'updated' => 'Mis à jour avec succès',
         'login_success' => 'Connexion réussie',
         'login_failed' => 'Email ou mot de passe incorrect',
+        'login_failed_attempts' => 'Email ou mot de passe incorrect. :remaining tentatives restantes.',
         'logout_success' => 'Déconnexion réussie',
         'register_success' => 'Compte créé avec succès',
         'ride_created' => 'Demande de course envoyée',
@@ -215,6 +216,8 @@ return [
         'geolocation_timeout' => 'Délai de localisation dépassé',
         'geolocation_unsupported' => 'Votre navigateur ne supporte pas la géolocalisation',
         'no_driver' => 'Aucune conductrice disponible pour le moment',
+        'too_many_attempts' => 'Trop de tentatives. Veuillez réessayer dans :minutes minutes.',
+        'account_locked' => 'Compte temporairement verrouillé pour raison de sécurité',
     ],
 
     // Validation

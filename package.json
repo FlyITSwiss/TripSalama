@@ -7,6 +7,8 @@
     "test": "tests"
   },
   "scripts": {
+    "lint": "eslint public/assets/js --ext .js",
+    "lint:fix": "eslint public/assets/js --ext .js --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -22,6 +24,9 @@
   },
   "homepage": "https://github.com/FlyITSwiss/TripSalama#readme",
   "devDependencies": {
-    "puppeteer": "^24.37.4"
+    "eslint": "^10.0.1",
+    "eslint-plugin-security": "^4.0.0",
+    "puppeteer": "^24.37.4",
+    "sharp": "^0.34.5"
   }
 }

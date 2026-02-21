@@ -1,0 +1,61 @@
+parameters:
+    level: 6
+    paths:
+        - backend/php
+    excludePaths:
+        - backend/php/Views/*
+        - backend/php/lang/*
+    scanDirectories:
+        - backend/php
+    reportUnmatchedIgnoredErrors: false
+    treatPhpDocTypesAsCertain: false
+
+    # Bootstrap defines
+    bootstrapFiles:
+        - backend/php/bootstrap.php
+
+    # Ignorer certaines erreurs communes
+    ignoreErrors:
+        # Fonctions globales du bootstrap
+        - '#Function current_user not found#'
+        - '#Function is_authenticated not found#'
+        - '#Function has_role not found#'
+        - '#Function redirect_to not found#'
+        - '#Function flash not found#'
+        - '#Function config not found#'
+        - '#Function getDbConnection not found#'
+        - '#Function __ not found#'
+        - '#Function base_url not found#'
+        - '#Function asset_url not found#'
+        - '#Function api_url not found#'
+        - '#Function verify_csrf not found#'
+        - '#Function generate_csrf not found#'
+        - '#Function app_log not found#'
+        - '#Function getRequestData not found#'
+        - '#Function successResponse not found#'
+        - '#Function errorResponse not found#'
+
+        # Variables de vue extraites
+        - '#Variable \$[a-zA-Z]+ might not be defined#'
+
+        # Constantes définies dans bootstrap
+        - '#Constant ROOT_PATH not found#'
+        - '#Constant BACKEND_PATH not found#'
+        - '#Constant PUBLIC_PATH not found#'
+        - '#Constant STORAGE_PATH not found#'
+
+        # Patterns de code existants à améliorer progressivement
+        - '#Unreachable statement#'
+        - '#Property .* is never read, only written#'
+        - '#no value type specified in iterable type array#'
+        - '#Only booleans are allowed in a negated boolean#'
+
+        # Strict rules à relaxer pour ce projet
+        - '#Construct empty\(\) is not allowed#'
+        - '#Short ternary operator is not allowed#'
+
+# Désactiver les règles trop strictes pour ce projet
+includes: []
+# Pour activer les règles strictes progressivement:
+# includes:
+#     - vendor/phpstan/phpstan-strict-rules/rules.neon

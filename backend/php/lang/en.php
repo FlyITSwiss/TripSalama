@@ -176,6 +176,7 @@ return [
         'updated' => 'Updated successfully',
         'login_success' => 'Login successful',
         'login_failed' => 'Invalid email or password',
+        'login_failed_attempts' => 'Invalid email or password. :remaining attempts remaining.',
         'logout_success' => 'Logged out successfully',
         'register_success' => 'Account created successfully',
         'ride_created' => 'Ride request sent',
@@ -203,6 +204,8 @@ return [
         'geolocation_timeout' => 'Location request timed out',
         'geolocation_unsupported' => 'Your browser does not support geolocation',
         'no_driver' => 'No driver available at the moment',
+        'too_many_attempts' => 'Too many attempts. Please try again in :minutes minutes.',
+        'account_locked' => 'Account temporarily locked for security reasons',
     ],
 
     // Validation

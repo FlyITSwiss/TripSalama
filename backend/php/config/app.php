@@ -37,7 +37,7 @@ return [
 
     // Simulation
     'simulation' => [
-        'default_speed_kmh' => 30,     // Vitesse par defaut
-        'update_interval_ms' => 1000,  // Interval de mise a jour
+        'default_speed_kmh' => 30,     // Vitesse par défaut
+        'update_interval_ms' => 1000,  // Intervalle de mise à jour
     ],
 ];
