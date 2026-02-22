@@ -104,6 +104,16 @@ class ETAService
         ?string $vehicleType = null,
         int $limit = 5
     ): array {
+        // Vérifier si la table driver_locations existe
+        try {
+            $check = $this->db->query("SHOW TABLES LIKE 'driver_locations'");
+            if ($check->rowCount() === 0) {
+                return []; // Table n'existe pas encore
+            }
+        } catch (\Exception $e) {
+            return [];
+        }
+
         $typeCondition = '';
         $params = [
             'lat' => $pickupLat,
@@ -116,43 +126,48 @@ class ETAService
             $params['vehicle_type'] = $vehicleType;
         }
 
-        $stmt = $this->db->prepare("
-            SELECT
-                u.id as driver_id,
-                u.first_name,
-                u.profile_photo,
-                u.rating,
-                dl.latitude,
-                dl.longitude,
-                dl.heading,
-                dl.speed,
-                v.brand as vehicle_brand,
-                v.model as vehicle_model,
-                v.color as vehicle_color,
-                v.license_plate,
-                v.vehicle_type,
-                (
-                    6371 * acos(
-                        cos(radians(:lat)) * cos(radians(dl.latitude))
-                        * cos(radians(dl.longitude) - radians(:lng))
-                        + sin(radians(:lat2)) * sin(radians(dl.latitude))
-                    )
-                ) as distance_km
-            FROM users u
-            JOIN driver_locations dl ON u.id = dl.driver_id
-            LEFT JOIN vehicles v ON u.id = v.driver_id AND v.is_active = 1
-            WHERE u.role = 'driver'
-            AND u.is_online = 1
-            AND u.is_verified = 1
-            AND dl.updated_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
-            {$typeCondition}
-            ORDER BY distance_km ASC
-            LIMIT :limit
-        ");
+        try {
+            $stmt = $this->db->prepare("
+                SELECT
+                    u.id as driver_id,
+                    u.first_name,
+                    u.profile_photo,
+                    u.rating,
+                    dl.latitude,
+                    dl.longitude,
+                    dl.heading,
+                    dl.speed,
+                    v.brand as vehicle_brand,
+                    v.model as vehicle_model,
+                    v.color as vehicle_color,
+                    v.license_plate,
+                    v.vehicle_type,
+                    (
+                        6371 * acos(
+                            cos(radians(:lat)) * cos(radians(dl.latitude))
+                            * cos(radians(dl.longitude) - radians(:lng))
+                            + sin(radians(:lat2)) * sin(radians(dl.latitude))
+                        )
+                    ) as distance_km
+                FROM users u
+                JOIN driver_locations dl ON u.id = dl.driver_id
+                LEFT JOIN vehicles v ON u.id = v.driver_id AND v.is_active = 1
+                WHERE u.role = 'driver'
+                AND u.is_online = 1
+                AND u.is_verified = 1
+                AND dl.updated_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+                {$typeCondition}
+                ORDER BY distance_km ASC
+                LIMIT :limit
+            ");
 
-        $params['limit'] = $limit;
-        $stmt->execute($params);
-        $drivers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $params['limit'] = $limit;
+            $stmt->execute($params);
+            $drivers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Exception $e) {
+            // Si erreur (ex: colonnes manquantes), retourner tableau vide
+            return [];
+        }
 
         $results = [];
         $trafficFactor = $this->getTrafficFactor();

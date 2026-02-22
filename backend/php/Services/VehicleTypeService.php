@@ -149,11 +149,12 @@ class VehicleTypeService
             $type = $this->defaultTypes['standard'];
         }
 
-        $baseFare = (float) $type['base_fare'];
-        $perKm = (float) $type['per_km_rate'];
-        $perMinute = (float) $type['per_minute_rate'];
-        $minFare = (float) $type['min_fare'];
-        $multiplier = (float) ($type['multiplier'] ?? 1.0);
+        // Support des deux schémas de colonnes (migration vs service)
+        $baseFare = (float) ($type['base_fare'] ?? ($type['base_price_multiplier'] ?? 1.0) * 8.0);
+        $perKm = (float) ($type['per_km_rate'] ?? ($type['per_km_multiplier'] ?? 1.0) * 3.5);
+        $perMinute = (float) ($type['per_minute_rate'] ?? ($type['per_min_multiplier'] ?? 1.0) * 0.5);
+        $minFare = (float) ($type['min_fare'] ?? ($type['min_price_multiplier'] ?? 1.0) * 15.0);
+        $multiplier = (float) ($type['multiplier'] ?? $type['base_price_multiplier'] ?? 1.0);
 
         // Calcul de base
         $distancePrice = $distanceKm * $perKm;
@@ -286,41 +287,55 @@ class VehicleTypeService
      */
     public function calculateSurgeMultiplier(float $lat, float $lng): float
     {
-        // Compter les demandes actives dans la zone (5km radius)
-        $stmt = $this->db->prepare('
-            SELECT COUNT(*) FROM rides
-            WHERE status IN ("searching", "pending")
-            AND created_at >= DATE_SUB(NOW(), INTERVAL 10 MINUTE)
-            AND (
-                6371 * acos(
-                    cos(radians(:lat)) * cos(radians(pickup_lat))
-                    * cos(radians(pickup_lng) - radians(:lng))
-                    + sin(radians(:lat2)) * sin(radians(pickup_lat))
-                )
-            ) <= 5
-        ');
+        // Vérifier si la table driver_locations existe
+        try {
+            $check = $this->db->query("SHOW TABLES LIKE 'driver_locations'");
+            if ($check->rowCount() === 0) {
+                return 1.0; // Pas de surge si table n'existe pas
+            }
+        } catch (\Exception $e) {
+            return 1.0;
+        }
 
-        $stmt->execute(['lat' => $lat, 'lng' => $lng, 'lat2' => $lat]);
-        $activeRequests = (int) $stmt->fetchColumn();
+        try {
+            // Compter les demandes actives dans la zone (5km radius)
+            $stmt = $this->db->prepare('
+                SELECT COUNT(*) FROM rides
+                WHERE status IN ("searching", "pending")
+                AND created_at >= DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+                AND (
+                    6371 * acos(
+                        cos(radians(:lat)) * cos(radians(pickup_lat))
+                        * cos(radians(pickup_lng) - radians(:lng))
+                        + sin(radians(:lat2)) * sin(radians(pickup_lat))
+                    )
+                ) <= 5
+            ');
 
-        // Compter les conductrices disponibles dans la zone
-        $stmt = $this->db->prepare('
-            SELECT COUNT(*) FROM users u
-            JOIN driver_locations dl ON u.id = dl.driver_id
-            WHERE u.role = "driver"
-            AND u.is_online = 1
-            AND dl.updated_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
-            AND (
-                6371 * acos(
-                    cos(radians(:lat)) * cos(radians(dl.latitude))
-                    * cos(radians(dl.longitude) - radians(:lng))
-                    + sin(radians(:lat2)) * sin(radians(dl.latitude))
-                )
-            ) <= 5
-        ');
+            $stmt->execute(['lat' => $lat, 'lng' => $lng, 'lat2' => $lat]);
+            $activeRequests = (int) $stmt->fetchColumn();
 
-        $stmt->execute(['lat' => $lat, 'lng' => $lng, 'lat2' => $lat]);
-        $availableDrivers = (int) $stmt->fetchColumn();
+            // Compter les conductrices disponibles dans la zone
+            $stmt = $this->db->prepare('
+                SELECT COUNT(*) FROM users u
+                JOIN driver_locations dl ON u.id = dl.driver_id
+                WHERE u.role = "driver"
+                AND u.is_online = 1
+                AND dl.updated_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+                AND (
+                    6371 * acos(
+                        cos(radians(:lat)) * cos(radians(dl.latitude))
+                        * cos(radians(dl.longitude) - radians(:lng))
+                        + sin(radians(:lat2)) * sin(radians(dl.latitude))
+                    )
+                ) <= 5
+            ');
+
+            $stmt->execute(['lat' => $lat, 'lng' => $lng, 'lat2' => $lat]);
+            $availableDrivers = (int) $stmt->fetchColumn();
+        } catch (\Exception $e) {
+            return 1.0; // Pas de surge en cas d'erreur
+        }
 
         // Calculer le ratio demande/offre
         if ($availableDrivers === 0) {
@@ -347,42 +362,56 @@ class VehicleTypeService
      */
     public function getAvailableInArea(float $lat, float $lng, int $radiusKm = 5): array
     {
+        // Vérifier si les tables nécessaires existent
+        try {
+            $check = $this->db->query("SHOW TABLES LIKE 'driver_locations'");
+            if ($check->rowCount() === 0) {
+                return []; // Tables pas encore créées
+            }
+        } catch (\Exception $e) {
+            return [];
+        }
+
         $types = $this->getActive();
         $available = [];
 
         foreach ($types as $type) {
-            // Compter les conductrices avec ce type de véhicule dans la zone
-            $stmt = $this->db->prepare('
-                SELECT COUNT(DISTINCT u.id) FROM users u
-                JOIN vehicles v ON u.id = v.driver_id
-                JOIN driver_locations dl ON u.id = dl.driver_id
-                WHERE u.role = "driver"
-                AND u.is_online = 1
-                AND v.is_active = 1
-                AND v.vehicle_type = :type
-                AND dl.updated_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
-                AND (
-                    6371 * acos(
-                        cos(radians(:lat)) * cos(radians(dl.latitude))
-                        * cos(radians(dl.longitude) - radians(:lng))
-                        + sin(radians(:lat2)) * sin(radians(dl.latitude))
-                    )
-                ) <= :radius
-            ');
+            try {
+                // Compter les conductrices avec ce type de véhicule dans la zone
+                $stmt = $this->db->prepare('
+                    SELECT COUNT(DISTINCT u.id) FROM users u
+                    JOIN vehicles v ON u.id = v.driver_id
+                    JOIN driver_locations dl ON u.id = dl.driver_id
+                    WHERE u.role = "driver"
+                    AND u.is_online = 1
+                    AND v.is_active = 1
+                    AND v.vehicle_type = :type
+                    AND dl.updated_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+                    AND (
+                        6371 * acos(
+                            cos(radians(:lat)) * cos(radians(dl.latitude))
+                            * cos(radians(dl.longitude) - radians(:lng))
+                            + sin(radians(:lat2)) * sin(radians(dl.latitude))
+                        )
+                    ) <= :radius
+                ');
 
-            $stmt->execute([
-                'type' => $type['code'],
-                'lat' => $lat,
-                'lng' => $lng,
-                'lat2' => $lat,
-                'radius' => $radiusKm,
-            ]);
+                $stmt->execute([
+                    'type' => $type['code'],
+                    'lat' => $lat,
+                    'lng' => $lng,
+                    'lat2' => $lat,
+                    'radius' => $radiusKm,
+                ]);
 
-            $count = (int) $stmt->fetchColumn();
+                $count = (int) $stmt->fetchColumn();
 
-            if ($count > 0) {
-                $type['available_drivers'] = $count;
-                $available[] = $type;
+                if ($count > 0) {
+                    $type['available_drivers'] = $count;
+                    $available[] = $type;
+                }
+            } catch (\Exception $e) {
+                continue;
             }
         }
 
@@ -397,61 +426,78 @@ class VehicleTypeService
         $types = $this->getActive();
         $etas = [];
 
+        // Vérifier si les tables nécessaires existent
+        $hasDriverLocations = false;
+        try {
+            $check = $this->db->query("SHOW TABLES LIKE 'driver_locations'");
+            $hasDriverLocations = $check->rowCount() > 0;
+        } catch (\Exception $e) {
+            // Ignorer
+        }
+
         foreach ($types as $type) {
-            // Trouver la conductrice la plus proche avec ce type
-            $stmt = $this->db->prepare('
-                SELECT
-                    u.id,
-                    (
-                        6371 * acos(
-                            cos(radians(:lat)) * cos(radians(dl.latitude))
-                            * cos(radians(dl.longitude) - radians(:lng))
-                            + sin(radians(:lat2)) * sin(radians(dl.latitude))
-                        )
-                    ) as distance_km
-                FROM users u
-                JOIN vehicles v ON u.id = v.driver_id
-                JOIN driver_locations dl ON u.id = dl.driver_id
-                WHERE u.role = "driver"
-                AND u.is_online = 1
-                AND v.is_active = 1
-                AND v.vehicle_type = :type
-                AND dl.updated_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
-                ORDER BY distance_km ASC
-                LIMIT 1
-            ');
+            if ($hasDriverLocations) {
+                try {
+                    // Trouver la conductrice la plus proche avec ce type
+                    $stmt = $this->db->prepare('
+                        SELECT
+                            u.id,
+                            (
+                                6371 * acos(
+                                    cos(radians(:lat)) * cos(radians(dl.latitude))
+                                    * cos(radians(dl.longitude) - radians(:lng))
+                                    + sin(radians(:lat2)) * sin(radians(dl.latitude))
+                                )
+                            ) as distance_km
+                        FROM users u
+                        JOIN vehicles v ON u.id = v.driver_id
+                        JOIN driver_locations dl ON u.id = dl.driver_id
+                        WHERE u.role = "driver"
+                        AND u.is_online = 1
+                        AND v.is_active = 1
+                        AND v.vehicle_type = :type
+                        AND dl.updated_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+                        ORDER BY distance_km ASC
+                        LIMIT 1
+                    ');
 
-            $stmt->execute([
-                'type' => $type['code'],
-                'lat' => $lat,
-                'lng' => $lng,
-                'lat2' => $lat,
-            ]);
+                    $stmt->execute([
+                        'type' => $type['code'],
+                        'lat' => $lat,
+                        'lng' => $lng,
+                        'lat2' => $lat,
+                    ]);
 
-            $nearest = $stmt->fetch(PDO::FETCH_ASSOC);
+                    $nearest = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($nearest) {
-                // Estimer l'ETA (environ 2 min par km en ville)
-                $etaMinutes = max(2, (int) ceil($nearest['distance_km'] * 2));
+                    if ($nearest) {
+                        // Estimer l'ETA (environ 2 min par km en ville)
+                        $etaMinutes = max(2, (int) ceil($nearest['distance_km'] * 2));
 
-                $etas[] = [
-                    'vehicle_type' => $type['code'],
-                    'vehicle_name' => $type['name'],
-                    'icon' => $type['icon'],
-                    'eta_minutes' => $etaMinutes,
-                    'eta_text' => $etaMinutes . ' min',
-                    'available' => true,
-                ];
-            } else {
-                $etas[] = [
-                    'vehicle_type' => $type['code'],
-                    'vehicle_name' => $type['name'],
-                    'icon' => $type['icon'],
-                    'eta_minutes' => null,
-                    'eta_text' => __('vehicle.not_available'),
-                    'available' => false,
-                ];
+                        $etas[] = [
+                            'vehicle_type' => $type['code'],
+                            'vehicle_name' => $type['name'],
+                            'icon' => $type['icon'],
+                            'eta_minutes' => $etaMinutes,
+                            'eta_text' => $etaMinutes . ' min',
+                            'available' => true,
+                        ];
+                        continue;
+                    }
+                } catch (\Exception $e) {
+                    // Continuer avec "non disponible"
+                }
             }
+
+            // Pas de conductrice disponible ou erreur
+            $etas[] = [
+                'vehicle_type' => $type['code'],
+                'vehicle_name' => $type['name'],
+                'icon' => $type['icon'],
+                'eta_minutes' => null,
+                'eta_text' => __('vehicle.not_available'),
+                'available' => false,
+            ];
         }
 
         return $etas;
