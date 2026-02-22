@@ -230,6 +230,17 @@
 
 <style>
 /* ============================================
+   LOCAL CSS VARIABLES (fallbacks for Uber design system)
+   ============================================ */
+:root {
+    --color-primary: #1B4D3E;
+    --color-primary-soft: rgba(27, 77, 62, 0.1);
+    --color-accent: #C9A962;
+    --emerald-700: #1B4D3E;
+    --stone-900: #1c1917;
+}
+
+/* ============================================
    DEMO RIDE PAGE - MOBILE FIRST, FULL SCREEN
    ============================================ */
 
@@ -685,12 +696,12 @@
 }
 
 .modal-btn.primary {
-    background: var(--color-primary);
-    color: white;
+    background: var(--uber-black, #000000);
+    color: var(--uber-white, #FFFFFF);
 }
 
 .modal-btn.primary:hover {
-    background: var(--emerald-700);
+    background: var(--uber-gray-800, #333333);
     transform: translateY(-2px);
 }
 
