@@ -3,7 +3,7 @@
  */
 
 module.exports = {
-    // URL de base
+    // URL de base (TripSalama Docker sur port 8080)
     baseUrl: 'http://127.0.0.1:8080',
 
     // Configuration Puppeteer

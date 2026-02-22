@@ -1,0 +1,19 @@
+{
+  "name": "tripsalama-websocket",
+  "version": "1.0.0",
+  "description": "TripSalama WebSocket Server pour le tracking temps réel",
+  "main": "websocket-server.js",
+  "scripts": {
+    "start": "node websocket-server.js",
+    "dev": "nodemon websocket-server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

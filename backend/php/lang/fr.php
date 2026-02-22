@@ -235,6 +235,8 @@ return [
         'rating_submitted' => 'Merci pour votre note',
         'position_updated' => 'Position mise à jour',
         'status_changed' => 'Statut mis à jour',
+        'data_exported' => 'Données exportées avec succès',
+        'account_deleted' => 'Compte supprimé définitivement',
     ],
 
     // Erreurs
@@ -255,6 +257,14 @@ return [
         'too_many_attempts' => 'Trop de tentatives. Veuillez réessayer dans :minutes minutes.',
         'account_locked' => 'Compte temporairement verrouillé pour raison de sécurité',
         'ride_not_active' => 'Cette course n\'est plus active',
+        'invalid_coordinates' => 'Coordonnées GPS invalides',
+        'rate_limit_exceeded' => 'Limite de requêtes dépassée',
+        'zone_restricted' => 'Cette zone n\'est pas desservie actuellement',
+        'pickup_restricted' => 'Le point de départ n\'est pas desservi',
+        'dropoff_restricted' => 'La destination n\'est pas desservie',
+        'encryption_failed' => 'Erreur lors du chiffrement des données',
+        'decryption_failed' => 'Erreur lors du déchiffrement des données',
+        'invalid_encrypted_data' => 'Données chiffrées invalides',
     ],
 
     // Validation

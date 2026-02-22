@@ -11,6 +11,9 @@ require_once __DIR__ . '/_bootstrap.php';
 $action = getAction();
 $method = $_SERVER['REQUEST_METHOD'];
 
+// Rate limiting global pour toutes les requêtes API rides
+requireRateLimit('api_request');
+
 try {
     require_once BACKEND_PATH . '/Models/Ride.php';
     require_once BACKEND_PATH . '/Models/Vehicle.php';
@@ -28,14 +31,23 @@ try {
             $data = getRequestData();
             $userId = (int)current_user()['id'];
 
+            // Validation des coordonnées
+            $pickupLat = (float)($data['pickup_lat'] ?? 0);
+            $pickupLng = (float)($data['pickup_lng'] ?? 0);
+            $dropoffLat = (float)($data['dropoff_lat'] ?? 0);
+            $dropoffLng = (float)($data['dropoff_lng'] ?? 0);
+
+            requireValidCoordinates($pickupLat, $pickupLng);
+            requireValidCoordinates($dropoffLat, $dropoffLng);
+
             $rideId = $rideModel->create([
                 'passenger_id' => $userId,
-                'pickup_address' => $data['pickup_address'] ?? '',
-                'pickup_lat' => (float)($data['pickup_lat'] ?? 0),
-                'pickup_lng' => (float)($data['pickup_lng'] ?? 0),
-                'dropoff_address' => $data['dropoff_address'] ?? '',
-                'dropoff_lat' => (float)($data['dropoff_lat'] ?? 0),
-                'dropoff_lng' => (float)($data['dropoff_lng'] ?? 0),
+                'pickup_address' => htmlspecialchars($data['pickup_address'] ?? '', ENT_QUOTES, 'UTF-8'),
+                'pickup_lat' => $pickupLat,
+                'pickup_lng' => $pickupLng,
+                'dropoff_address' => htmlspecialchars($data['dropoff_address'] ?? '', ENT_QUOTES, 'UTF-8'),
+                'dropoff_lat' => $dropoffLat,
+                'dropoff_lng' => $dropoffLng,
                 'estimated_distance_km' => (float)($data['estimated_distance_km'] ?? 0),
                 'estimated_duration_min' => (int)($data['estimated_duration_min'] ?? 0),
                 'estimated_price' => (float)($data['estimated_price'] ?? 0),
@@ -209,6 +221,9 @@ try {
             $rideId = (int)($data['ride_id'] ?? 0);
             $lat = (float)($data['lat'] ?? 0);
             $lng = (float)($data['lng'] ?? 0);
+
+            // Validation des coordonnées
+            requireValidCoordinates($lat, $lng);
 
             $rideModel->savePosition($rideId, $lat, $lng);
             successResponse(null, __('msg.position_updated'));

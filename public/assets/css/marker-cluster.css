@@ -1,0 +1,215 @@
+/**
+ * TripSalama - Marker Cluster Styles
+ * Styles pour le regroupement de marqueurs
+ */
+
+/* ============================================
+   CLUSTER MARKERS
+   ============================================ */
+.ts-cluster {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-family: var(--font-primary);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-inverse);
+    cursor: pointer;
+    transition: transform var(--transition-fast);
+    will-change: transform;
+}
+
+.ts-cluster:hover {
+    transform: scale(1.1);
+}
+
+.ts-cluster-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+}
+
+/* Small cluster (< 10) */
+.ts-cluster-small {
+    width: 34px;
+    height: 34px;
+    font-size: var(--text-sm);
+}
+
+.ts-cluster-small .ts-cluster-inner {
+    background: var(--color-primary);
+    box-shadow:
+        0 0 0 4px rgba(45, 90, 74, 0.2),
+        var(--shadow-md);
+}
+
+/* Medium cluster (10-99) */
+.ts-cluster-medium {
+    width: 55px;
+    height: 55px;
+    font-size: var(--text-base);
+}
+
+.ts-cluster-medium .ts-cluster-inner {
+    background: var(--color-accent);
+    box-shadow:
+        0 0 0 4px rgba(201, 169, 98, 0.2),
+        var(--shadow-md);
+}
+
+/* Large cluster (100+) */
+.ts-cluster-large {
+    width: 89px;
+    height: 89px;
+    font-size: var(--text-lg);
+}
+
+.ts-cluster-large .ts-cluster-inner {
+    background: var(--color-danger);
+    box-shadow:
+        0 0 0 4px rgba(239, 68, 68, 0.2),
+        var(--shadow-lg);
+}
+
+/* ============================================
+   INDIVIDUAL MARKERS
+   ============================================ */
+.ts-marker {
+    width: 34px;
+    height: 34px;
+}
+
+.ts-marker-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    box-shadow: var(--shadow-md);
+    border: 2px solid var(--color-bg-card);
+}
+
+.ts-marker-inner svg {
+    width: var(--size-icon-sm);
+    height: var(--size-icon-sm);
+    transform: rotate(45deg);
+}
+
+/* Marker types */
+.ts-marker-driver .ts-marker-inner {
+    background: var(--color-primary);
+}
+
+.ts-marker-pickup .ts-marker-inner {
+    background: var(--color-success);
+}
+
+.ts-marker-dropoff .ts-marker-inner {
+    background: var(--color-danger);
+}
+
+.ts-marker-default .ts-marker-inner {
+    background: var(--color-accent);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes clusterPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(45, 90, 74, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 13px rgba(45, 90, 74, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(45, 90, 74, 0);
+    }
+}
+
+.ts-cluster-pulse .ts-cluster-inner {
+    animation: clusterPulse 2s infinite;
+}
+
+/* ============================================
+   SPIDERFIER (pour les clusters au zoom max)
+   ============================================ */
+.ts-spider-leg {
+    stroke: var(--color-primary);
+    stroke-width: 2px;
+    stroke-dasharray: 8, 4;
+    stroke-linecap: round;
+    opacity: 0.6;
+}
+
+.ts-spider-marker {
+    transform-origin: center center;
+    animation: spiderAppear 0.3s ease-out;
+}
+
+@keyframes spiderAppear {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ============================================
+   DARK MODE
+   ============================================ */
+.dark-theme .ts-marker-inner {
+    border-color: var(--color-bg-card);
+}
+
+.dark-theme .ts-cluster-small .ts-cluster-inner {
+    box-shadow:
+        0 0 0 4px rgba(45, 90, 74, 0.3),
+        var(--shadow-md);
+}
+
+.dark-theme .ts-cluster-medium .ts-cluster-inner {
+    box-shadow:
+        0 0 0 4px rgba(201, 169, 98, 0.3),
+        var(--shadow-md);
+}
+
+.dark-theme .ts-cluster-large .ts-cluster-inner {
+    box-shadow:
+        0 0 0 4px rgba(239, 68, 68, 0.3),
+        var(--shadow-lg);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 518px) {
+    /* Marqueurs plus grands sur mobile pour le touch (Fibonacci: 55px) */
+    .ts-marker {
+        width: 55px;
+        height: 55px;
+    }
+
+    .ts-cluster-small {
+        width: 55px;
+        height: 55px;
+    }
+
+    .ts-cluster-medium {
+        width: 89px;
+        height: 89px;
+    }
+
+    .ts-cluster-large {
+        width: 144px;
+        height: 144px;
+    }
+}

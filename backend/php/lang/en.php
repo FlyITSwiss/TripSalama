@@ -230,6 +230,8 @@ return [
         'rating_submitted' => 'Thank you for your rating',
         'position_updated' => 'Position updated',
         'status_changed' => 'Status updated',
+        'data_exported' => 'Data exported successfully',
+        'account_deleted' => 'Account permanently deleted',
     ],
 
     // Errors
@@ -250,6 +252,14 @@ return [
         'too_many_attempts' => 'Too many attempts. Please try again in :minutes minutes.',
         'account_locked' => 'Account temporarily locked for security reasons',
         'ride_not_active' => 'This ride is no longer active',
+        'invalid_coordinates' => 'Invalid GPS coordinates',
+        'rate_limit_exceeded' => 'Rate limit exceeded',
+        'zone_restricted' => 'This area is not currently served',
+        'pickup_restricted' => 'Pickup location is not served',
+        'dropoff_restricted' => 'Destination is not served',
+        'encryption_failed' => 'Error while encrypting data',
+        'decryption_failed' => 'Error while decrypting data',
+        'invalid_encrypted_data' => 'Invalid encrypted data',
     ],
 
     // Validation

@@ -11,6 +11,9 @@ require_once __DIR__ . '/_bootstrap.php';
 $action = getAction();
 $method = $_SERVER['REQUEST_METHOD'];
 
+// Rate limiting global pour toutes les requêtes API drivers
+requireRateLimit('api_request');
+
 try {
     require_once BACKEND_PATH . '/Models/Ride.php';
 
@@ -29,6 +32,11 @@ try {
             $isAvailable = filter_var($data['is_available'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $lat = isset($data['lat']) ? (float)$data['lat'] : null;
             $lng = isset($data['lng']) ? (float)$data['lng'] : null;
+
+            // Validation des coordonnées si fournies
+            if ($lat !== null && $lng !== null) {
+                requireValidCoordinates($lat, $lng);
+            }
 
             $stmt = $db->prepare('
                 INSERT INTO driver_status (driver_id, is_available, current_lat, current_lng)
@@ -61,9 +69,12 @@ try {
             $lat = (float)($data['lat'] ?? 0);
             $lng = (float)($data['lng'] ?? 0);
 
+            // Validation des coordonnées
+            requireValidCoordinates($lat, $lng);
+
             $stmt = $db->prepare('
                 UPDATE driver_status
-                SET current_lat = :lat, current_lng = :lng
+                SET current_lat = :lat, current_lng = :lng, last_heartbeat = NOW()
                 WHERE driver_id = :driver_id
             ');
             $stmt->execute([

@@ -22,6 +22,9 @@ try {
             if ($method !== 'POST') {
                 errorResponse('Method not allowed', 405);
             }
+            // Rate limiting strict pour le login (5 tentatives / 15 min)
+            $email = getParam('email', '', 'string');
+            requireRateLimit('login', $email);
             requireCsrf();
             $controller->apiLogin();
             break;
@@ -30,6 +33,8 @@ try {
             if ($method !== 'POST') {
                 errorResponse('Method not allowed', 405);
             }
+            // Rate limiting strict pour l'inscription (3 tentatives / 60 min)
+            requireRateLimit('register');
             requireCsrf();
             $controller->apiRegister();
             break;

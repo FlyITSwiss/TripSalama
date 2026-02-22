@@ -52,6 +52,23 @@ try {
             handleGetCountryConfig();
             break;
 
+        case 'export-data':
+            // Export RGPD - droit d'accès
+            if ($method !== 'GET') {
+                errorResponse(__('error.generic'), 405);
+            }
+            handleExportData();
+            break;
+
+        case 'delete-account':
+            // Suppression RGPD - droit à l'oubli
+            if ($method !== 'POST') {
+                errorResponse(__('error.generic'), 405);
+            }
+            requireCsrf();
+            handleDeleteAccount();
+            break;
+
         default:
             errorResponse(__('error.not_found'), 404);
     }
@@ -294,4 +311,62 @@ function handleGetCountryConfig(): never
         'pricing' => $config['pricing'] ?? [],
         'supported_countries' => $countryService->getSupportedCountries(),
     ]);
+}
+
+/**
+ * Exporter toutes les données de l'utilisateur (RGPD - droit d'accès)
+ */
+function handleExportData(): never
+{
+    require_once BACKEND_PATH . '/Services/GdprService.php';
+
+    $user = current_user();
+    $userId = (int) $user['id'];
+
+    $db = getDbConnection();
+    $gdprService = new \TripSalama\Services\GdprService($db);
+
+    $data = $gdprService->exportUserData($userId);
+
+    // Retourner en JSON avec header de téléchargement
+    header('Content-Disposition: attachment; filename="tripsalama-data-export-' . date('Y-m-d') . '.json"');
+    successResponse($data, __('msg.data_exported'));
+}
+
+/**
+ * Supprimer le compte utilisateur (RGPD - droit à l'oubli)
+ */
+function handleDeleteAccount(): never
+{
+    require_once BACKEND_PATH . '/Services/GdprService.php';
+
+    $user = current_user();
+    $userId = (int) $user['id'];
+
+    // Vérifier le mot de passe pour confirmation
+    $input = getRequestData();
+    $password = $input['password'] ?? '';
+
+    if (empty($password)) {
+        errorResponse(__('validation.required_field'), 400);
+    }
+
+    // Vérifier le mot de passe
+    $db = getDbConnection();
+    $stmt = $db->prepare('SELECT password_hash FROM users WHERE id = ?');
+    $stmt->execute([$userId]);
+    $hash = $stmt->fetchColumn();
+
+    if (!password_verify($password, $hash)) {
+        errorResponse(__('msg.login_failed'), 401);
+    }
+
+    // Supprimer les données
+    $gdprService = new \TripSalama\Services\GdprService($db);
+    $summary = $gdprService->deleteUserData($userId);
+
+    // Déconnexion
+    session_destroy();
+
+    successResponse($summary, __('msg.account_deleted'));
 }
