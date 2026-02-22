@@ -14,11 +14,10 @@ class GdprService
 {
     private PDO $db;
 
-    // Durées de rétention en jours
-    private const RETENTION_RIDE_POSITIONS = 30;        // Positions GPS : 30 jours
-    private const RETENTION_COMPLETED_RIDES = 365 * 3;  // Courses terminées : 3 ans (fiscal)
-    private const RETENTION_RATE_LIMITS = 1;            // Rate limits : 1 jour
-    private const RETENTION_INACTIVE_USERS = 365 * 2;   // Utilisateurs inactifs : 2 ans
+    // Retention periods (days)
+    private const RETENTION_RIDE_POSITIONS = 30;        // GPS positions: 30 days
+    private const RETENTION_COMPLETED_RIDES = 365 * 3;  // Completed rides: 3 years (tax)
+    private const RETENTION_RATE_LIMITS = 1;            // Rate limits: 1 day
 
     public function __construct(PDO $db)
     {
