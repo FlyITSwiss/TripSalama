@@ -317,6 +317,9 @@ const Booking = (function() {
             });
 
             pickupDropdown.classList.remove('hidden');
+
+            // Auto-scroll pour afficher le dropdown
+            scrollDropdownIntoView(pickupDropdown);
         }
     }
 
@@ -399,6 +402,7 @@ const Booking = (function() {
                 ${window.BookingConfig?.i18n?.noResults || 'No results'}
             </div>`;
             dropdown.classList.remove('hidden');
+            scrollDropdownIntoView(dropdown);
             return;
         }
 
@@ -428,6 +432,51 @@ const Booking = (function() {
         });
 
         dropdown.classList.remove('hidden');
+
+        // Auto-scroll pour afficher le dropdown
+        scrollDropdownIntoView(dropdown);
+    }
+
+    /**
+     * Scroll automatique pour afficher le dropdown de suggestions
+     * Fait scroller la bottom sheet pour que le dropdown soit visible
+     */
+    function scrollDropdownIntoView(dropdown) {
+        // Petit timeout pour laisser le DOM se mettre a jour
+        requestAnimationFrame(() => {
+            // Trouver le container scrollable (booking-sheet)
+            const sheet = document.querySelector('.booking-sheet');
+            if (!sheet) return;
+
+            // Trouver l'input wrapper parent du dropdown
+            const inputWrapper = dropdown.closest('.booking-input-wrapper');
+            if (!inputWrapper) return;
+
+            // Calculer si le dropdown depasse la zone visible de la sheet
+            const sheetRect = sheet.getBoundingClientRect();
+            const dropdownRect = dropdown.getBoundingClientRect();
+
+            // Si le bas du dropdown depasse le bas de la sheet visible
+            if (dropdownRect.bottom > sheetRect.bottom) {
+                // Calculer de combien il faut scroller
+                const scrollNeeded = dropdownRect.bottom - sheetRect.bottom + 16; // +16px de marge
+
+                // Smooth scroll de la sheet
+                sheet.scrollBy({
+                    top: scrollNeeded,
+                    behavior: 'smooth'
+                });
+            }
+
+            // Aussi, scroller l'input en vue si necessaire
+            const input = inputWrapper.querySelector('input');
+            if (input) {
+                input.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
+            }
+        });
     }
 
     /**
