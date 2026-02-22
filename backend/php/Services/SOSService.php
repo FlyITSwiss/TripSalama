@@ -493,15 +493,16 @@ class SOSService
             : (int) $ride['passenger_id'];
 
         if ($notifyUserId && $this->pushService) {
-            $this->pushService->sendToUser($notifyUserId, [
-                'title' => __('sos.alert_title'),
-                'body' => __('sos.alert_participant_message'),
-                'data' => [
+            $this->pushService->sendToUser(
+                $notifyUserId,
+                __('sos.alert_title'),
+                __('sos.alert_participant_message'),
+                [
                     'type' => 'sos_alert',
                     'alert_id' => $alertId,
                     'ride_id' => $rideId,
-                ],
-            ]);
+                ]
+            );
         }
     }
 
