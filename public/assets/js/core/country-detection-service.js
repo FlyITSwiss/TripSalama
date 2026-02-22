@@ -246,9 +246,9 @@ const CountryDetectionService = (function() {
      */
     async function syncWithServer(countryCode) {
         try {
-            await ApiService.post('user/set-country', { country: countryCode });
+            await ApiService.post('user', { action: 'set-country', country: countryCode });
         } catch (error) {
-            // Silencieux - la session PHP sera mise à jour à la prochaine requête
+            // Silencieux - la session PHP sera mise a jour a la prochaine requete
             AppConfig.debug('Country sync error:', error);
         }
     }

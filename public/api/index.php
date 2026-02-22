@@ -26,6 +26,8 @@ if (empty($endpoint)) {
             '/api/auth',
             '/api/rides',
             '/api/drivers',
+            '/api/user',
+            '/api/chat',
             '/api/health',
             '/api/verification'
         ]
@@ -54,6 +56,6 @@ if (file_exists($apiFile)) {
     echo json_encode([
         'success' => false,
         'error' => 'Endpoint not found: ' . $file,
-        'available_endpoints' => ['auth', 'rides', 'drivers', 'health', 'verification']
+        'available_endpoints' => ['auth', 'rides', 'drivers', 'user', 'chat', 'health', 'verification']
     ]);
 }

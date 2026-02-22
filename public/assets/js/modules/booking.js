@@ -331,7 +331,7 @@ const Booking = (function() {
             clearTimeout(searchTimeout);
             const query = input.value.trim();
 
-            if (query.length < 3) {
+            if (query.length < 4) {
                 dropdown.classList.add('hidden');
                 return;
             }
