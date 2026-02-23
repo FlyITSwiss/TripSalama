@@ -14,7 +14,8 @@ const fs = require('fs');
 const BASE_URL = 'https://stabilis-it.ch/internal/tripsalama';
 const SCREENSHOTS_DIR = path.join(__dirname, 'screenshots', 'profile-driver-test');
 
-// Credentials
+// Credentials (from 007_seed_admin_user.sql migration)
+// Hash $2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi = 'password'
 const PASSENGER_EMAIL = 'passenger@tripsalama.ch';
 const DRIVER_EMAIL = 'driver@tripsalama.ch';
 const PASSWORD = 'password';

@@ -538,7 +538,9 @@ const Booking = (function() {
             // OSRM public API pour le MVP
             const url = `https://router.project-osrm.org/route/v1/driving/${pickup.lng},${pickup.lat};${dropoff.lng},${dropoff.lat}?overview=full&geometries=polyline`;
 
-            const response = await fetch(url);
+            const response = typeof FetchUtils !== 'undefined'
+                ? await FetchUtils.fetchWithRetry(url, {}, 2, 5000)
+                : await fetch(url);
             if (!response.ok) throw new Error('Routing failed');
 
             const data = await response.json();
@@ -572,8 +574,37 @@ const Booking = (function() {
             }
 
         } catch (error) {
-            AppConfig.debug('Routing error:', error);
-            Toast.error(window.BookingConfig?.i18n?.error || 'Error calculating route');
+            AppConfig.debug('OSRM failed, using Haversine fallback:', error.message);
+
+            // Fallback Haversine avec facteur route (1.3x distance directe)
+            const calcDistance = (lat1, lng1, lat2, lng2) => {
+                const R = 6371;
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLng = (lng2 - lng1) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            };
+
+            const distance = calcDistance(pickup.lat, pickup.lng, dropoff.lat, dropoff.lng) * 1.3;
+            const duration = Math.round((distance / 30) * 60);
+
+            routeData = {
+                distance: Math.round(distance * 100) / 100,
+                duration: duration,
+                polyline: null,
+                isEstimate: true
+            };
+
+            MapController.drawRoute([[pickup.lat, pickup.lng], [dropoff.lat, dropoff.lng]]);
+            MapController.fitBounds([[pickup.lat, pickup.lng], [dropoff.lat, dropoff.lng]]);
+
+            const price = calculatePrice(routeData.distance, routeData.duration);
+            showEstimation(routeData.distance, routeData.duration, price);
+
+            StateManager.set(StateManager.Keys.BOOKING_ROUTE, routeData);
+            EventBus.emit(EventBus.Events.BOOKING_ESTIMATE_READY, { ...routeData, price });
+
+            Toast.warning(window.BookingConfig?.i18n?.estimateOnly || 'Estimated route');
         }
     }
 

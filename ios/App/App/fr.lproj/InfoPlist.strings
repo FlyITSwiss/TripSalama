@@ -1,0 +1,12 @@
+/* French localization for iOS permission descriptions */
+
+/* Location Permissions */
+"NSLocationWhenInUseUsageDescription" = "TripSalama a besoin de votre position pour afficher les conductrices proches et calculer vos trajets.";
+"NSLocationAlwaysUsageDescription" = "TripSalama a besoin d'un accès permanent à votre position pour le suivi des conductrices pendant les courses.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "TripSalama a besoin de votre position pour vous connecter aux conductrices proches et suivre vos courses en temps réel.";
+
+/* Camera Permission */
+"NSCameraUsageDescription" = "TripSalama a besoin d'accéder à la caméra pour prendre des photos de profil et vérifier votre identité.";
+
+/* Photo Library Permission */
+"NSPhotoLibraryUsageDescription" = "TripSalama a besoin d'accéder à vos photos pour définir votre photo de profil.";

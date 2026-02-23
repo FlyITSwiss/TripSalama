@@ -1,7 +1,7 @@
 {
   "name": "tripsalama",
   "version": "1.0.0",
-  "description": "",
+  "description": "VTC app for women - Safe rides by women, for women",
   "main": "index.js",
   "directories": {
     "test": "tests"
@@ -9,21 +9,49 @@
   "scripts": {
     "lint": "eslint public/assets/js --ext .js",
     "lint:fix": "eslint public/assets/js --ext .js --fix",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "cap:sync": "npx cap sync",
+    "cap:open:ios": "npx cap open ios",
+    "cap:open:android": "npx cap open android",
+    "build:mobile": "npm run cap:sync && echo 'Ready for native build'"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/FlyITSwiss/TripSalama.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "vtc",
+    "rideshare",
+    "women-safety",
+    "capacitor",
+    "mobile"
+  ],
+  "author": "Stabilis IT",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/FlyITSwiss/TripSalama/issues"
   },
   "homepage": "https://github.com/FlyITSwiss/TripSalama#readme",
+  "dependencies": {
+    "@capacitor-community/background-geolocation": "^1.2.0",
+    "@capacitor/android": "^8.1.0",
+    "@capacitor/app": "^8.0.1",
+    "@capacitor/camera": "^8.0.1",
+    "@capacitor/core": "^8.1.0",
+    "@capacitor/geolocation": "^8.1.0",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/ios": "^8.1.0",
+    "@capacitor/keyboard": "^8.0.0",
+    "@capacitor/network": "^8.0.1",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/push-notifications": "^8.0.1",
+    "@capacitor/share": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.1"
+  },
   "devDependencies": {
+    "@capacitor/cli": "^8.1.0",
     "eslint": "^10.0.1",
     "eslint-plugin-security": "^4.0.0",
     "puppeteer": "^24.37.4",

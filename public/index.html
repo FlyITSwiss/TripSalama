@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1">
+    <meta name="theme-color" content="#2D5A4A">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TripSalama">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <title>TripSalama</title>
+
+    <!-- Manifest PWA -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/assets/images/icons/icon-192x192.png">
+
+    <!-- Preconnect -->
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://cartodb-basemaps-a.global.ssl.fastly.net">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="/assets/css/tripsalama-design-system.css">
+    <link rel="stylesheet" href="/assets/css/tripsalama-core.css">
+    <link rel="stylesheet" href="/assets/css/tripsalama-components.css">
+    <link rel="stylesheet" href="/assets/css/tripsalama-responsive.css">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+
+    <!-- Safe Area CSS pour iOS -->
+    <style>
+        /* Safe Area Insets pour iOS (notch, home indicator) */
+        :root {
+            --safe-area-inset-top: env(safe-area-inset-top, 0px);
+            --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-area-inset-left: env(safe-area-inset-left, 0px);
+            --safe-area-inset-right: env(safe-area-inset-right, 0px);
+        }
+
+        body {
+            padding-top: var(--safe-area-inset-top);
+            padding-bottom: var(--safe-area-inset-bottom);
+            padding-left: var(--safe-area-inset-left);
+            padding-right: var(--safe-area-inset-right);
+        }
+
+        /* Header fixe avec safe area */
+        .app-header {
+            padding-top: calc(var(--space-13) + var(--safe-area-inset-top));
+        }
+
+        /* Navigation mobile avec safe area */
+        .mobile-nav {
+            padding-bottom: calc(var(--space-8) + var(--safe-area-inset-bottom));
+        }
+
+        /* Splash screen natif */
+        .capacitor-splash {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #2D5A4A 0%, #1A3D33 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.3s ease;
+        }
+
+        .capacitor-splash.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .capacitor-splash-logo {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 24px;
+        }
+
+        .capacitor-splash-text {
+            color: white;
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        .capacitor-splash-loading {
+            margin-top: 32px;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Splash Screen Capacitor -->
+    <div id="capacitor-splash" class="capacitor-splash">
+        <svg class="capacitor-splash-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="45" fill="white" fill-opacity="0.15"/>
+            <path d="M50 15C30.67 15 15 30.67 15 50s15.67 35 35 35 35-15.67 35-35S69.33 15 50 15zm0 63c-15.46 0-28-12.54-28-28s12.54-28 28-28 28 12.54 28 28-12.54 28-28 28z" fill="white"/>
+            <path d="M50 30c-11.05 0-20 8.95-20 20s8.95 20 20 20 20-8.95 20-20-8.95-20-20-20zm0 33c-7.18 0-13-5.82-13-13s5.82-13 13-13 13 5.82 13 13-5.82 13-13 13z" fill="white"/>
+            <circle cx="50" cy="50" r="8" fill="#D4A574"/>
+        </svg>
+        <div class="capacitor-splash-text">TripSalama</div>
+        <div class="capacitor-splash-loading"></div>
+    </div>
+
+    <!-- App Container -->
+    <div id="app"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+    <!-- Core Services -->
+    <script src="/assets/js/core/app-config.js"></script>
+    <script src="/assets/js/core/event-bus.js"></script>
+    <script src="/assets/js/core/state-manager.js"></script>
+    <script src="/assets/js/core/api-service.js"></script>
+    <script src="/assets/js/core/fetch-utils.js"></script>
+    <script src="/assets/js/core/i18n.js"></script>
+    <script src="/assets/js/core/navigation.js"></script>
+
+    <!-- Geolocation Services -->
+    <script src="/assets/js/core/geolocation-service.js"></script>
+    <script src="/assets/js/core/background-geolocation.js"></script>
+    <script src="/assets/js/core/offline-sync.js"></script>
+
+    <!-- Map -->
+    <script src="/assets/js/modules/map-controller.js"></script>
+
+    <!-- Components -->
+    <script src="/assets/js/components/toast-notification.js"></script>
+    <script src="/assets/js/components/modal.js"></script>
+
+    <!-- Capacitor -->
+    <script type="module">
+        // Importer Capacitor uniquement en mode natif
+        let isNative = false;
+
+        try {
+            // Vérifier si on est dans Capacitor
+            if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+                isNative = true;
+
+                // Importer les plugins Capacitor
+                const { App } = await import('@capacitor/app');
+                const { StatusBar, Style } = await import('@capacitor/status-bar');
+                const { SplashScreen } = await import('@capacitor/splash-screen');
+                const { Keyboard } = await import('@capacitor/keyboard');
+                const { Network } = await import('@capacitor/network');
+                const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
+
+                // Configurer la barre de statut (iOS/Android)
+                await StatusBar.setStyle({ style: Style.Dark });
+                await StatusBar.setBackgroundColor({ color: '#2D5A4A' });
+
+                // Écouter le retour arrière (Android)
+                App.addListener('backButton', ({ canGoBack }) => {
+                    if (canGoBack) {
+                        window.history.back();
+                    } else {
+                        App.exitApp();
+                    }
+                });
+
+                // Écouter l'état du réseau
+                Network.addListener('networkStatusChange', (status) => {
+                    console.log('Network status changed:', status.connected);
+                    EventBus.emit('network:change', status);
+                });
+
+                // Configurer le clavier (iOS)
+                Keyboard.addListener('keyboardWillShow', (info) => {
+                    document.body.style.setProperty('--keyboard-height', `${info.keyboardHeight}px`);
+                });
+
+                Keyboard.addListener('keyboardWillHide', () => {
+                    document.body.style.setProperty('--keyboard-height', '0px');
+                });
+
+                // Haptic feedback global
+                window.triggerHaptic = async (style = 'light') => {
+                    const impactMap = {
+                        light: ImpactStyle.Light,
+                        medium: ImpactStyle.Medium,
+                        heavy: ImpactStyle.Heavy
+                    };
+                    await Haptics.impact({ style: impactMap[style] || ImpactStyle.Light });
+                };
+
+                // Masquer le splash après initialisation
+                await SplashScreen.hide();
+
+                console.log('Capacitor initialized in native mode');
+            }
+        } catch (error) {
+            console.log('Running in web mode (Capacitor not available)');
+        }
+
+        // Exposer l'état
+        window.TripSalama = {
+            isNative,
+            version: '1.0.0'
+        };
+
+        // Masquer le splash HTML
+        setTimeout(() => {
+            const splash = document.getElementById('capacitor-splash');
+            if (splash) {
+                splash.classList.add('hidden');
+                setTimeout(() => splash.remove(), 300);
+            }
+        }, 500);
+
+        // Rediriger vers la page de login (mode web/PWA)
+        if (!isNative) {
+            // Vérifier si connecté via cookie/session
+            const checkAuth = async () => {
+                try {
+                    const response = await fetch('/api/auth?action=check', {
+                        credentials: 'include'
+                    });
+                    const data = await response.json();
+
+                    if (data.authenticated) {
+                        window.location.href = data.user.role === 'driver'
+                            ? '/driver/dashboard'
+                            : '/passenger/dashboard';
+                    } else {
+                        window.location.href = '/login';
+                    }
+                } catch (error) {
+                    window.location.href = '/login';
+                }
+            };
+
+            checkAuth();
+        }
+    </script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    const registration = await navigator.serviceWorker.register('/sw.js', {
+                        scope: '/'
+                    });
+                    console.log('Service Worker registered:', registration.scope);
+                } catch (error) {
+                    console.error('Service Worker registration failed:', error);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

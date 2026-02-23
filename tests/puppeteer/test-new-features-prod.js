@@ -119,7 +119,7 @@ async function runTests() {
             });
 
             // Screenshot
-            await page.screenshot({ path: 'tests/puppeteer/screenshots/01-login-page.png' });
+            await page.screenshot({ path: __dirname + '/screenshots/01-login-page.png' });
 
             const title = await page.title();
             recordTest('Page login accessible', title.length > 0, title);
@@ -149,7 +149,7 @@ async function runTests() {
             recordTest('Connexion réussie', isLoggedIn, loggedInUrl);
 
             // Screenshot après login
-            await page.screenshot({ path: 'tests/puppeteer/screenshots/02-after-login.png' });
+            await page.screenshot({ path: __dirname + '/screenshots/02-after-login.png' });
 
             // Récupérer les cookies de session
             const cookies = await page.cookies();
@@ -525,7 +525,7 @@ async function runTests() {
         }
 
         // Screenshot final
-        await page.screenshot({ path: 'tests/puppeteer/screenshots/99-final.png' });
+        await page.screenshot({ path: __dirname + '/screenshots/99-final.png' });
 
     } catch (error) {
         log('fail', `Erreur fatale: ${error.message}`);
