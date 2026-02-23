@@ -1,45 +1,65 @@
 <!DOCTYPE html>
-<html lang="<?= $_SESSION['lang'] ?? 'fr' ?>">
+<html lang="<?= ['lang'] ?? 'fr' ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#1B4D3E">
+    <meta name="theme-color" content="#000000">
     <meta name="description" content="<?= __('app.tagline') ?>">
     <?= csrf_meta() ?>
 
     <title><?= __('auth.register') ?> - <?= __('app.name') ?></title>
 
-    <link rel="icon" type="image/svg+xml" href="<?= asset_url('images/logo.svg') ?>">
+    <link rel="icon" type="image/svg+xml" href="<?= asset_url('images/icons/icon.svg') ?>">
+    <link rel="stylesheet" href="<?= versioned_asset('css/uber-design-system.css') ?>">
 
-    <!-- Design System CSS (includes Google Fonts) -->
-    <link rel="stylesheet" href="<?= versioned_asset('css/tripsalama-design-system.css') ?>">
+    <style>
+        .register-page { min-height: 100vh; display: flex; flex-direction: column; background: var(--uber-white); }
+        .register-header { padding: var(--space-12) var(--space-6) var(--space-6); text-align: center; }
+        .register-logo { font-size: 48px; font-weight: 800; color: var(--uber-black); letter-spacing: -0.04em; margin-bottom: var(--space-6); }
+        .register-logo span { color: var(--uber-green); }
+        .register-title { font-size: var(--text-2xl); font-weight: var(--font-bold); color: var(--uber-black); margin-bottom: var(--space-2); }
+        .register-subtitle { font-size: var(--text-base); color: var(--uber-gray-500); }
+        .register-content { flex: 1; padding: var(--space-6); }
+        .role-cards { display: flex; flex-direction: column; gap: var(--space-4); }
+        .role-card { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-5); background: var(--uber-gray-50); border: 2px solid transparent; border-radius: var(--radius-xl); text-decoration: none; color: inherit; transition: all 0.2s ease; }
+        .role-card:hover { background: var(--uber-white); border-color: var(--uber-black); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+        .role-icon { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-lg); flex-shrink: 0; }
+        .role-icon.passenger { background: var(--uber-green-soft); color: var(--uber-green); }
+        .role-icon.driver { background: #EBF5FF; color: #0066FF; }
+        .role-icon svg { width: 28px; height: 28px; }
+        .role-info { flex: 1; }
+        .role-title { font-size: var(--text-lg); font-weight: var(--font-semibold); color: var(--uber-black); margin-bottom: var(--space-1); }
+        .role-description { font-size: var(--text-sm); color: var(--uber-gray-500); }
+        .role-arrow { width: 24px; height: 24px; color: var(--uber-gray-400); flex-shrink: 0; }
+        .register-footer { padding: var(--space-6); text-align: center; background: var(--uber-gray-50); }
+        .register-footer-text { font-size: var(--text-sm); color: var(--uber-gray-500); margin-bottom: var(--space-4); }
+        .register-footer-btn { width: 100%; padding: var(--space-4); font-family: var(--font-family); font-size: var(--text-base); font-weight: var(--font-semibold); color: var(--uber-black); background: var(--uber-gray-100); border: none; border-radius: var(--radius-lg); text-decoration: none; display: block; }
+        .register-footer-btn:hover { background: var(--uber-gray-200); }
+        @media (min-width: 480px) {
+            .register-page { justify-content: center; background: var(--uber-gray-100); padding: var(--space-6); }
+            .register-container { max-width: 420px; margin: 0 auto; background: var(--uber-white); border-radius: var(--radius-2xl); box-shadow: var(--shadow-xl); overflow: hidden; }
+        }
+    </style>
 </head>
-<body class="auth-body">
-    <div class="auth-page">
-        <!-- Moroccan Pattern Background -->
-        <div class="auth-pattern"></div>
+<body>
+    <div class="register-page">
+        <div class="register-container">
+            <header class="register-header">
+                <div class="register-logo">Trip<span>Salama</span></div>
+                <h1 class="register-title"><?= __('auth.create_account') ?></h1>
+                <p class="register-subtitle"><?= __('auth.register_as') ?></p>
+            </header>
 
-        <div class="auth-card glass-card animate-phi-enter">
-            <!-- Logo & Header -->
-            <div class="auth-header">
-                <div class="auth-logo">
-                    <img src="<?= asset_url('images/icons/icon.svg') ?>" alt="TripSalama" style="width: 80px; height: 80px; border-radius: var(--radius-xl);">
-                </div>
-                <h1 class="auth-title"><?= __('auth.create_account') ?></h1>
-                <p class="auth-subtitle"><?= __('auth.register_as') ?></p>
-            </div>
-
-            <!-- Role Selection -->
-            <div class="auth-form">
-                <div class="role-selection">
-                    <a href="<?= base_url('register/passenger') ?>" class="role-card glass-card">
+            <div class="register-content">
+                <div class="role-cards">
+                    <a href="<?= base_url('register/passenger') ?>" class="role-card">
                         <div class="role-icon passenger">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                                 <circle cx="12" cy="7" r="4"/>
                             </svg>
                         </div>
-                        <div class="role-content">
+                        <div class="role-info">
                             <h3 class="role-title"><?= __('auth.register_passenger') ?></h3>
                             <p class="role-description"><?= __('booking.title') ?></p>
                         </div>
@@ -48,15 +68,16 @@
                         </svg>
                     </a>
 
-                    <a href="<?= base_url('register/driver') ?>" class="role-card glass-card">
+                    <a href="<?= base_url('register/driver') ?>" class="role-card">
                         <div class="role-icon driver">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 17h14v-6h-4l-2-4H9l-2 4H5v6z"/>
-                                <circle cx="7.5" cy="17" r="2"/>
-                                <circle cx="16.5" cy="17" r="2"/>
+                                <rect x="2" y="7" width="20" height="10" rx="2"/>
+                                <circle cx="6" cy="17" r="2"/>
+                                <circle cx="18" cy="17" r="2"/>
+                                <path d="M6 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/>
                             </svg>
                         </div>
-                        <div class="role-content">
+                        <div class="role-info">
                             <h3 class="role-title"><?= __('auth.register_driver') ?></h3>
                             <p class="role-description"><?= __('driver.title') ?></p>
                         </div>
@@ -67,22 +88,10 @@
                 </div>
             </div>
 
-            <!-- Footer -->
-            <div class="auth-footer">
-                <p class="auth-footer-text"><?= __('auth.have_account') ?></p>
-                <a href="<?= base_url('login') ?>" class="btn btn-secondary btn-block">
-                    <?= __('auth.login') ?>
-                </a>
-            </div>
-        </div>
-
-        <!-- Decorative Element -->
-        <div class="auth-decoration">
-            <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="100" cy="100" r="80" stroke="currentColor" stroke-width="0.5" opacity="0.3"/>
-                <circle cx="100" cy="100" r="60" stroke="currentColor" stroke-width="0.5" opacity="0.2"/>
-                <circle cx="100" cy="100" r="40" stroke="currentColor" stroke-width="0.5" opacity="0.1"/>
-            </svg>
+            <footer class="register-footer">
+                <p class="register-footer-text"><?= __('auth.have_account') ?></p>
+                <a href="<?= base_url('login') ?>" class="register-footer-btn"><?= __('auth.login') ?></a>
+            </footer>
         </div>
     </div>
 </body>
