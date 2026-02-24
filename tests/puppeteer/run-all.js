@@ -6,11 +6,12 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 const tests = [
-    { name: 'Smoke Tests', file: 'smoke-tests.js' },
     { name: 'Authentication', file: 'test-auth.js' },
     { name: 'Booking Flow', file: 'test-booking-flow.js' },
     { name: 'Driver Dashboard', file: 'test-driver-dashboard.js' },
-    { name: 'Ride Tracking', file: 'test-ride-tracking.js' }
+    { name: 'Ride Tracking', file: 'test-ride-tracking.js' },
+    { name: 'Safety Features', file: 'test-safety-features.js' },
+    { name: 'Encoding & i18n', file: 'test-encoding-i18n.js' }
 ];
 
 async function runTest(testFile) {
@@ -86,20 +87,20 @@ if (args.includes('--help')) {
 TripSalama - Tests Puppeteer E2E
 
 Usage:
-  node run-all.js            Exécuter tous les tests
-  node run-all.js --smoke    Exécuter uniquement les smoke tests
-  node run-all.js --auth     Exécuter uniquement les tests auth
-  node run-all.js --booking  Exécuter uniquement les tests booking
-  node run-all.js --driver   Exécuter uniquement les tests driver
-  node run-all.js --tracking Exécuter uniquement les tests tracking
+  node run-all.js            Executer tous les tests
+  node run-all.js --auth     Tests authentification
+  node run-all.js --booking  Tests booking flow
+  node run-all.js --driver   Tests driver dashboard
+  node run-all.js --tracking Tests ride tracking
+  node run-all.js --safety   Tests securite (SOS, checklist, PIN)
+  node run-all.js --encoding Tests encoding et i18n
+  node run-all.js --prod     Tests production complets
   node run-all.js --help     Afficher cette aide
 `);
     process.exit(0);
 }
 
-if (args.includes('--smoke')) {
-    runTest('smoke-tests.js').then(success => process.exit(success ? 0 : 1));
-} else if (args.includes('--auth')) {
+if (args.includes('--auth')) {
     runTest('test-auth.js').then(success => process.exit(success ? 0 : 1));
 } else if (args.includes('--booking')) {
     runTest('test-booking-flow.js').then(success => process.exit(success ? 0 : 1));
@@ -107,6 +108,12 @@ if (args.includes('--smoke')) {
     runTest('test-driver-dashboard.js').then(success => process.exit(success ? 0 : 1));
 } else if (args.includes('--tracking')) {
     runTest('test-ride-tracking.js').then(success => process.exit(success ? 0 : 1));
+} else if (args.includes('--safety')) {
+    runTest('test-safety-features.js').then(success => process.exit(success ? 0 : 1));
+} else if (args.includes('--encoding')) {
+    runTest('test-encoding-i18n.js').then(success => process.exit(success ? 0 : 1));
+} else if (args.includes('--prod')) {
+    runTest('test-complete-prod.js').then(success => process.exit(success ? 0 : 1));
 } else {
     runAllTests();
 }
