@@ -1,0 +1,513 @@
+<?php
+/**
+ * TripSalama - Admin Settings Page
+ * Ultra user-friendly design with perfect UX/UI
+ */
+?>
+
+<style>
+/* Admin Settings Page - Premium Design */
+.admin-settings {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--space-5);
+    padding-bottom: calc(var(--nav-height) + var(--space-8));
+}
+
+.admin-header {
+    margin-bottom: var(--space-8);
+}
+
+.admin-title {
+    font-size: var(--text-3xl);
+    font-weight: var(--font-bold);
+    color: var(--uber-black);
+    margin-bottom: var(--space-2);
+}
+
+.admin-subtitle {
+    font-size: var(--text-base);
+    color: var(--uber-gray-500);
+}
+
+/* Stats Cards */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-8);
+}
+
+.stat-card {
+    background: var(--uber-white);
+    border-radius: var(--radius-xl);
+    padding: var(--space-5);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.stat-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-3);
+}
+
+.stat-card-icon.sms { background: #DBEAFE; color: #3B82F6; }
+.stat-card-icon.sos { background: #FEE2E2; color: #DC2626; }
+.stat-card-icon.pin { background: var(--uber-green-soft); color: var(--uber-green); }
+.stat-card-icon.storage { background: #FEF3C7; color: #F59E0B; }
+
+.stat-card-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.stat-card-value {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--uber-black);
+    margin-bottom: 2px;
+}
+
+.stat-card-label {
+    font-size: var(--text-sm);
+    color: var(--uber-gray-500);
+}
+
+/* Settings Sections */
+.settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.settings-section {
+    background: var(--uber-white);
+    border-radius: var(--radius-2xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.settings-section-header {
+    padding: var(--space-5);
+    border-bottom: 1px solid var(--uber-gray-100);
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.settings-section-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.settings-section-icon.safety { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+.settings-section-icon.sms { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); color: white; }
+.settings-section-icon.sos { background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%); color: white; }
+.settings-section-icon.checklist { background: linear-gradient(135deg, var(--uber-green) 0%, #04A054 100%); color: white; }
+
+.settings-section-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.settings-section-title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-bold);
+    color: var(--uber-black);
+}
+
+.settings-section-desc {
+    font-size: var(--text-sm);
+    color: var(--uber-gray-500);
+}
+
+.settings-section-body {
+    padding: var(--space-5);
+}
+
+/* Settings Items */
+.settings-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) 0;
+    border-bottom: 1px solid var(--uber-gray-100);
+}
+
+.settings-item:last-child {
+    border-bottom: none;
+}
+
+.settings-item-info {
+    flex: 1;
+    margin-right: var(--space-4);
+}
+
+.settings-item-label {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--uber-black);
+    margin-bottom: 2px;
+}
+
+.settings-item-desc {
+    font-size: var(--text-sm);
+    color: var(--uber-gray-500);
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-switch-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--uber-gray-300);
+    border-radius: var(--radius-full);
+    transition: background 0.3s ease;
+}
+
+.toggle-switch-slider::before {
+    position: absolute;
+    content: '';
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    bottom: 3px;
+    background: var(--uber-white);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.toggle-switch input:checked + .toggle-switch-slider {
+    background: var(--uber-green);
+}
+
+.toggle-switch input:checked + .toggle-switch-slider::before {
+    transform: translateX(24px);
+}
+
+/* Number Input */
+.settings-number-input {
+    width: 80px;
+    padding: var(--space-2) var(--space-3);
+    background: var(--uber-gray-50);
+    border: 2px solid var(--uber-gray-200);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    text-align: center;
+    color: var(--uber-black);
+    transition: all 0.2s ease;
+}
+
+.settings-number-input:focus {
+    outline: none;
+    border-color: var(--uber-green);
+    background: var(--uber-white);
+}
+
+/* Submit Button */
+.settings-submit {
+    background: var(--uber-black);
+    color: var(--uber-white);
+    border: none;
+    border-radius: var(--radius-lg);
+    padding: var(--space-4) var(--space-8);
+    font-size: var(--text-base);
+    font-weight: var(--font-bold);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.settings-submit:hover {
+    background: var(--uber-gray-800);
+    transform: translateY(-2px);
+}
+
+.settings-submit svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Animation */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.admin-header { animation: fadeInUp 0.4s ease-out; }
+.stats-grid { animation: fadeInUp 0.4s ease-out 0.05s backwards; }
+.settings-section:nth-child(1) { animation: fadeInUp 0.4s ease-out 0.1s backwards; }
+.settings-section:nth-child(2) { animation: fadeInUp 0.4s ease-out 0.15s backwards; }
+.settings-section:nth-child(3) { animation: fadeInUp 0.4s ease-out 0.2s backwards; }
+.settings-section:nth-child(4) { animation: fadeInUp 0.4s ease-out 0.25s backwards; }
+
+/* Responsive */
+@media (max-width: 640px) {
+    .admin-settings {
+        padding: var(--space-4);
+    }
+
+    .settings-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+    }
+
+    .settings-item-info {
+        margin-right: 0;
+    }
+}
+</style>
+
+<div class="admin-settings">
+    <!-- Header -->
+    <header class="admin-header">
+        <h1 class="admin-title"><?= __('admin.settings') ?></h1>
+        <p class="admin-subtitle"><?= __('admin.settings_desc') ?></p>
+    </header>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-card-icon sms">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+            </div>
+            <div class="stat-card-value"><?= number_format($smsStats['today'] ?? 0) ?></div>
+            <div class="stat-card-label"><?= __('admin.sms_today') ?></div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-icon sos">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+            </div>
+            <div class="stat-card-value"><?= number_format($sosStats['recordings']['today'] ?? 0) ?></div>
+            <div class="stat-card-label"><?= __('admin.sos_recordings_today') ?></div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-icon pin">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+            </div>
+            <div class="stat-card-value"><?= number_format($smsStats['by_type']['ride_pin']['today'] ?? 0) ?></div>
+            <div class="stat-card-label"><?= __('admin.pins_sent_today') ?></div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-icon storage">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                </svg>
+            </div>
+            <div class="stat-card-value"><?= number_format($sosStats['recordings']['total_size_mb'] ?? 0, 1) ?> MB</div>
+            <div class="stat-card-label"><?= __('admin.storage_used') ?></div>
+        </div>
+    </div>
+
+    <!-- Settings Form -->
+    <form action="<?= base_url('admin/settings') ?>" method="POST" class="settings-form">
+        <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+
+        <!-- Safety Section -->
+        <section class="settings-section">
+            <div class="settings-section-header">
+                <div class="settings-section-icon safety">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <path d="M9 12l2 2 4-4"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="settings-section-title"><?= __('admin.safety_settings') ?></h2>
+                    <p class="settings-section-desc"><?= __('admin.safety_settings_desc') ?></p>
+                </div>
+            </div>
+            <div class="settings-section-body">
+                <div class="settings-item">
+                    <div class="settings-item-info">
+                        <div class="settings-item-label"><?= __('admin.pin_verification') ?></div>
+                        <div class="settings-item-desc"><?= __('admin.pin_verification_desc') ?></div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="pin_verification_enabled" <?= ($settings['pin_verification_enabled'] ?? '1') === '1' ? 'checked' : '' ?>>
+                        <span class="toggle-switch-slider"></span>
+                    </label>
+                </div>
+
+                <div class="settings-item">
+                    <div class="settings-item-info">
+                        <div class="settings-item-label"><?= __('admin.max_pin_attempts') ?></div>
+                        <div class="settings-item-desc"><?= __('admin.max_pin_attempts_desc') ?></div>
+                    </div>
+                    <input type="number" name="max_pin_attempts" class="settings-number-input" value="<?= (int) ($settings['max_pin_attempts'] ?? 3) ?>" min="1" max="10">
+                </div>
+
+                <div class="settings-item">
+                    <div class="settings-item-info">
+                        <div class="settings-item-label"><?= __('admin.pin_expiry') ?></div>
+                        <div class="settings-item-desc"><?= __('admin.pin_expiry_desc') ?></div>
+                    </div>
+                    <input type="number" name="pin_expiry_minutes" class="settings-number-input" value="<?= (int) ($settings['pin_expiry_minutes'] ?? 10) ?>" min="5" max="60">
+                </div>
+            </div>
+        </section>
+
+        <!-- Checklist Section -->
+        <section class="settings-section">
+            <div class="settings-section-header">
+                <div class="settings-section-icon checklist">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 11l3 3L22 4"/>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="settings-section-title"><?= __('admin.checklist_settings') ?></h2>
+                    <p class="settings-section-desc"><?= __('admin.checklist_settings_desc') ?></p>
+                </div>
+            </div>
+            <div class="settings-section-body">
+                <div class="settings-item">
+                    <div class="settings-item-info">
+                        <div class="settings-item-label"><?= __('admin.checklist_required') ?></div>
+                        <div class="settings-item-desc"><?= __('admin.checklist_required_desc') ?></div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="checklist_required" <?= ($settings['checklist_required'] ?? '1') === '1' ? 'checked' : '' ?>>
+                        <span class="toggle-switch-slider"></span>
+                    </label>
+                </div>
+
+                <div class="settings-item">
+                    <div class="settings-item-info">
+                        <div class="settings-item-label"><?= __('admin.dashcam_required') ?></div>
+                        <div class="settings-item-desc"><?= __('admin.dashcam_required_desc') ?></div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="dashcam_required" <?= ($settings['dashcam_required'] ?? '1') === '1' ? 'checked' : '' ?>>
+                        <span class="toggle-switch-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <!-- SMS Section -->
+        <section class="settings-section">
+            <div class="settings-section-header">
+                <div class="settings-section-icon sms">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="settings-section-title"><?= __('admin.sms_settings') ?></h2>
+                    <p class="settings-section-desc"><?= __('admin.sms_settings_desc') ?></p>
+                </div>
+            </div>
+            <div class="settings-section-body">
+                <div class="settings-item">
+                    <div class="settings-item-info">
+                        <div class="settings-item-label"><?= __('admin.sms_enabled') ?></div>
+                        <div class="settings-item-desc"><?= __('admin.sms_enabled_desc') ?></div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="sms_enabled" <?= ($settings['sms_enabled'] ?? '1') === '1' ? 'checked' : '' ?>>
+                        <span class="toggle-switch-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <!-- SOS Section -->
+        <section class="settings-section">
+            <div class="settings-section-header">
+                <div class="settings-section-icon sos">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="settings-section-title"><?= __('admin.sos_settings') ?></h2>
+                    <p class="settings-section-desc"><?= __('admin.sos_settings_desc') ?></p>
+                </div>
+            </div>
+            <div class="settings-section-body">
+                <div class="settings-item">
+                    <div class="settings-item-info">
+                        <div class="settings-item-label"><?= __('admin.sos_auto_call') ?></div>
+                        <div class="settings-item-desc"><?= __('admin.sos_auto_call_desc') ?></div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" name="sos_auto_call_enabled" <?= ($settings['sos_auto_call_enabled'] ?? '0') === '1' ? 'checked' : '' ?>>
+                        <span class="toggle-switch-slider"></span>
+                    </label>
+                </div>
+
+                <div class="settings-item">
+                    <div class="settings-item-info">
+                        <div class="settings-item-label"><?= __('admin.recording_max_duration') ?></div>
+                        <div class="settings-item-desc"><?= __('admin.recording_max_duration_desc') ?></div>
+                    </div>
+                    <input type="number" name="sos_recording_max_duration" class="settings-number-input" value="<?= (int) ($settings['sos_recording_max_duration'] ?? 300) ?>" min="60" max="600" step="60">
+                </div>
+            </div>
+        </section>
+
+        <!-- Submit Button -->
+        <button type="submit" class="settings-submit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+            </svg>
+            <?= __('action.save') ?>
+        </button>
+    </form>
+</div>

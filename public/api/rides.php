@@ -108,7 +108,8 @@ try {
             successResponse(['ride_id' => $rideId], __('msg.ride_accepted'));
             break;
 
-        case 'start':
+        case 'arrived':
+            // Conductrice signale son arrivée - génère PIN et envoie SMS
             if ($method !== 'PUT') errorResponse('Method not allowed', 405);
             requireAuth();
             requireRole('driver');
@@ -116,6 +117,95 @@ try {
 
             $data = getRequestData();
             $rideId = (int)($data['ride_id'] ?? 0);
+            $driverId = (int)current_user()['id'];
+
+            $ride = $rideModel->findById($rideId);
+            if (!$ride || (int)$ride['driver_id'] !== $driverId) {
+                errorResponse(__('error.forbidden'), 403);
+            }
+
+            // Mettre à jour le statut
+            $rideModel->updateStatus($rideId, 'driver_arriving');
+
+            // Générer le PIN
+            $pinData = $rideModel->generatePin($rideId);
+
+            // Envoyer le SMS via Twilio
+            require_once BACKEND_PATH . '/Services/SMSService.php';
+            $smsService = new \TripSalama\Services\SMSService($db);
+
+            $driverName = current_user()['first_name'] ?? 'Votre conductrice';
+            $passengerPhone = $ride['passenger_phone'] ?? '';
+
+            if ($passengerPhone) {
+                $smsResult = $smsService->sendRidePin($passengerPhone, $pinData['pin'], $driverName);
+                $rideModel->markPinSmsSent($rideId, $smsResult['success'] ? 'sent' : 'failed');
+            }
+
+            successResponse([
+                'ride_id' => $rideId,
+                'pin_expires_at' => $pinData['expires_at'],
+                'pin_expires_in' => $pinData['expires_in'],
+                'sms_sent' => !empty($passengerPhone),
+            ], __('pin.sent_to_passenger'));
+            break;
+
+        case 'verify-pin':
+            // Conductrice vérifie le PIN avant de démarrer
+            if ($method !== 'POST') errorResponse('Method not allowed', 405);
+            requireAuth();
+            requireRole('driver');
+            requireCsrf();
+
+            $data = getRequestData();
+            $rideId = (int)($data['ride_id'] ?? 0);
+            $pin = trim($data['pin'] ?? '');
+
+            if (strlen($pin) !== 4 || !ctype_digit($pin)) {
+                errorResponse(__('pin.invalid'), 400);
+            }
+
+            $result = $rideModel->validatePin($rideId, $pin);
+
+            if ($result['valid']) {
+                successResponse(['verified' => true], __('pin.verified'));
+            } else {
+                $errorMsg = match ($result['error'] ?? 'invalid') {
+                    'pin_expired' => __('pin.expired'),
+                    'max_attempts' => __('pin.max_attempts'),
+                    'pin_already_used' => __('pin.verified'),
+                    default => __('pin.invalid'),
+                };
+                errorResponse($errorMsg, 400, [
+                    'error_code' => $result['error'] ?? 'invalid_pin',
+                    'attempts_left' => $result['attempts_left'] ?? 0,
+                ]);
+            }
+            break;
+
+        case 'start':
+            // Démarrer la course - nécessite PIN vérifié
+            if ($method !== 'PUT') errorResponse('Method not allowed', 405);
+            requireAuth();
+            requireRole('driver');
+            requireCsrf();
+
+            $data = getRequestData();
+            $rideId = (int)($data['ride_id'] ?? 0);
+            $driverId = (int)current_user()['id'];
+
+            $ride = $rideModel->findById($rideId);
+            if (!$ride || (int)$ride['driver_id'] !== $driverId) {
+                errorResponse(__('error.forbidden'), 403);
+            }
+
+            // Vérifier que le PIN a été validé
+            $pinStatus = $rideModel->getPinStatus($rideId);
+            if (!$pinStatus || !$pinStatus['verified']) {
+                errorResponse(__('pin.driver_instruction'), 400, [
+                    'error_code' => 'pin_not_verified',
+                ]);
+            }
 
             $rideModel->updateStatus($rideId, 'in_progress');
             successResponse(null, __('msg.status_changed'));

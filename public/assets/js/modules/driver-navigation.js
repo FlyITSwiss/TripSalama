@@ -117,6 +117,65 @@ const DriverNavigation = (function() {
         if (cancelBtn) {
             cancelBtn.addEventListener('click', handleCancelRide);
         }
+
+        // PIN input handlers
+        setupPinInputHandlers();
+    }
+
+    /**
+     * Configurer les handlers pour les inputs PIN
+     */
+    function setupPinInputHandlers() {
+        const pinInputs = [
+            document.getElementById('pinInput1'),
+            document.getElementById('pinInput2'),
+            document.getElementById('pinInput3'),
+            document.getElementById('pinInput4')
+        ];
+
+        const verifyBtn = document.getElementById('verifyPinBtn');
+        if (!verifyBtn) return;
+
+        // Auto-focus et navigation entre inputs
+        pinInputs.forEach((input, index) => {
+            if (!input) return;
+
+            input.addEventListener('input', (e) => {
+                const value = e.target.value.replace(/\D/g, '');
+                e.target.value = value;
+
+                // Passer au suivant si un chiffre est entré
+                if (value && index < 3) {
+                    pinInputs[index + 1].focus();
+                }
+
+                // Activer/désactiver le bouton verify
+                const pin = pinInputs.map(i => i.value).join('');
+                verifyBtn.disabled = pin.length !== 4;
+            });
+
+            input.addEventListener('keydown', (e) => {
+                // Backspace: revenir au précédent si vide
+                if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                    pinInputs[index - 1].focus();
+                }
+                // Enter: soumettre si complet
+                if (e.key === 'Enter') {
+                    const pin = pinInputs.map(i => i.value).join('');
+                    if (pin.length === 4) {
+                        handleVerifyPin();
+                    }
+                }
+            });
+
+            // Sélectionner tout au focus
+            input.addEventListener('focus', () => {
+                input.select();
+            });
+        });
+
+        // Bouton vérifier
+        verifyBtn.addEventListener('click', handleVerifyPin);
     }
 
     /**
@@ -222,16 +281,184 @@ const DriverNavigation = (function() {
 
     /**
      * Gérer l'arrivée au point de pickup
+     * Étape 1: Génère le PIN et l'envoie par SMS à la passagère
      */
     async function handleArrivedAtPickup() {
         const btn = document.getElementById('arrivedBtn');
-        if (btn) btn.disabled = true;
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-small"></span> ${config.i18n.pinGenerating || 'Generating...'}`;
+        }
 
         try {
+            // Appeler l'action "arrived" qui génère le PIN et envoie le SMS
+            const response = await ApiService.put('rides', {
+                action: 'arrived',
+                ride_id: config.rideId
+            });
+
+            // Afficher le modal PIN
+            showPinModal();
+
+            // Notification
+            Toast.info(config.i18n.pinSentSms || 'Code sent via SMS');
+
+        } catch (error) {
+            Toast.error(error.message || config.i18n.error);
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg> ${config.i18n.arrivedPickup}`;
+            }
+        }
+    }
+
+    /**
+     * Afficher le modal de saisie du PIN
+     */
+    function showPinModal() {
+        const modal = document.getElementById('pinModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            // Focus sur le premier input
+            setTimeout(() => {
+                const firstInput = document.getElementById('pinInput1');
+                if (firstInput) firstInput.focus();
+            }, 300);
+        }
+    }
+
+    /**
+     * Masquer le modal PIN
+     */
+    function hidePinModal() {
+        const modal = document.getElementById('pinModal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        // Reset les inputs
+        for (let i = 1; i <= 4; i++) {
+            const input = document.getElementById('pinInput' + i);
+            if (input) {
+                input.value = '';
+                input.classList.remove('error', 'success');
+            }
+        }
+        document.getElementById('pinHint').textContent = config.i18n.pinSentSms || '';
+        document.getElementById('pinHint').classList.remove('error');
+        document.getElementById('pinAttempts').textContent = '';
+    }
+
+    /**
+     * Gérer la vérification du PIN
+     * Étape 2: Vérifie le PIN puis démarre la course
+     */
+    async function handleVerifyPin() {
+        const pinInputs = [
+            document.getElementById('pinInput1'),
+            document.getElementById('pinInput2'),
+            document.getElementById('pinInput3'),
+            document.getElementById('pinInput4')
+        ];
+
+        const pin = pinInputs.map(i => i.value).join('');
+        if (pin.length !== 4) return;
+
+        const verifyBtn = document.getElementById('verifyPinBtn');
+        if (verifyBtn) {
+            verifyBtn.disabled = true;
+            verifyBtn.innerHTML = '<span class="spinner-small"></span>';
+        }
+
+        try {
+            // Vérifier le PIN
+            const response = await ApiService.put('rides', {
+                action: 'verify-pin',
+                ride_id: config.rideId,
+                pin: pin
+            });
+
+            // PIN valide - animation succès
+            pinInputs.forEach(input => {
+                input.classList.remove('error');
+                input.classList.add('success');
+            });
+
+            Toast.success(config.i18n.pinVerified || 'Code verified');
+
+            // Attendre un peu pour l'animation puis démarrer la course
+            setTimeout(async () => {
+                await startRideAfterPinVerified();
+            }, 800);
+
+        } catch (error) {
+            // PIN invalide - animation erreur
+            pinInputs.forEach(input => {
+                input.classList.add('error');
+                setTimeout(() => input.classList.remove('error'), 500);
+            });
+
+            const hint = document.getElementById('pinHint');
+            const attempts = document.getElementById('pinAttempts');
+
+            // Gérer les différents types d'erreurs
+            if (error.data && error.data.error_code === 'max_attempts') {
+                hint.textContent = config.i18n.pinMaxAttempts || 'Maximum attempts reached';
+                hint.classList.add('error');
+                // Fermer le modal et réinitialiser
+                setTimeout(() => {
+                    hidePinModal();
+                    const btn = document.getElementById('arrivedBtn');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg> ${config.i18n.arrivedPickup}`;
+                    }
+                }, 2000);
+            } else if (error.data && error.data.error_code === 'expired') {
+                hint.textContent = config.i18n.pinExpired || 'Code expired';
+                hint.classList.add('error');
+            } else {
+                hint.textContent = config.i18n.pinInvalid || 'Invalid code';
+                hint.classList.add('error');
+
+                // Afficher les tentatives restantes
+                if (error.data && error.data.attempts_left !== undefined) {
+                    const remaining = error.data.attempts_left;
+                    const attemptsText = (config.i18n.pinAttemptsLeft || ':count attempts remaining')
+                        .replace(':count', remaining);
+                    attempts.textContent = attemptsText;
+                }
+            }
+
+            // Reset les inputs pour nouvelle tentative
+            pinInputs.forEach(input => input.value = '');
+            pinInputs[0].focus();
+
+            if (verifyBtn) {
+                verifyBtn.disabled = true;
+                verifyBtn.innerHTML = config.i18n.pinVerify || 'Verify';
+            }
+        }
+    }
+
+    /**
+     * Démarrer la course après vérification du PIN
+     */
+    async function startRideAfterPinVerified() {
+        try {
+            // Appeler l'action "start" pour démarrer officiellement la course
             await ApiService.put('rides', {
                 action: 'start',
                 ride_id: config.rideId
             });
+
+            // Fermer le modal PIN
+            hidePinModal();
 
             Toast.success(config.i18n.startRide);
 
@@ -261,7 +488,6 @@ const DriverNavigation = (function() {
 
         } catch (error) {
             Toast.error(error.message || config.i18n.error);
-            if (btn) btn.disabled = false;
         }
     }
 

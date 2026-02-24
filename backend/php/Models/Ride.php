@@ -397,4 +397,99 @@ class Ride
 
         return $position ?: null;
     }
+
+    // ========================================
+    // PIN VERIFICATION METHODS
+    // ========================================
+
+    /**
+     * Generer un code PIN pour verification de course
+     */
+    public function generatePin(int $rideId): array
+    {
+        $this->ensurePinTableExists();
+        $pin = str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+        $pinHash = password_hash($pin, PASSWORD_BCRYPT);
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+        
+        $stmt = $this->db->prepare('DELETE FROM ride_pins WHERE ride_id = :ride_id');
+        $stmt->execute(['ride_id' => $rideId]);
+        
+        $stmt = $this->db->prepare('INSERT INTO ride_pins (ride_id, pin_hash, expires_at, created_at) VALUES (:ride_id, :pin_hash, :expires_at, NOW())');
+        $stmt->execute(['ride_id' => $rideId, 'pin_hash' => $pinHash, 'expires_at' => $expiresAt]);
+        
+        return ['pin' => $pin, 'expires_at' => $expiresAt, 'expires_in' => 600];
+    }
+
+    /**
+     * Valider un code PIN
+     */
+    public function validatePin(int $rideId, string $pin): array
+    {
+        $this->ensurePinTableExists();
+        $stmt = $this->db->prepare('SELECT * FROM ride_pins WHERE ride_id = :ride_id LIMIT 1');
+        $stmt->execute(['ride_id' => $rideId]);
+        $pinRecord = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$pinRecord) { return ['valid' => false, 'error' => 'pin_not_found']; }
+        if (strtotime($pinRecord['expires_at']) < time()) { return ['valid' => false, 'error' => 'pin_expired']; }
+        if ($pinRecord['verified_at'] !== null) { return ['valid' => false, 'error' => 'pin_already_used']; }
+        if ($pinRecord['attempts'] >= 3) { return ['valid' => false, 'error' => 'max_attempts', 'attempts_left' => 0]; }
+        
+        if (!password_verify($pin, $pinRecord['pin_hash'])) {
+            $stmt = $this->db->prepare('UPDATE ride_pins SET attempts = attempts + 1 WHERE id = :id');
+            $stmt->execute(['id' => $pinRecord['id']]);
+            return ['valid' => false, 'error' => 'invalid_pin', 'attempts_left' => max(0, 2 - $pinRecord['attempts'])];
+        }
+        
+        $stmt = $this->db->prepare('UPDATE ride_pins SET verified_at = NOW() WHERE id = :id');
+        $stmt->execute(['id' => $pinRecord['id']]);
+        return ['valid' => true];
+    }
+
+    /**
+     * Obtenir le statut du PIN
+     */
+    public function getPinStatus(int $rideId): ?array
+    {
+        $this->ensurePinTableExists();
+        $stmt = $this->db->prepare('SELECT * FROM ride_pins WHERE ride_id = :ride_id LIMIT 1');
+        $stmt->execute(['ride_id' => $rideId]);
+        $pin = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$pin) { return null; }
+        return [
+            'exists' => true,
+            'verified' => $pin['verified_at'] !== null,
+            'expired' => strtotime($pin['expires_at']) < time(),
+            'attempts' => (int) $pin['attempts'],
+            'attempts_left' => max(0, 3 - (int) $pin['attempts']),
+            'sms_sent' => ($pin['sms_status'] ?? 'pending') === 'sent',
+            'expires_at' => $pin['expires_at'],
+        ];
+    }
+
+    /**
+     * Marquer le SMS du PIN comme envoye
+     */
+    public function markPinSmsSent(int $rideId, string $status = 'sent'): bool
+    {
+        $stmt = $this->db->prepare('UPDATE ride_pins SET sms_sent_at = NOW(), sms_status = :status WHERE ride_id = :ride_id');
+        return $stmt->execute(['ride_id' => $rideId, 'status' => $status]);
+    }
+
+    private function ensurePinTableExists(): void
+    {
+        $this->db->exec('CREATE TABLE IF NOT EXISTS ride_pins (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            ride_id INT NOT NULL,
+            pin_hash VARCHAR(255) NOT NULL,
+            attempts INT DEFAULT 0,
+            expires_at DATETIME NOT NULL,
+            verified_at DATETIME NULL,
+            sms_sent_at DATETIME NULL,
+            sms_status VARCHAR(20) DEFAULT "pending",
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_ride_pin (ride_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+    }
 }

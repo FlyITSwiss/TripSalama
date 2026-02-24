@@ -881,13 +881,383 @@
     </section>
 </div>
 
+<!-- Safety Checklist Modal -->
+<div class="checklist-modal hidden" id="checklistModal">
+    <div class="checklist-modal-content">
+        <div class="checklist-modal-header">
+            <div class="checklist-modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path d="M9 12l2 2 4-4"/>
+                </svg>
+            </div>
+            <h2 class="checklist-modal-title"><?= __('checklist.title') ?></h2>
+            <p class="checklist-modal-subtitle"><?= __('checklist.subtitle') ?></p>
+        </div>
+
+        <form id="checklistForm" class="checklist-form">
+            <div class="checklist-items">
+                <label class="checklist-item">
+                    <input type="checkbox" name="seatbelt" required>
+                    <span class="checklist-item-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </span>
+                    <span class="checklist-item-text"><?= __('checklist.seatbelt') ?></span>
+                </label>
+
+                <label class="checklist-item">
+                    <input type="checkbox" name="mirror" required>
+                    <span class="checklist-item-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </span>
+                    <span class="checklist-item-text"><?= __('checklist.mirrors') ?></span>
+                </label>
+
+                <label class="checklist-item">
+                    <input type="checkbox" name="dashcam" required>
+                    <span class="checklist-item-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </span>
+                    <span class="checklist-item-text"><?= __('checklist.dashcam') ?></span>
+                </label>
+
+                <label class="checklist-item">
+                    <input type="checkbox" name="lights" required>
+                    <span class="checklist-item-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </span>
+                    <span class="checklist-item-text"><?= __('checklist.lights') ?></span>
+                </label>
+
+                <label class="checklist-item">
+                    <input type="checkbox" name="brakes" required>
+                    <span class="checklist-item-check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </span>
+                    <span class="checklist-item-text"><?= __('checklist.brakes') ?></span>
+                </label>
+            </div>
+
+            <!-- Dashcam Photo Upload -->
+            <div class="checklist-photo-section">
+                <label class="checklist-photo-label"><?= __('checklist.dashcam_photo') ?></label>
+                <p class="checklist-photo-hint"><?= __('checklist.take_dashcam_photo') ?></p>
+                <div class="checklist-photo-upload" id="photoUploadArea">
+                    <input type="file" name="dashcam_photo" id="dashcamPhotoInput" accept="image/*" capture="environment" class="hidden">
+                    <div class="checklist-photo-preview hidden" id="photoPreview">
+                        <img id="photoPreviewImg" alt="Preview">
+                        <button type="button" class="checklist-photo-remove" id="removePhoto">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="checklist-photo-placeholder" id="photoPlaceholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                        <span><?= __('checklist.upload_photo') ?></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="checklist-actions">
+                <button type="button" class="btn btn-outline" id="cancelChecklist"><?= __('action.cancel') ?></button>
+                <button type="submit" class="btn btn-primary" id="submitChecklist">
+                    <?= __('checklist.submit') ?>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+/* Checklist Modal Styles */
+.checklist-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: var(--space-4);
+    padding-top: var(--space-8);
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    overflow-y: auto;
+    animation: fadeIn 0.3s ease;
+}
+
+.checklist-modal.hidden {
+    display: none;
+}
+
+.checklist-modal-content {
+    width: 100%;
+    max-width: 400px;
+    background: var(--uber-white);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-6);
+    animation: slideUp 0.4s var(--ease-out-expo);
+    margin: auto;
+}
+
+.checklist-modal-header {
+    text-align: center;
+    margin-bottom: var(--space-6);
+}
+
+.checklist-modal-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto var(--space-4);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.checklist-modal-title {
+    font-size: var(--text-xl);
+    font-weight: var(--font-bold);
+    color: var(--uber-black);
+    margin-bottom: var(--space-2);
+}
+
+.checklist-modal-subtitle {
+    font-size: var(--text-sm);
+    color: var(--uber-gray-500);
+}
+
+.checklist-items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+}
+
+.checklist-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--uber-gray-50);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.checklist-item:hover {
+    background: var(--uber-gray-100);
+}
+
+.checklist-item input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.checklist-item-check {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--uber-gray-300);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.checklist-item-check svg {
+    width: 14px;
+    height: 14px;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s ease;
+    color: white;
+}
+
+.checklist-item input:checked + .checklist-item-check {
+    background: var(--uber-green);
+    border-color: var(--uber-green);
+}
+
+.checklist-item input:checked + .checklist-item-check svg {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.checklist-item-text {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--uber-black);
+}
+
+/* Photo Upload Section */
+.checklist-photo-section {
+    margin-bottom: var(--space-5);
+}
+
+.checklist-photo-label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--uber-black);
+    display: block;
+    margin-bottom: var(--space-1);
+}
+
+.checklist-photo-hint {
+    font-size: var(--text-xs);
+    color: var(--uber-gray-500);
+    margin-bottom: var(--space-3);
+}
+
+.checklist-photo-upload {
+    position: relative;
+    border: 2px dashed var(--uber-gray-300);
+    border-radius: var(--radius-lg);
+    height: 144px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.checklist-photo-upload:hover {
+    border-color: var(--uber-green);
+    background: var(--uber-green-soft);
+}
+
+.checklist-photo-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    color: var(--uber-gray-400);
+}
+
+.checklist-photo-placeholder svg {
+    width: 40px;
+    height: 40px;
+}
+
+.checklist-photo-placeholder span {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+}
+
+.checklist-photo-preview {
+    position: absolute;
+    inset: 0;
+}
+
+.checklist-photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.checklist-photo-remove {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    width: 32px;
+    height: 32px;
+    background: rgba(0,0,0,0.6);
+    border: none;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+}
+
+.checklist-photo-remove svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Actions */
+.checklist-actions {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.checklist-actions .btn {
+    flex: 1;
+    padding: var(--space-4);
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    border-radius: var(--radius-lg);
+}
+
+.checklist-actions .btn-outline {
+    background: transparent;
+    border: 2px solid var(--uber-gray-300);
+    color: var(--uber-black);
+}
+
+.checklist-actions .btn-primary {
+    background: var(--uber-black);
+    border: none;
+    color: white;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(21px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+</style>
+
 <script>
-    // Toggle availability
+    // Checklist state
+    let checklistValid = <?= json_encode($checklistStatus['is_valid'] ?? false) ?>;
+    const checklistConfig = {
+        title: <?= json_encode(__('checklist.title')) ?>,
+        submitted: <?= json_encode(__('checklist.submitted')) ?>,
+        required: <?= json_encode(__('checklist.complete_to_go_online')) ?>,
+        allRequired: <?= json_encode(__('checklist.all_required')) ?>,
+        error: <?= json_encode(__('error.generic')) ?>
+    };
+
+    // Toggle availability - with checklist verification
     document.getElementById('availabilityToggle').addEventListener('change', async function() {
         const isAvailable = this.checked;
         const statusIcon = document.getElementById('statusIcon');
         const statusText = document.getElementById('statusText');
         const statusHint = document.getElementById('statusHint');
+
+        // If trying to go online, check checklist first
+        if (isAvailable && !checklistValid) {
+            this.checked = false; // Revert toggle
+            showChecklistModal();
+            return;
+        }
 
         try {
             const response = await ApiService.post('drivers?action=availability', {
@@ -927,6 +1297,117 @@
             if (typeof showToast === 'function') {
                 showToast('error', <?= json_encode(__('error.generic')) ?>);
             }
+        }
+    });
+
+    // === CHECKLIST MODAL FUNCTIONS ===
+
+    function showChecklistModal() {
+        document.getElementById('checklistModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function hideChecklistModal() {
+        document.getElementById('checklistModal').classList.add('hidden');
+        document.body.style.overflow = '';
+        // Reset form
+        document.getElementById('checklistForm').reset();
+        document.getElementById('photoPreview').classList.add('hidden');
+        document.getElementById('photoPlaceholder').classList.remove('hidden');
+    }
+
+    // Cancel button
+    document.getElementById('cancelChecklist').addEventListener('click', hideChecklistModal);
+
+    // Photo upload handling
+    const photoUploadArea = document.getElementById('photoUploadArea');
+    const photoInput = document.getElementById('dashcamPhotoInput');
+    const photoPreview = document.getElementById('photoPreview');
+    const photoPlaceholder = document.getElementById('photoPlaceholder');
+    const photoPreviewImg = document.getElementById('photoPreviewImg');
+    const removePhotoBtn = document.getElementById('removePhoto');
+
+    photoUploadArea.addEventListener('click', function(e) {
+        if (e.target !== removePhotoBtn && !removePhotoBtn.contains(e.target)) {
+            photoInput.click();
+        }
+    });
+
+    photoInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                photoPreviewImg.src = e.target.result;
+                photoPreview.classList.remove('hidden');
+                photoPlaceholder.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    removePhotoBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        photoInput.value = '';
+        photoPreview.classList.add('hidden');
+        photoPlaceholder.classList.remove('hidden');
+    });
+
+    // Form submission
+    document.getElementById('checklistForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const submitBtn = document.getElementById('submitChecklist');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-small"></span>';
+
+        // Build FormData for file upload
+        const formData = new FormData(this);
+
+        // Add checklist items as booleans
+        const checkboxes = this.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+            formData.set(cb.name, cb.checked ? '1' : '0');
+        });
+
+        try {
+            // Use fetch directly for FormData (multipart/form-data)
+            const response = await fetch(AppConfig.apiUrl('drivers?action=safety-checklist'), {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-Token': AppConfig.csrfToken
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                checklistValid = true;
+                hideChecklistModal();
+
+                // Show success toast
+                if (typeof showToast === 'function') {
+                    showToast('success', checklistConfig.submitted);
+                }
+
+                // Auto-toggle online after successful checklist
+                setTimeout(() => {
+                    document.getElementById('availabilityToggle').checked = true;
+                    document.getElementById('availabilityToggle').dispatchEvent(new Event('change'));
+                }, 500);
+            } else {
+                throw new Error(result.message || checklistConfig.error);
+            }
+        } catch (error) {
+            console.error('Checklist submission error:', error);
+            if (typeof showToast === 'function') {
+                showToast('error', error.message || checklistConfig.error);
+            }
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
         }
     });
 

@@ -42,4 +42,9 @@ return [
     'GET /profile' => ['UserController', 'profile', 'auth' => true],
     'GET /profile/edit' => ['UserController', 'editProfile', 'auth' => true],
     'POST /profile/update' => ['UserController', 'updateProfile', 'auth' => true],
+
+    // Admin (auth required, admin role)
+    'GET /admin/settings' => ['AdminController', 'settings', 'auth' => true, 'role' => 'admin'],
+    'POST /admin/settings' => ['AdminController', 'updateSettings', 'auth' => true, 'role' => 'admin'],
+    'GET /admin/dashboard' => ['AdminController', 'dashboard', 'auth' => true, 'role' => 'admin'],
 ];

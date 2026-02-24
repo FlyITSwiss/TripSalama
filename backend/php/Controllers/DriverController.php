@@ -58,6 +58,9 @@ class DriverController
         $vehicleModel = new Vehicle($this->db);
         $vehicle = $vehicleModel->findByDriver($driverId);
 
+        // Statut checklist sécurité du jour
+        $checklistStatus = $this->getChecklistStatus($driverId);
+
         $this->render('driver/dashboard', [
             'pageTitle' => __('driver.title'),
             'currentPage' => 'dashboard',
@@ -68,6 +71,7 @@ class DriverController
             'activeRide' => $activeRide,
             'pendingRides' => $pendingRides,
             'vehicle' => $vehicle,
+            'checklistStatus' => $checklistStatus,
             'pageJs' => ['modules/map-controller.js', 'modules/driver-dashboard.js'],
         ]);
     }
@@ -128,6 +132,34 @@ class DriverController
     {
         $driverStatusModel = new DriverStatus($this->db);
         return $driverStatusModel->getOrCreate($driverId);
+    }
+
+    /**
+     * Obtenir le statut de la checklist de sécurité du jour
+     */
+    private function getChecklistStatus(int $driverId): array
+    {
+        $today = date('Y-m-d');
+
+        $stmt = $this->db->prepare('
+            SELECT * FROM driver_daily_checklist
+            WHERE driver_id = :driver_id AND check_date = :today
+        ');
+        $stmt->execute(['driver_id' => $driverId, 'today' => $today]);
+        $checklist = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        $isValid = false;
+        if ($checklist) {
+            $validUntil = strtotime($checklist['valid_until']);
+            $isValid = $validUntil > time();
+        }
+
+        return [
+            'has_checklist' => (bool)$checklist,
+            'is_valid' => $isValid,
+            'valid_until' => $checklist['valid_until'] ?? null,
+            'dashcam_verified' => !empty($checklist['dashcam_verified_at'] ?? null),
+        ];
     }
 
     /**

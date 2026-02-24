@@ -275,6 +275,103 @@ try {
             successResponse(['anomaly' => $anomaly]);
             break;
 
+        /**
+         * Upload un enregistrement SOS (vidéo/audio)
+         * POST /api/sos.php?action=upload-recording
+         */
+        case 'upload-recording':
+            if ($method !== 'POST') {
+                errorResponse('Method not allowed', 405);
+            }
+            requireAuth();
+            requireCsrf();
+
+            $userId = (int) current_user()['id'];
+
+            // Vérifier le fichier uploadé
+            if (!isset($_FILES['recording']) || $_FILES['recording']['error'] !== UPLOAD_ERR_OK) {
+                $errorCode = $_FILES['recording']['error'] ?? UPLOAD_ERR_NO_FILE;
+                app_log('warning', 'SOS Recording upload failed', ['error_code' => $errorCode]);
+                errorResponse(__('error.upload_failed'), 400);
+            }
+
+            $file = $_FILES['recording'];
+
+            // Validation du type MIME
+            $allowedTypes = ['video/webm', 'video/mp4', 'video/ogg', 'audio/webm', 'audio/mp4', 'audio/ogg', 'audio/mpeg'];
+            $finfo = new finfo(FILEINFO_MIME_TYPE);
+            $detectedType = $finfo->file($file['tmp_name']);
+
+            if (!in_array($detectedType, $allowedTypes)) {
+                errorResponse(__('error.invalid_file_type'), 400);
+            }
+
+            // Limite de taille (50 MB)
+            $maxSize = 50 * 1024 * 1024;
+            if ($file['size'] > $maxSize) {
+                errorResponse(__('error.file_too_large'), 400);
+            }
+
+            // Métadonnées
+            $rideId = isset($_POST['ride_id']) ? (int) $_POST['ride_id'] : null;
+            $sosAlertId = isset($_POST['sos_alert_id']) ? (int) $_POST['sos_alert_id'] : null;
+            $recordingType = $_POST['recording_type'] ?? 'video';
+            $durationSeconds = isset($_POST['duration_seconds']) ? (int) $_POST['duration_seconds'] : null;
+            $mimeType = $_POST['mime_type'] ?? $detectedType;
+
+            // Créer le répertoire d'upload
+            $uploadDir = PUBLIC_PATH . '/uploads/sos/' . $userId;
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            // Nom de fichier sécurisé
+            $ext = pathinfo($file['name'], PATHINFO_EXTENSION) ?: 'webm';
+            $filename = 'sos_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+            $filepath = $uploadDir . '/' . $filename;
+            $relativePath = '/uploads/sos/' . $userId . '/' . $filename;
+
+            // Déplacer le fichier
+            if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+                errorResponse(__('error.upload_failed'), 500);
+            }
+
+            // Sauvegarder en base de données
+            $stmt = $db->prepare('
+                INSERT INTO sos_recordings
+                    (sos_alert_id, user_id, ride_id, recording_path, recording_type, duration_seconds, file_size_bytes, mime_type, upload_status, recorded_at, completed_at)
+                VALUES
+                    (:sos_alert_id, :user_id, :ride_id, :path, :type, :duration, :size, :mime, :status, NOW(), NOW())
+            ');
+            $stmt->execute([
+                'sos_alert_id' => $sosAlertId,
+                'user_id' => $userId,
+                'ride_id' => $rideId,
+                'path' => $relativePath,
+                'type' => $recordingType,
+                'duration' => $durationSeconds,
+                'size' => $file['size'],
+                'mime' => $mimeType,
+                'status' => 'completed',
+            ]);
+
+            $recordingId = (int) $db->lastInsertId();
+
+            app_log('info', 'SOS Recording uploaded', [
+                'user_id' => $userId,
+                'recording_id' => $recordingId,
+                'type' => $recordingType,
+                'duration' => $durationSeconds,
+                'size' => $file['size'],
+            ]);
+
+            successResponse([
+                'recording_id' => $recordingId,
+                'path' => $relativePath,
+                'duration' => $durationSeconds,
+            ], __('recording.uploaded'));
+            break;
+
         default:
             errorResponse('Action not found', 404);
     }
