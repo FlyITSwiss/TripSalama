@@ -1,0 +1,367 @@
+<?php
+/**
+ * TripSalama - Admin Dashboard
+ * Vue d'ensemble du systeme
+ */
+?>
+
+<style>
+/* Admin Dashboard - Premium Design */
+.admin-dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--space-5);
+    padding-bottom: calc(var(--nav-height) + var(--space-8));
+}
+
+.admin-header {
+    margin-bottom: var(--space-8);
+}
+
+.admin-title {
+    font-size: var(--text-3xl);
+    font-weight: var(--font-bold);
+    color: var(--uber-black);
+    margin-bottom: var(--space-2);
+}
+
+.admin-subtitle {
+    font-size: var(--text-base);
+    color: var(--uber-gray-500);
+}
+
+/* Stats Grid */
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-8);
+}
+
+.stat-card {
+    background: var(--uber-white);
+    border-radius: var(--radius-xl);
+    padding: var(--space-5);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.stat-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-3);
+}
+
+.stat-card-icon.passengers { background: #DBEAFE; color: #3B82F6; }
+.stat-card-icon.drivers { background: var(--uber-green-soft); color: var(--uber-green); }
+.stat-card-icon.rides { background: #FEF3C7; color: #F59E0B; }
+.stat-card-icon.alerts { background: #FEE2E2; color: #DC2626; }
+
+.stat-card-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.stat-card-value {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--uber-black);
+    margin-bottom: 2px;
+}
+
+.stat-card-label {
+    font-size: var(--text-sm);
+    color: var(--uber-gray-500);
+}
+
+/* Quick Actions */
+.quick-actions {
+    background: var(--uber-white);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--space-6);
+}
+
+.quick-actions-title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-bold);
+    color: var(--uber-black);
+    margin-bottom: var(--space-4);
+}
+
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--space-3);
+}
+
+.quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    background: var(--uber-gray-50);
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    color: var(--uber-black);
+}
+
+.quick-action-btn:hover {
+    background: var(--uber-gray-100);
+    transform: translateY(-2px);
+}
+
+.quick-action-btn svg {
+    width: 24px;
+    height: 24px;
+    margin-bottom: var(--space-2);
+    color: var(--uber-green);
+}
+
+.quick-action-btn span {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+}
+
+/* Recent Activity */
+.recent-activity {
+    background: var(--uber-white);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-6);
+    box-shadow: var(--shadow-sm);
+}
+
+.recent-activity-title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-bold);
+    color: var(--uber-black);
+    margin-bottom: var(--space-4);
+}
+
+.activity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--uber-gray-100);
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: var(--space-3);
+    flex-shrink: 0;
+}
+
+.activity-icon.ride { background: #DBEAFE; color: #3B82F6; }
+.activity-icon.user { background: var(--uber-green-soft); color: var(--uber-green); }
+.activity-icon.alert { background: #FEE2E2; color: #DC2626; }
+
+.activity-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-text {
+    font-size: var(--text-sm);
+    color: var(--uber-black);
+}
+
+.activity-time {
+    font-size: var(--text-xs);
+    color: var(--uber-gray-500);
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--space-8);
+    color: var(--uber-gray-500);
+}
+
+.empty-state svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: var(--space-3);
+    opacity: 0.5;
+}
+
+/* Animation */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.admin-header { animation: fadeInUp 0.4s ease-out; }
+.dashboard-stats { animation: fadeInUp 0.4s ease-out 0.05s backwards; }
+.quick-actions { animation: fadeInUp 0.4s ease-out 0.1s backwards; }
+.recent-activity { animation: fadeInUp 0.4s ease-out 0.15s backwards; }
+
+/* Responsive */
+@media (max-width: 640px) {
+    .admin-dashboard {
+        padding: var(--space-4);
+    }
+
+    .dashboard-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+</style>
+
+<div class="admin-dashboard">
+    <!-- Header -->
+    <header class="admin-header">
+        <h1 class="admin-title"><?= __('admin.dashboard') ?></h1>
+        <p class="admin-subtitle"><?= __('admin.dashboard_desc') ?></p>
+    </header>
+
+    <!-- Stats Cards -->
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-card-icon passengers">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+            </div>
+            <div class="stat-card-value"><?= number_format($stats['users_by_role']['passenger'] ?? 0) ?></div>
+            <div class="stat-card-label"><?= __('admin.passengers') ?></div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-icon drivers">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v6l4 2"/>
+                </svg>
+            </div>
+            <div class="stat-card-value"><?= number_format($stats['users_by_role']['driver'] ?? 0) ?></div>
+            <div class="stat-card-label"><?= __('admin.drivers') ?></div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-icon rides">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+            </div>
+            <div class="stat-card-value"><?= number_format($stats['rides_today'] ?? 0) ?></div>
+            <div class="stat-card-label"><?= __('admin.rides_today') ?></div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-card-icon alerts">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+            </div>
+            <div class="stat-card-value"><?= number_format($stats['active_alerts'] ?? 0) ?></div>
+            <div class="stat-card-label"><?= __('admin.active_alerts') ?></div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h2 class="quick-actions-title"><?= __('admin.quick_actions') ?></h2>
+        <div class="quick-actions-grid">
+            <a href="<?= base_url('admin/settings') ?>" class="quick-action-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                <span><?= __('admin.settings') ?></span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="recent-activity">
+        <h2 class="recent-activity-title"><?= __('admin.recent_activity') ?></h2>
+
+        <?php if (($stats['rides_today'] ?? 0) > 0 || ($stats['active_alerts'] ?? 0) > 0): ?>
+            <ul class="activity-list">
+                <?php if (($stats['active_alerts'] ?? 0) > 0): ?>
+                    <li class="activity-item">
+                        <div class="activity-icon alert">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-text"><?= $stats['active_alerts'] ?> <?= __('admin.active_sos_alerts') ?></div>
+                            <div class="activity-time"><?= __('admin.requires_attention') ?></div>
+                        </div>
+                    </li>
+                <?php endif; ?>
+
+                <?php if (($stats['rides_today'] ?? 0) > 0): ?>
+                    <li class="activity-item">
+                        <div class="activity-icon ride">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+                                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                                <line x1="6" y1="1" x2="6" y2="4"/>
+                                <line x1="10" y1="1" x2="10" y2="4"/>
+                                <line x1="14" y1="1" x2="14" y2="4"/>
+                            </svg>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-text"><?= $stats['rides_today'] ?> <?= __('admin.rides_created_today') ?></div>
+                            <div class="activity-time"><?= __('admin.today') ?></div>
+                        </div>
+                    </li>
+                <?php endif; ?>
+            </ul>
+        <?php else: ?>
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                    <line x1="9" y1="9" x2="9.01" y2="9"/>
+                    <line x1="15" y1="9" x2="15.01" y2="9"/>
+                </svg>
+                <p><?= __('admin.no_recent_activity') ?></p>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
