@@ -6,7 +6,12 @@
   "server": {
     "androidScheme": "https",
     "iosScheme": "https",
-    "hostname": "app.tripsalama.com"
+    "hostname": "app.tripsalama.com",
+    "allowNavigation": [
+      "https://api.tripsalama.com/*",
+      "https://*.stripe.com/*",
+      "https://*.openstreetmap.org/*"
+    ]
   },
   "plugins": {
     "SplashScreen": {
@@ -15,24 +20,53 @@
       "backgroundColor": "#2D5A4A",
       "androidSplashResourceName": "splash",
       "iosSplashResourceName": "Splash",
-      "showSpinner": false
+      "showSpinner": false,
+      "spinnerColor": "#D4AF37"
     },
     "StatusBar": {
       "style": "dark",
-      "backgroundColor": "#2D5A4A"
+      "backgroundColor": "#2D5A4A",
+      "overlaysWebView": false
     },
     "Keyboard": {
       "resize": "body",
-      "resizeOnFullScreen": true
+      "resizeOnFullScreen": true,
+      "style": "dark"
     },
     "PushNotifications": {
       "presentationOptions": ["badge", "sound", "alert"]
     },
     "Geolocation": {
-      "enableHighAccuracy": true
+      "enableHighAccuracy": true,
+      "timeout": 15000,
+      "maximumAge": 0
     },
     "Haptics": {
       "enabled": true
+    },
+    "Camera": {
+      "saveToGallery": false,
+      "quality": 80,
+      "width": 1024,
+      "height": 1024,
+      "preserveAspectRatio": true,
+      "correctOrientation": true,
+      "promptLabelHeader": "Photo",
+      "promptLabelPhoto": "Galerie",
+      "promptLabelPicture": "Camera"
+    },
+    "Network": {
+      "connectionType": "any"
+    },
+    "BackgroundGeolocation": {
+      "distanceFilter": 10,
+      "desiredAccuracy": "high",
+      "stationaryRadius": 25,
+      "stopOnTerminate": false,
+      "startOnBoot": true,
+      "notificationTitle": "TripSalama",
+      "notificationText": "Course en cours...",
+      "debug": false
     }
   },
   "android": {
@@ -40,12 +74,17 @@
     "captureInput": true,
     "webContentsDebuggingEnabled": false,
     "loggingBehavior": "none",
-    "backgroundColor": "#2D5A4A"
+    "backgroundColor": "#2D5A4A",
+    "buildOptions": {
+      "keystorePath": "release.keystore",
+      "keystoreAlias": "tripsalama"
+    }
   },
   "ios": {
     "contentInset": "automatic",
     "scrollEnabled": true,
     "backgroundColor": "#2D5A4A",
-    "limitsNavigationsToAppBoundDomains": true
+    "limitsNavigationsToAppBoundDomains": true,
+    "preferredContentMode": "mobile"
   }
 }

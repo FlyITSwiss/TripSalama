@@ -18,7 +18,7 @@ class PaymentService
     private Wallet $walletModel;
     private Transaction $transactionModel;
     private ?string $stripeSecretKey;
-    private float $commissionRate = 0.12; // 12% commission
+    private float $commissionRate;
 
     public function __construct(PDO $db)
     {
@@ -26,6 +26,8 @@ class PaymentService
         $this->walletModel = new Wallet($db);
         $this->transactionModel = new Transaction($db);
         $this->stripeSecretKey = $_ENV['STRIPE_SECRET_KEY'] ?? null;
+        // Commission par defaut 15%, configurable via .env
+        $this->commissionRate = (float) ($_ENV['PLATFORM_COMMISSION_RATE'] ?? 0.15);
     }
 
     /**
