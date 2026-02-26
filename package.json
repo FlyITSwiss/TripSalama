@@ -9,11 +9,18 @@
   "scripts": {
     "lint": "eslint public/assets/js --ext .js",
     "lint:fix": "eslint public/assets/js --ext .js --fix",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node tests/puppeteer/smoke-tests.js",
     "cap:sync": "npx cap sync",
     "cap:open:ios": "npx cap open ios",
     "cap:open:android": "npx cap open android",
-    "build:mobile": "npm run cap:sync && echo 'Ready for native build'"
+    "build:mobile": "npm run cap:sync && echo 'Ready for native build'",
+    "test:visual": "node tests/puppeteer/smoke-tests.js --visual",
+    "build:icons": "node scripts/generate-android-icons.js",
+    "android:debug": "cd android && ./gradlew assembleDebug",
+    "android:release": "cd android && ./gradlew assembleRelease",
+    "android:build": "npm run cap:sync && npm run build:icons && npm run android:debug",
+    "android:install": "cd android && ./gradlew installDebug",
+    "prebuild": "npm run cap:sync && npm run build:icons"
   },
   "repository": {
     "type": "git",

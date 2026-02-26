@@ -1,0 +1,240 @@
+# TripSalama - Codemagic CI/CD Configuration
+# Build iOS without Mac! Use Codemagic cloud service.
+# Sign up at: https://codemagic.io
+
+workflows:
+  # ============================================
+  # ANDROID BUILD
+  # ============================================
+  android-workflow:
+    name: Android Build
+    max_build_duration: 60
+    instance_type: linux_x2
+
+    environment:
+      node: 20
+      java: 17
+
+    triggering:
+      events:
+        - push
+        - pull_request
+      branch_patterns:
+        - pattern: main
+          include: true
+        - pattern: develop
+          include: true
+
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+
+      - name: Sync Capacitor
+        script: npx cap sync android
+
+      - name: Generate Android icons
+        script: node scripts/generate-android-icons.js || true
+
+      - name: Build Debug APK
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Build Release APK
+        script: |
+          cd android
+          ./gradlew assembleRelease
+
+    artifacts:
+      - android/app/build/outputs/apk/**/*.apk
+
+    publishing:
+      email:
+        recipients:
+          - tarik.gilani@stabilis-it.ch
+        notify:
+          success: true
+          failure: true
+
+  # ============================================
+  # ANDROID SIGNED RELEASE (Play Store)
+  # ============================================
+  android-release:
+    name: Android Play Store Release
+    max_build_duration: 60
+    instance_type: linux_x2
+
+    environment:
+      node: 20
+      java: 17
+      groups:
+        - android_signing
+
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'v*'
+          include: true
+
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+
+      - name: Sync Capacitor
+        script: npx cap sync android
+
+      - name: Generate icons
+        script: node scripts/generate-android-icons.js || true
+
+      - name: Build Release Bundle (AAB)
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease
+
+    artifacts:
+      - android/app/build/outputs/bundle/**/*.aab
+
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+
+  # ============================================
+  # iOS BUILD (No Mac required!)
+  # ============================================
+  ios-workflow:
+    name: iOS Build
+    max_build_duration: 90
+    instance_type: mac_mini_m2
+
+    environment:
+      node: 20
+      xcode: 15.4
+      cocoapods: default
+
+    triggering:
+      events:
+        - push
+        - pull_request
+      branch_patterns:
+        - pattern: main
+          include: true
+        - pattern: develop
+          include: true
+
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+
+      - name: Sync Capacitor
+        script: npx cap sync ios
+
+      - name: Install CocoaPods
+        script: |
+          cd ios/App
+          pod install --repo-update
+
+      - name: Build iOS (Simulator)
+        script: |
+          cd ios/App
+          xcodebuild build \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+
+    artifacts:
+      - ios/App/build/**/*.app
+
+    publishing:
+      email:
+        recipients:
+          - tarik.gilani@stabilis-it.ch
+        notify:
+          success: true
+          failure: true
+
+  # ============================================
+  # iOS TESTFLIGHT RELEASE
+  # ============================================
+  ios-release:
+    name: iOS TestFlight Release
+    max_build_duration: 90
+    instance_type: mac_mini_m2
+
+    environment:
+      node: 20
+      xcode: 15.4
+      cocoapods: default
+      groups:
+        - ios_signing
+
+    integrations:
+      app_store_connect: TripSalama App Store
+
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'v*'
+          include: true
+
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+
+      - name: Sync Capacitor
+        script: npx cap sync ios
+
+      - name: Install CocoaPods
+        script: |
+          cd ios/App
+          pod install --repo-update
+
+      - name: Set up code signing
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "com.tripsalama.app" \
+            --type IOS_APP_STORE \
+            --create
+          keychain add-certificates
+
+      - name: Set up Xcode project
+        script: |
+          xcode-project use-profiles --project ios/App/App.xcodeproj
+
+      - name: Increment build number
+        script: |
+          cd ios/App
+          agvtool new-version -all $(($BUILD_NUMBER))
+
+      - name: Build IPA
+        script: |
+          cd ios/App
+          xcode-project build-ipa \
+            --workspace App.xcworkspace \
+            --scheme App \
+            --config Release
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - TripSalama Testers
+
+      email:
+        recipients:
+          - tarik.gilani@stabilis-it.ch
+        notify:
+          success: true
+          failure: true
