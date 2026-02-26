@@ -60,6 +60,13 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Fix adaptive-icon placement
+        run: |
+          # Remove adaptive-icon from drawable-v24 (requires SDK 26+)
+          rm -f android/app/src/main/res/drawable-v24/ic_launcher.xml
+          rm -f android/app/src/main/res/drawable-v24/ic_launcher_round.xml
+          echo "Cleaned up adaptive-icon files from drawable-v24"
+
       - name: Generate Android icons
         run: node scripts/generate-android-icons.js
         continue-on-error: true
@@ -67,9 +74,9 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      - name: Build Debug APK
+      - name: Clean and Build Debug APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew clean assembleDebug --no-daemon
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
