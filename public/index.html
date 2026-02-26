@@ -2,767 +2,1234 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="TripSalama">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="format-detection" content="telephone=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob: ws: wss:;">
     <meta name="csrf-token" content="">
-
     <title>TripSalama</title>
 
-    <!-- Fonts -->
+    <!-- Google Fonts - Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
+        /* ============================================
+           UBER DESIGN SYSTEM - COMPLETE
+           ============================================ */
         :root {
-            --primary: #000000;
-            --primary-hover: #333333;
-            --secondary: #276EF1;
-            --success: #05A357;
-            --warning: #F6B100;
-            --danger: #E54B4B;
-            --white: #FFFFFF;
-            --gray-50: #F6F6F6;
-            --gray-100: #EEEEEE;
-            --gray-200: #E2E2E2;
-            --gray-300: #CBCBCB;
-            --gray-400: #AFAFAF;
-            --gray-500: #757575;
-            --gray-600: #545454;
-            --gray-700: #333333;
-            --gray-800: #1F1F1F;
-            --gray-900: #141414;
-            --safe-top: env(safe-area-inset-top, 0px);
-            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            /* Core Colors - Uber Style */
+            --uber-black: #000000;
+            --uber-white: #FFFFFF;
+
+            /* Gray Scale */
+            --uber-gray-50: #F7F7F7;
+            --uber-gray-100: #EEEEEE;
+            --uber-gray-200: #E2E2E2;
+            --uber-gray-300: #CBCBCB;
+            --uber-gray-400: #AFAFAF;
+            --uber-gray-500: #757575;
+            --uber-gray-600: #545454;
+            --uber-gray-700: #333333;
+            --uber-gray-800: #1F1F1F;
+            --uber-gray-900: #141414;
+
+            /* Accent Colors */
+            --uber-green: #06C167;
+            --uber-green-soft: #E6F9EF;
+            --uber-blue: #276EF1;
+            --uber-blue-soft: #EBF2FE;
+            --uber-red: #E11900;
+            --uber-red-soft: #FFEFEC;
+            --uber-yellow: #FFC043;
+            --uber-yellow-soft: #FFF8E6;
+
+            /* Typography */
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+            /* Font Sizes */
+            --text-xs: 0.75rem;
+            --text-sm: 0.875rem;
+            --text-base: 1rem;
+            --text-lg: 1.125rem;
+            --text-xl: 1.25rem;
+            --text-2xl: 1.5rem;
+            --text-3xl: 1.875rem;
+            --text-4xl: 2.25rem;
+
+            /* Font Weights */
+            --font-normal: 400;
+            --font-medium: 500;
+            --font-semibold: 600;
+            --font-bold: 700;
+            --font-extrabold: 800;
+
+            /* Spacing Scale */
+            --space-1: 4px;
+            --space-2: 8px;
+            --space-3: 12px;
+            --space-4: 16px;
+            --space-5: 20px;
+            --space-6: 24px;
+            --space-8: 32px;
+            --space-10: 40px;
+            --space-12: 48px;
+
+            /* Border Radius */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --radius-2xl: 24px;
+            --radius-full: 9999px;
+
+            /* Shadows */
+            --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+            --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.16);
+
+            /* Layout */
+            --container-mobile: 420px;
+            --nav-height: 64px;
+            --safe-area-bottom: env(safe-area-inset-bottom, 0px);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* Reset */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--white);
-            color: var(--gray-900);
-            min-height: 100vh;
-            padding-top: var(--safe-top);
-            padding-bottom: var(--safe-bottom);
+        html {
+            font-size: 16px;
+            -webkit-text-size-adjust: 100%;
             -webkit-font-smoothing: antialiased;
         }
 
-        /* Screen container */
-        .screen {
-            display: none;
+        body {
+            font-family: var(--font-family);
+            font-size: var(--text-base);
+            line-height: 1.5;
+            color: var(--uber-black);
+            background: var(--uber-gray-50);
             min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* App Container */
+        .app-container {
+            max-width: var(--container-mobile);
+            margin: 0 auto;
+            min-height: 100vh;
+            background: var(--uber-white);
+            position: relative;
+        }
+
+        @media (min-width: 480px) {
+            body { background: var(--uber-gray-100); }
+            .app-container { box-shadow: var(--shadow-xl); }
+        }
+
+        /* Hidden */
+        .hidden { display: none !important; }
+
+        /* ============================================
+           LOGIN PAGE - ISO WEBAPP
+           ============================================ */
+        .login-page {
+            min-height: 100vh;
+            display: flex;
             flex-direction: column;
-        }
-        .screen.active {
-            display: flex;
+            background: var(--uber-white);
         }
 
-        /* Splash */
-        #splash-screen {
-            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
-            align-items: center;
-            justify-content: center;
-            color: white;
-        }
-        .splash-logo {
-            width: 80px;
-            height: 80px;
-            background: white;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 16px;
-            font-size: 32px;
-        }
-        .splash-title {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        .splash-subtitle {
-            font-size: 14px;
-            opacity: 0.7;
-        }
-        .splash-loader {
-            margin-top: 40px;
-            width: 32px;
-            height: 32px;
-            border: 3px solid rgba(255,255,255,0.2);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Login Screen */
-        #login-screen {
-            background: var(--white);
-            padding: 24px;
-        }
         .login-header {
-            padding: 40px 0 32px;
+            padding: var(--space-12) var(--space-6) var(--space-8);
             text-align: center;
         }
+
         .login-logo {
-            width: 60px;
-            height: 60px;
-            background: var(--primary);
-            border-radius: 16px;
-            margin: 0 auto 16px;
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--uber-black);
+            letter-spacing: -0.04em;
+            margin-bottom: var(--space-8);
+        }
+
+        .login-logo span { color: var(--uber-green); }
+
+        .login-title {
+            font-size: var(--text-2xl);
+            font-weight: var(--font-bold);
+            color: var(--uber-black);
+            margin-bottom: var(--space-2);
+        }
+
+        .login-subtitle {
+            font-size: var(--text-base);
+            color: var(--uber-gray-500);
+        }
+
+        .login-form {
+            flex: 1;
+            padding: var(--space-6);
+        }
+
+        .login-input-group { margin-bottom: var(--space-4); }
+
+        .login-input-wrapper { position: relative; }
+
+        .login-input-icon {
+            position: absolute;
+            left: var(--space-4);
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            color: var(--uber-gray-500);
+        }
+
+        .login-input {
+            width: 100%;
+            padding: var(--space-4) var(--space-5);
+            padding-left: var(--space-12);
+            font-family: var(--font-family);
+            font-size: var(--text-base);
+            font-weight: var(--font-medium);
+            color: var(--uber-black);
+            background: var(--uber-gray-100);
+            border: 2px solid transparent;
+            border-radius: var(--radius-lg);
+            transition: all 0.2s ease;
+        }
+
+        .login-input:focus {
+            outline: none;
+            background: var(--uber-white);
+            border-color: var(--uber-black);
+        }
+
+        .login-input::placeholder {
+            color: var(--uber-gray-500);
+            font-weight: var(--font-normal);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: var(--space-4);
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            background: none;
+            border: none;
+            color: var(--uber-gray-500);
+            cursor: pointer;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: var(--space-4) var(--space-6);
+            font-family: var(--font-family);
+            font-size: var(--text-base);
+            font-weight: var(--font-semibold);
+            color: var(--uber-white);
+            background: var(--uber-black);
+            border: none;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: var(--space-4);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 24px;
+            gap: var(--space-2);
         }
-        .login-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 8px;
+
+        .login-btn:hover { background: var(--uber-gray-800); }
+        .login-btn:active { transform: scale(0.98); }
+        .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .login-footer {
+            padding: var(--space-6);
+            text-align: center;
+            background: var(--uber-gray-50);
         }
-        .login-subtitle {
-            color: var(--gray-500);
-            font-size: 14px;
+
+        .login-footer-text {
+            font-size: var(--text-sm);
+            color: var(--uber-gray-500);
+            margin-bottom: var(--space-4);
         }
-        .form-group {
-            margin-bottom: 16px;
-        }
-        .form-label {
-            display: block;
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: 8px;
-            color: var(--gray-700);
-        }
-        .form-input {
+
+        .login-footer-btn {
             width: 100%;
-            padding: 16px;
-            font-size: 16px;
-            border: 1px solid var(--gray-200);
-            border-radius: 12px;
-            background: var(--gray-50);
-            outline: none;
-            transition: border-color 0.2s, background 0.2s;
-        }
-        .form-input:focus {
-            border-color: var(--primary);
-            background: var(--white);
-        }
-        .btn {
-            width: 100%;
-            padding: 16px;
-            font-size: 16px;
-            font-weight: 600;
+            padding: var(--space-4);
+            font-family: var(--font-family);
+            font-size: var(--text-base);
+            font-weight: var(--font-semibold);
+            color: var(--uber-black);
+            background: var(--uber-gray-100);
             border: none;
-            border-radius: 12px;
+            border-radius: var(--radius-lg);
             cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-        .btn-primary:hover {
-            background: var(--primary-hover);
-        }
-        .btn-primary:disabled {
-            background: var(--gray-300);
-            cursor: not-allowed;
-        }
-        .error-message {
-            background: #FEE;
-            color: var(--danger);
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            margin-bottom: 16px;
-            display: none;
-        }
-        .error-message.visible {
-            display: block;
+            transition: all 0.2s ease;
         }
 
-        /* Dashboard Common */
-        .dashboard-header {
-            padding: 16px 20px;
-            background: var(--white);
-            border-bottom: 1px solid var(--gray-100);
+        .login-footer-btn:hover { background: var(--uber-gray-200); }
+
+        .login-error {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: var(--space-3);
+            padding: var(--space-4);
+            border-radius: var(--radius-lg);
+            font-size: var(--text-sm);
+            font-weight: var(--font-medium);
+            margin-bottom: var(--space-4);
+            background: var(--uber-red-soft);
+            color: var(--uber-red);
         }
-        .user-greeting {
-            font-size: 14px;
-            color: var(--gray-500);
+
+        /* ============================================
+           DASHBOARD COMMON STYLES
+           ============================================ */
+        .dashboard-page {
+            min-height: 100vh;
+            background: var(--uber-white);
+            padding-bottom: calc(var(--nav-height) + var(--space-8));
         }
-        .user-name {
-            font-size: 20px;
-            font-weight: 700;
+
+        .dashboard-content { padding: var(--space-4); }
+
+        .welcome-section { margin-bottom: var(--space-5); }
+
+        .welcome-greeting {
+            font-size: var(--text-sm);
+            color: var(--uber-gray-500);
+            margin-bottom: var(--space-1);
         }
-        .logout-btn {
-            padding: 8px 16px;
-            font-size: 14px;
-            background: var(--gray-100);
-            border: none;
-            border-radius: 8px;
+
+        .welcome-name {
+            font-size: var(--text-3xl);
+            font-weight: var(--font-bold);
+            color: var(--uber-black);
+            letter-spacing: -0.02em;
+        }
+
+        /* Where To Card - Passenger */
+        .where-to-card {
+            background: var(--uber-white);
+            border-radius: var(--radius-2xl);
+            padding: var(--space-4);
+            box-shadow: var(--shadow-lg);
+            margin-bottom: var(--space-5);
+        }
+
+        .where-to-input {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            padding: var(--space-4);
+            background: var(--uber-gray-100);
+            border-radius: var(--radius-xl);
             cursor: pointer;
+            transition: all 0.2s ease;
         }
 
-        /* Map Container */
-        .map-container {
-            flex: 1;
-            position: relative;
-            min-height: 300px;
-        }
-        #map {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
+        .where-to-input:hover { background: var(--uber-gray-200); }
 
-        /* Bottom Panel */
-        .bottom-panel {
-            background: var(--white);
-            border-radius: 24px 24px 0 0;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
-            padding: 20px;
-            padding-bottom: calc(20px + var(--safe-bottom));
-        }
-
-        /* Search Box */
-        .search-box {
-            background: var(--gray-50);
-            border-radius: 12px;
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        .search-icon {
-            color: var(--gray-400);
-        }
-        .search-input {
-            flex: 1;
-            border: none;
-            background: transparent;
-            font-size: 16px;
-            outline: none;
-        }
-
-        /* Driver Status Card */
-        .status-card {
-            background: var(--gray-50);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 16px;
-        }
-        .status-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-        .status-title {
-            font-size: 16px;
-            font-weight: 600;
-        }
-        .status-toggle {
-            width: 52px;
+        .where-to-icon {
+            width: 32px;
             height: 32px;
-            background: var(--gray-300);
-            border-radius: 16px;
-            position: relative;
-            cursor: pointer;
-            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--uber-black);
+            border-radius: var(--radius-lg);
         }
-        .status-toggle.active {
-            background: var(--success);
+
+        .where-to-icon svg { width: 16px; height: 16px; color: var(--uber-white); }
+
+        .where-to-text {
+            flex: 1;
+            font-size: var(--text-lg);
+            font-weight: var(--font-medium);
+            color: var(--uber-gray-500);
         }
-        .status-toggle::after {
-            content: '';
-            position: absolute;
-            width: 28px;
-            height: 28px;
-            background: white;
-            border-radius: 50%;
-            top: 2px;
-            left: 2px;
-            transition: transform 0.3s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+
+        /* Safety Banner */
+        .safety-banner {
+            background: linear-gradient(135deg, var(--uber-green) 0%, #04A054 100%);
+            border-radius: var(--radius-2xl);
+            padding: var(--space-4);
+            margin-bottom: var(--space-5);
+            color: var(--uber-white);
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
         }
-        .status-toggle.active::after {
-            transform: translateX(20px);
+
+        .safety-banner-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255,255,255,0.2);
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
-        .status-info {
-            font-size: 14px;
-            color: var(--gray-500);
+
+        .safety-banner-icon svg { width: 24px; height: 24px; }
+
+        .safety-banner-title {
+            font-size: var(--text-base);
+            font-weight: var(--font-bold);
+            margin-bottom: 2px;
         }
+
+        .safety-banner-text { font-size: var(--text-sm); opacity: 0.9; }
 
         /* Stats Grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        .stat-card {
-            background: var(--gray-50);
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-        }
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--primary);
-        }
-        .stat-label {
-            font-size: 12px;
-            color: var(--gray-500);
-            margin-top: 4px;
+            gap: var(--space-3);
+            margin-bottom: var(--space-5);
         }
 
-        /* Bottom Navigation */
-        .bottom-nav {
+        .stat-card {
+            background: var(--uber-white);
+            border-radius: var(--radius-xl);
+            padding: var(--space-4);
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stat-value {
+            font-size: var(--text-2xl);
+            font-weight: var(--font-bold);
+            color: var(--uber-black);
+            line-height: 1;
+            margin-bottom: var(--space-1);
+        }
+
+        .stat-label {
+            font-size: var(--text-xs);
+            color: var(--uber-gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        /* ============================================
+           DRIVER DASHBOARD SPECIFIC
+           ============================================ */
+        .driver-status-card {
+            background: var(--uber-white);
+            border-radius: var(--radius-2xl);
+            padding: var(--space-5);
+            box-shadow: var(--shadow-lg);
+            margin-bottom: var(--space-5);
+        }
+
+        .driver-status-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+        }
+
+        .driver-status-icon {
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-full);
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .driver-status-icon.online {
+            background: var(--uber-green-soft);
+            color: var(--uber-green);
+        }
+
+        .driver-status-icon.offline {
+            background: var(--uber-gray-100);
+            color: var(--uber-gray-500);
+        }
+
+        .driver-status-icon svg { width: 32px; height: 32px; }
+
+        .driver-status-info { flex: 1; }
+
+        .driver-status-text {
+            font-size: var(--text-xl);
+            font-weight: var(--font-bold);
+            color: var(--uber-black);
+            margin-bottom: 2px;
+        }
+
+        .driver-status-hint {
+            font-size: var(--text-sm);
+            color: var(--uber-gray-500);
+        }
+
+        /* Toggle Switch */
+        .status-toggle {
+            position: relative;
+            width: 64px;
+            height: 36px;
+            flex-shrink: 0;
+        }
+
+        .status-toggle input { opacity: 0; width: 0; height: 0; }
+
+        .status-toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--uber-gray-300);
+            border-radius: var(--radius-full);
+            transition: background 0.3s ease;
+        }
+
+        .status-toggle-slider::before {
+            position: absolute;
+            content: '';
+            height: 28px;
+            width: 28px;
+            left: 4px;
+            bottom: 4px;
+            background: var(--uber-white);
+            border-radius: var(--radius-full);
+            box-shadow: var(--shadow-md);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .status-toggle input:checked + .status-toggle-slider { background: var(--uber-green); }
+        .status-toggle input:checked + .status-toggle-slider::before { transform: translateX(28px); }
+
+        /* Earnings Card */
+        .earnings-card {
+            background: linear-gradient(135deg, var(--uber-black) 0%, #1a1a1a 100%);
+            border-radius: var(--radius-2xl);
+            padding: var(--space-5);
+            margin-bottom: var(--space-5);
+            color: var(--uber-white);
+        }
+
+        .earnings-main { text-align: center; margin-bottom: var(--space-4); }
+
+        .earnings-label {
+            font-size: var(--text-sm);
+            color: var(--uber-gray-400);
+            margin-bottom: var(--space-1);
+        }
+
+        .earnings-value {
+            font-size: var(--text-4xl);
+            font-weight: var(--font-bold);
+            line-height: 1;
+        }
+
+        .earnings-currency {
+            font-size: var(--text-lg);
+            font-weight: var(--font-normal);
+            margin-left: var(--space-1);
+        }
+
+        .earnings-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-3);
+            padding-top: var(--space-4);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .earnings-stat { text-align: center; }
+
+        .earnings-stat-value {
+            font-size: var(--text-lg);
+            font-weight: var(--font-bold);
+            margin-bottom: 2px;
+        }
+
+        .earnings-stat-label {
+            font-size: var(--text-xs);
+            color: var(--uber-gray-400);
+            text-transform: uppercase;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: var(--space-10) var(--space-6);
+            background: var(--uber-white);
+            border-radius: var(--radius-xl);
+        }
+
+        .empty-state-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto var(--space-4);
+            color: var(--uber-gray-300);
+        }
+
+        .empty-state-title {
+            font-size: var(--text-lg);
+            font-weight: var(--font-bold);
+            color: var(--uber-black);
+            margin-bottom: var(--space-2);
+        }
+
+        .empty-state-text {
+            font-size: var(--text-sm);
+            color: var(--uber-gray-500);
+        }
+
+        /* ============================================
+           MOBILE NAVIGATION
+           ============================================ */
+        .mobile-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: var(--container-mobile);
+            background: var(--uber-white);
+            border-top: 1px solid var(--uber-gray-100);
+            padding: var(--space-2) var(--space-4);
+            padding-bottom: calc(var(--space-2) + var(--safe-area-bottom));
+            z-index: 100;
             display: flex;
             justify-content: space-around;
-            padding: 12px 0;
-            background: var(--white);
-            border-top: 1px solid var(--gray-100);
+            align-items: center;
         }
+
         .nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
-            color: var(--gray-400);
+            gap: var(--space-1);
+            padding: var(--space-2);
+            color: var(--uber-gray-500);
             text-decoration: none;
-            font-size: 12px;
+            transition: all 0.2s;
+            min-width: 60px;
+            background: none;
+            border: none;
             cursor: pointer;
         }
-        .nav-item.active {
-            color: var(--primary);
-        }
-        .nav-icon {
-            font-size: 24px;
+
+        .nav-item:hover, .nav-item.active { color: var(--uber-black); }
+
+        .nav-item svg { width: 24px; height: 24px; }
+
+        .nav-item-label {
+            font-size: 10px;
+            font-weight: var(--font-medium);
         }
 
-        /* Toast */
+        /* ============================================
+           TOAST NOTIFICATION
+           ============================================ */
         .toast {
             position: fixed;
-            bottom: 100px;
+            top: var(--space-4);
             left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: var(--gray-800);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 14px;
-            opacity: 0;
-            transition: all 0.3s;
+            transform: translateX(-50%) translateY(-100px);
+            max-width: calc(100% - var(--space-8));
+            padding: var(--space-4);
+            background: var(--uber-gray-900);
+            color: var(--uber-white);
+            border-radius: var(--radius-lg);
+            font-size: var(--text-sm);
+            font-weight: var(--font-medium);
+            box-shadow: var(--shadow-xl);
             z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
         }
-        .toast.visible {
+
+        .toast.show {
             transform: translateX(-50%) translateY(0);
             opacity: 1;
         }
+
+        .toast.error { background: var(--uber-red); }
+        .toast.success { background: var(--uber-green); }
+
+        /* Spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: var(--uber-white);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-in { animation: fadeInUp 0.4s ease-out; }
     </style>
 </head>
 <body>
-    <!-- Splash Screen -->
-    <div id="splash-screen" class="screen active">
-        <div class="splash-logo">🚗</div>
-        <div class="splash-title">TripSalama</div>
-        <div class="splash-subtitle">Sécurité et sérénité au féminin</div>
-        <div class="splash-loader"></div>
+    <div class="app-container">
+        <!-- Toast Notification -->
+        <div id="toast" class="toast"></div>
+
+        <!-- ============================================
+             LOGIN PAGE
+             ============================================ -->
+        <div id="loginPage" class="login-page">
+            <header class="login-header animate-in">
+                <div class="login-logo">Trip<span>Salama</span></div>
+                <h1 class="login-title">Bon retour</h1>
+                <p class="login-subtitle">Voyagez en toute sécurité</p>
+            </header>
+
+            <div id="loginError" class="login-error hidden" style="margin: 0 var(--space-6);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                <span id="loginErrorText"></span>
+            </div>
+
+            <form id="loginForm" class="login-form animate-in">
+                <div class="login-input-group">
+                    <div class="login-input-wrapper">
+                        <svg class="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/>
+                        </svg>
+                        <input type="email" id="email" name="email" class="login-input" placeholder="Email" required autofocus autocomplete="email">
+                    </div>
+                </div>
+
+                <div class="login-input-group">
+                    <div class="login-input-wrapper">
+                        <svg class="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <input type="password" id="password" name="password" class="login-input" placeholder="Mot de passe" required autocomplete="current-password">
+                        <button type="button" class="password-toggle" id="togglePassword">
+                            <svg id="eyeOpen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg id="eyeClosed" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                                <line x1="1" y1="1" x2="23" y2="23"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                        <polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+                    </svg>
+                    <span id="loginBtnText">Se connecter</span>
+                </button>
+            </form>
+
+            <footer class="login-footer animate-in">
+                <p class="login-footer-text">Pas encore de compte ?</p>
+                <button type="button" class="login-footer-btn" id="registerBtn">S'inscrire</button>
+            </footer>
+        </div>
+
+        <!-- ============================================
+             PASSENGER DASHBOARD
+             ============================================ -->
+        <div id="passengerDashboard" class="dashboard-page hidden">
+            <div class="dashboard-content">
+                <section class="welcome-section animate-in">
+                    <p class="welcome-greeting">Bon retour</p>
+                    <h1 class="welcome-name" id="passengerName">Utilisateur</h1>
+                </section>
+
+                <section class="where-to-card animate-in">
+                    <div class="where-to-input" id="bookRideBtn">
+                        <div class="where-to-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                        </div>
+                        <span class="where-to-text">Où allez-vous ?</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                    </div>
+                </section>
+
+                <section class="safety-banner animate-in">
+                    <div class="safety-banner-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            <polyline points="9 12 11 14 15 10"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="safety-banner-title">Voyagez en sécurité</div>
+                        <div class="safety-banner-text">Tous nos chauffeurs sont vérifiés</div>
+                    </div>
+                </section>
+
+                <section class="stats-grid animate-in">
+                    <div class="stat-card">
+                        <div class="stat-value" id="passengerRides">0</div>
+                        <div class="stat-label">Courses</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="passengerMonth">0</div>
+                        <div class="stat-label">Ce mois</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="passengerRating">5.0</div>
+                        <div class="stat-label">Note</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Bottom Navigation -->
+            <nav class="mobile-nav">
+                <button class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    </svg>
+                    <span class="nav-item-label">Accueil</span>
+                </button>
+                <button class="nav-item" id="navHistory">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <span class="nav-item-label">Historique</span>
+                </button>
+                <button class="nav-item" id="navProfile">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span class="nav-item-label">Profil</span>
+                </button>
+                <button class="nav-item" id="logoutBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    <span class="nav-item-label">Sortir</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- ============================================
+             DRIVER DASHBOARD
+             ============================================ -->
+        <div id="driverDashboard" class="dashboard-page hidden">
+            <div class="dashboard-content">
+                <section class="welcome-section animate-in">
+                    <p class="welcome-greeting">Bon retour</p>
+                    <h1 class="welcome-name" id="driverName">Chauffeur</h1>
+                </section>
+
+                <section class="driver-status-card animate-in">
+                    <div class="driver-status-header">
+                        <div class="driver-status-icon offline" id="statusIcon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="15" y1="9" x2="9" y2="15"/>
+                                <line x1="9" y1="9" x2="15" y2="15"/>
+                            </svg>
+                        </div>
+                        <div class="driver-status-info">
+                            <div class="driver-status-text" id="statusText">Hors ligne</div>
+                            <div class="driver-status-hint" id="statusHint">Activez pour recevoir des courses</div>
+                        </div>
+                        <label class="status-toggle">
+                            <input type="checkbox" id="availabilityToggle">
+                            <span class="status-toggle-slider"></span>
+                        </label>
+                    </div>
+                </section>
+
+                <section class="earnings-card animate-in">
+                    <div class="earnings-main">
+                        <div class="earnings-label">Gains aujourd'hui</div>
+                        <div class="earnings-value">
+                            <span id="earningsToday">0</span>
+                            <span class="earnings-currency">MAD</span>
+                        </div>
+                    </div>
+                    <div class="earnings-grid">
+                        <div class="earnings-stat">
+                            <div class="earnings-stat-value" id="earningsWeek">0</div>
+                            <div class="earnings-stat-label">Cette semaine</div>
+                        </div>
+                        <div class="earnings-stat">
+                            <div class="earnings-stat-value" id="earningsMonth">0</div>
+                            <div class="earnings-stat-label">Ce mois</div>
+                        </div>
+                        <div class="earnings-stat">
+                            <div class="earnings-stat-value" id="ridesToday">0</div>
+                            <div class="earnings-stat-label">Courses</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="safety-banner animate-in" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="safety-banner-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            <path d="M9 12l2 2 4-4"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="safety-banner-title">Partagez votre trajet</div>
+                        <div class="safety-banner-text">Informez vos proches de votre position</div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 style="font-size: var(--text-xs); font-weight: var(--font-semibold); color: var(--uber-gray-500); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: var(--space-4);">Demandes de courses</h2>
+                    <div class="empty-state animate-in">
+                        <div class="empty-state-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                                <line x1="9" y1="9" x2="9.01" y2="9"/>
+                                <line x1="15" y1="9" x2="15.01" y2="9"/>
+                            </svg>
+                        </div>
+                        <div class="empty-state-title">Aucune demande</div>
+                        <div class="empty-state-text">Activez votre statut pour recevoir des courses</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Bottom Navigation -->
+            <nav class="mobile-nav">
+                <button class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    </svg>
+                    <span class="nav-item-label">Accueil</span>
+                </button>
+                <button class="nav-item" id="driverNavHistory">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <span class="nav-item-label">Historique</span>
+                </button>
+                <button class="nav-item" id="driverNavProfile">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span class="nav-item-label">Profil</span>
+                </button>
+                <button class="nav-item" id="driverLogoutBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    <span class="nav-item-label">Sortir</span>
+                </button>
+            </nav>
+        </div>
     </div>
 
-    <!-- Login Screen -->
-    <div id="login-screen" class="screen">
-        <div class="login-header">
-            <div class="login-logo">🚗</div>
-            <h1 class="login-title">TripSalama</h1>
-            <p class="login-subtitle">Connectez-vous pour continuer</p>
-        </div>
-
-        <div id="login-error" class="error-message"></div>
-
-        <form id="login-form">
-            <div class="form-group">
-                <label class="form-label">Email</label>
-                <input type="email" id="login-email" class="form-input" placeholder="votre@email.com" required>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Mot de passe</label>
-                <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
-            </div>
-            <button type="submit" id="login-btn" class="btn btn-primary">Se connecter</button>
-        </form>
-    </div>
-
-    <!-- Passenger Dashboard -->
-    <div id="passenger-screen" class="screen">
-        <div class="dashboard-header">
-            <div>
-                <div class="user-greeting">Bonjour,</div>
-                <div class="user-name" id="passenger-name">...</div>
-            </div>
-            <button class="logout-btn" onclick="App.logout()">Déconnexion</button>
-        </div>
-
-        <div class="map-container">
-            <div id="map"></div>
-        </div>
-
-        <div class="bottom-panel">
-            <div class="search-box">
-                <span class="search-icon">📍</span>
-                <input type="text" class="search-input" placeholder="Où allez-vous ?" id="destination-input">
-            </div>
-            <button class="btn btn-primary" onclick="App.requestRide()">Demander une course</button>
-        </div>
-
-        <div class="bottom-nav">
-            <div class="nav-item active">
-                <span class="nav-icon">🏠</span>
-                <span>Accueil</span>
-            </div>
-            <div class="nav-item" onclick="App.showHistory()">
-                <span class="nav-icon">📋</span>
-                <span>Historique</span>
-            </div>
-            <div class="nav-item" onclick="App.showProfile()">
-                <span class="nav-icon">👤</span>
-                <span>Profil</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Driver Dashboard -->
-    <div id="driver-screen" class="screen">
-        <div class="dashboard-header">
-            <div>
-                <div class="user-greeting">Bon retour,</div>
-                <div class="user-name" id="driver-name">...</div>
-            </div>
-            <button class="logout-btn" onclick="App.logout()">Déconnexion</button>
-        </div>
-
-        <div style="padding: 16px;">
-            <div class="status-card">
-                <div class="status-header">
-                    <span class="status-title" id="status-text">Hors ligne</span>
-                    <div id="status-toggle" class="status-toggle" onclick="App.toggleDriverStatus()"></div>
-                </div>
-                <div class="status-info">Activez pour recevoir des courses</div>
-            </div>
-
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value" id="stat-rides">0</div>
-                    <div class="stat-label">Courses</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="stat-earnings">0</div>
-                    <div class="stat-label">Gains (MAD)</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="stat-rating">5.0</div>
-                    <div class="stat-label">Note</div>
-                </div>
-            </div>
-
-            <h3 style="margin-bottom: 12px; font-size: 16px;">Courses en attente</h3>
-            <div id="pending-rides" style="color: var(--gray-500); font-size: 14px;">
-                Aucune course disponible pour le moment
-            </div>
-        </div>
-
-        <div class="bottom-nav" style="margin-top: auto;">
-            <div class="nav-item active">
-                <span class="nav-icon">🏠</span>
-                <span>Accueil</span>
-            </div>
-            <div class="nav-item" onclick="App.showHistory()">
-                <span class="nav-icon">📋</span>
-                <span>Historique</span>
-            </div>
-            <div class="nav-item" onclick="App.showProfile()">
-                <span class="nav-icon">👤</span>
-                <span>Profil</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast -->
-    <div id="toast" class="toast"></div>
-
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-
-    <!-- App Script -->
     <script>
-        // Configuration
+        // ============================================
+        // APP CONFIGURATION
+        // ============================================
         const API_BASE = 'https://stabilis-it.ch/internal/tripsalama/api';
+        let csrfToken = '';
         let currentUser = null;
-        let map = null;
-        let isOnline = false;
 
-        // App Module
-        const App = {
-            // Initialize
-            init: async function() {
-                console.log('TripSalama App initializing...');
+        // ============================================
+        // UTILITY FUNCTIONS
+        // ============================================
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type + ' show';
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
 
-                // Check for stored session
-                const stored = localStorage.getItem('tripsalama_user');
-                if (stored) {
-                    try {
-                        currentUser = JSON.parse(stored);
-                        await this.verifySession();
-                    } catch (e) {
-                        localStorage.removeItem('tripsalama_user');
-                        this.showScreen('login');
-                    }
-                } else {
-                    // Small delay for splash
-                    setTimeout(() => this.showScreen('login'), 1000);
-                }
+        function showPage(pageId) {
+            document.querySelectorAll('.login-page, .dashboard-page').forEach(p => p.classList.add('hidden'));
+            document.getElementById(pageId).classList.remove('hidden');
+        }
 
-                // Setup login form
-                document.getElementById('login-form').addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    this.login();
-                });
-            },
-
-            // Show screen
-            showScreen: function(screenId) {
-                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                document.getElementById(screenId + '-screen').classList.add('active');
-
-                if (screenId === 'passenger' && !map) {
-                    setTimeout(() => this.initMap(), 100);
-                }
-            },
-
-            // Show toast
-            toast: function(message) {
-                const toast = document.getElementById('toast');
-                toast.textContent = message;
-                toast.classList.add('visible');
-                setTimeout(() => toast.classList.remove('visible'), 3000);
-            },
-
-            // API Call
-            api: async function(endpoint, options = {}) {
-                const url = API_BASE + '/' + endpoint;
-                const defaultOptions = {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include'
-                };
-
-                const mergedOptions = { ...defaultOptions, ...options };
-                if (mergedOptions.body && typeof mergedOptions.body === 'object') {
-                    mergedOptions.body = JSON.stringify(mergedOptions.body);
-                }
-
-                console.log('API:', mergedOptions.method, url);
-                const response = await fetch(url, mergedOptions);
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.message || 'Erreur serveur');
-                }
-
-                return data;
-            },
-
-            // Login
-            login: async function() {
-                const email = document.getElementById('login-email').value;
-                const password = document.getElementById('login-password').value;
-                const btn = document.getElementById('login-btn');
-                const errorDiv = document.getElementById('login-error');
-
+        function setLoading(btn, loading) {
+            const textEl = btn.querySelector('span') || btn;
+            if (loading) {
                 btn.disabled = true;
-                btn.textContent = 'Connexion...';
-                errorDiv.classList.remove('visible');
-
-                try {
-                    // Get CSRF token first
-                    const csrfResponse = await fetch(API_BASE + '/auth?action=csrf');
-                    const csrfData = await csrfResponse.json();
-                    const csrfToken = csrfData.token || '';
-
-                    // Login
-                    const data = await this.api('auth?action=login', {
-                        method: 'POST',
-                        body: { email, password, _csrf_token: csrfToken }
-                    });
-
-                    if (data.success && data.data && data.data.user) {
-                        currentUser = data.data.user;
-                        localStorage.setItem('tripsalama_user', JSON.stringify(currentUser));
-                        this.showDashboard();
-                    } else {
-                        throw new Error(data.message || 'Identifiants incorrects');
-                    }
-
-                } catch (error) {
-                    console.error('Login error:', error);
-                    errorDiv.textContent = error.message || 'Erreur de connexion';
-                    errorDiv.classList.add('visible');
-                } finally {
-                    btn.disabled = false;
-                    btn.textContent = 'Se connecter';
-                }
-            },
-
-            // Verify session
-            verifySession: async function() {
-                try {
-                    const data = await this.api('auth?action=me');
-                    if (data.success && data.data) {
-                        currentUser = data.data;
-                        localStorage.setItem('tripsalama_user', JSON.stringify(currentUser));
-                        this.showDashboard();
-                    } else {
-                        throw new Error('Session invalide');
-                    }
-                } catch (error) {
-                    localStorage.removeItem('tripsalama_user');
-                    this.showScreen('login');
-                }
-            },
-
-            // Show dashboard based on role
-            showDashboard: function() {
-                if (!currentUser) {
-                    this.showScreen('login');
-                    return;
-                }
-
-                if (currentUser.role === 'driver') {
-                    document.getElementById('driver-name').textContent = currentUser.first_name || 'Conductrice';
-                    this.showScreen('driver');
-                    this.loadDriverStats();
-                } else {
-                    document.getElementById('passenger-name').textContent = currentUser.first_name || 'Passagère';
-                    this.showScreen('passenger');
-                }
-            },
-
-            // Logout
-            logout: async function() {
-                try {
-                    await this.api('auth?action=logout', { method: 'POST', body: {} });
-                } catch (e) {
-                    console.warn('Logout API error:', e);
-                }
-                localStorage.removeItem('tripsalama_user');
-                currentUser = null;
-                this.showScreen('login');
-                this.toast('Déconnexion réussie');
-            },
-
-            // Init map
-            initMap: function() {
-                if (map) return;
-
-                map = L.map('map').setView([33.5731, -7.5898], 13); // Casablanca
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap'
-                }).addTo(map);
-
-                // Get user location
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                            map.setView([pos.coords.latitude, pos.coords.longitude], 15);
-                            L.marker([pos.coords.latitude, pos.coords.longitude]).addTo(map)
-                                .bindPopup('Vous êtes ici').openPopup();
-                        },
-                        (err) => console.warn('Geolocation error:', err)
-                    );
-                }
-            },
-
-            // Load driver stats
-            loadDriverStats: async function() {
-                try {
-                    const data = await this.api('driver?action=stats');
-                    if (data.success && data.data) {
-                        document.getElementById('stat-rides').textContent = data.data.rides_today || 0;
-                        document.getElementById('stat-earnings').textContent = data.data.earnings_today || 0;
-                        document.getElementById('stat-rating').textContent = data.data.rating || '5.0';
-                    }
-                } catch (e) {
-                    console.warn('Could not load driver stats:', e);
-                }
-            },
-
-            // Toggle driver status
-            toggleDriverStatus: function() {
-                isOnline = !isOnline;
-                const toggle = document.getElementById('status-toggle');
-                const text = document.getElementById('status-text');
-
-                if (isOnline) {
-                    toggle.classList.add('active');
-                    text.textContent = 'En ligne';
-                    this.toast('Vous êtes maintenant en ligne');
-                } else {
-                    toggle.classList.remove('active');
-                    text.textContent = 'Hors ligne';
-                    this.toast('Vous êtes maintenant hors ligne');
-                }
-            },
-
-            // Request ride
-            requestRide: function() {
-                const destination = document.getElementById('destination-input').value;
-                if (!destination) {
-                    this.toast('Entrez une destination');
-                    return;
-                }
-                this.toast('Recherche de conductrices...');
-            },
-
-            // Show history
-            showHistory: function() {
-                this.toast('Historique - Bientôt disponible');
-            },
-
-            // Show profile
-            showProfile: function() {
-                this.toast('Profil - Bientôt disponible');
+                btn.dataset.originalText = textEl.textContent;
+                textEl.innerHTML = '<div class="spinner" style="margin: 0 auto;"></div>';
+            } else {
+                btn.disabled = false;
+                textEl.textContent = btn.dataset.originalText || 'Se connecter';
             }
-        };
+        }
+
+        // ============================================
+        // API FUNCTIONS
+        // ============================================
+        async function apiRequest(endpoint, options = {}) {
+            const url = API_BASE + '/' + endpoint;
+            const config = {
+                method: options.method || 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    ...options.headers
+                },
+                credentials: 'include'
+            };
+
+            if (csrfToken) {
+                config.headers['X-CSRF-Token'] = csrfToken;
+            }
+
+            if (options.body) {
+                config.body = JSON.stringify(options.body);
+            }
+
+            const response = await fetch(url, config);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || data.error || 'Erreur serveur');
+            }
+
+            return data;
+        }
+
+        async function getCsrfToken() {
+            try {
+                const data = await apiRequest('auth.php?action=csrf');
+                csrfToken = data.token;
+                document.querySelector('meta[name="csrf-token"]').content = csrfToken;
+            } catch (e) {
+                console.error('CSRF error:', e);
+            }
+        }
+
+        async function checkAuth() {
+            try {
+                const data = await apiRequest('auth.php?action=check');
+                if (data.authenticated && data.user) {
+                    currentUser = data.user;
+                    showDashboard();
+                    return true;
+                }
+            } catch (e) {
+                console.error('Auth check error:', e);
+            }
+            return false;
+        }
+
+        async function login(email, password) {
+            const data = await apiRequest('auth.php?action=login', {
+                method: 'POST',
+                body: { email, password }
+            });
+
+            if (data.success && data.user) {
+                currentUser = data.user;
+                showDashboard();
+                return true;
+            }
+
+            throw new Error(data.message || 'Identifiants incorrects');
+        }
+
+        async function logout() {
+            try {
+                await apiRequest('auth.php?action=logout', { method: 'POST' });
+            } catch (e) {
+                console.error('Logout error:', e);
+            }
+            currentUser = null;
+            showPage('loginPage');
+            showToast('Déconnexion réussie', 'success');
+        }
+
+        // ============================================
+        // DASHBOARD FUNCTIONS
+        // ============================================
+        function showDashboard() {
+            if (!currentUser) return;
+
+            const isDriver = currentUser.role === 'driver';
+
+            if (isDriver) {
+                document.getElementById('driverName').textContent = currentUser.first_name || 'Chauffeur';
+                showPage('driverDashboard');
+                loadDriverStats();
+            } else {
+                document.getElementById('passengerName').textContent = currentUser.first_name || 'Utilisateur';
+                showPage('passengerDashboard');
+                loadPassengerStats();
+            }
+        }
+
+        async function loadPassengerStats() {
+            try {
+                const data = await apiRequest('passengers.php?action=dashboard');
+                if (data.stats) {
+                    document.getElementById('passengerRides').textContent = data.stats.total_rides || 0;
+                    document.getElementById('passengerMonth').textContent = data.stats.this_month || 0;
+                    document.getElementById('passengerRating').textContent = (data.user?.rating || 5.0).toFixed(1);
+                }
+            } catch (e) {
+                console.error('Stats error:', e);
+            }
+        }
+
+        async function loadDriverStats() {
+            try {
+                const data = await apiRequest('drivers.php?action=dashboard');
+                if (data.stats) {
+                    document.getElementById('earningsToday').textContent = data.stats.earnings_today || 0;
+                    document.getElementById('earningsWeek').textContent = data.stats.earnings_week || 0;
+                    document.getElementById('earningsMonth').textContent = data.stats.earnings_month || 0;
+                    document.getElementById('ridesToday').textContent = data.stats.rides_today || 0;
+                }
+                if (data.status) {
+                    updateDriverStatus(data.status.is_available);
+                }
+            } catch (e) {
+                console.error('Driver stats error:', e);
+            }
+        }
+
+        function updateDriverStatus(isOnline) {
+            const icon = document.getElementById('statusIcon');
+            const text = document.getElementById('statusText');
+            const hint = document.getElementById('statusHint');
+            const toggle = document.getElementById('availabilityToggle');
+
+            toggle.checked = isOnline;
+            icon.className = 'driver-status-icon ' + (isOnline ? 'online' : 'offline');
+
+            if (isOnline) {
+                icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+                text.textContent = 'En ligne';
+                hint.textContent = 'Vous recevez des demandes';
+            } else {
+                icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+                text.textContent = 'Hors ligne';
+                hint.textContent = 'Activez pour recevoir des courses';
+            }
+        }
+
+        async function toggleDriverAvailability() {
+            const toggle = document.getElementById('availabilityToggle');
+            const isAvailable = toggle.checked;
+
+            try {
+                const data = await apiRequest('drivers.php?action=availability', {
+                    method: 'POST',
+                    body: { is_available: isAvailable }
+                });
+
+                if (data.success) {
+                    updateDriverStatus(isAvailable);
+                    showToast(isAvailable ? 'Vous êtes en ligne' : 'Vous êtes hors ligne', 'success');
+                }
+            } catch (e) {
+                toggle.checked = !isAvailable;
+                showToast(e.message || 'Erreur', 'error');
+            }
+        }
+
+        // ============================================
+        // EVENT HANDLERS
+        // ============================================
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('loginBtn');
+            const errorDiv = document.getElementById('loginError');
+
+            errorDiv.classList.add('hidden');
+            setLoading(btn, true);
+
+            try {
+                await getCsrfToken();
+                await login(email, password);
+            } catch (error) {
+                errorDiv.classList.remove('hidden');
+                document.getElementById('loginErrorText').textContent = error.message;
+            } finally {
+                setLoading(btn, false);
+            }
+        });
+
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const input = document.getElementById('password');
+            const eyeOpen = document.getElementById('eyeOpen');
+            const eyeClosed = document.getElementById('eyeClosed');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                eyeOpen.classList.add('hidden');
+                eyeClosed.classList.remove('hidden');
+            } else {
+                input.type = 'password';
+                eyeOpen.classList.remove('hidden');
+                eyeClosed.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('registerBtn').addEventListener('click', function() {
+            showToast('Inscription disponible sur le site web', 'info');
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+        document.getElementById('driverLogoutBtn').addEventListener('click', logout);
+
+        document.getElementById('availabilityToggle').addEventListener('change', toggleDriverAvailability);
+
+        document.getElementById('bookRideBtn').addEventListener('click', function() {
+            showToast('Réservation disponible bientôt', 'info');
+        });
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        async function init() {
+            await getCsrfToken();
+            const isAuthenticated = await checkAuth();
+
+            if (!isAuthenticated) {
+                showPage('loginPage');
+            }
+        }
 
         // Start app
-        document.addEventListener('DOMContentLoaded', () => App.init());
+        init();
     </script>
 </body>
 </html>
