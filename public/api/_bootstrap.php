@@ -8,6 +8,44 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../backend/php/bootstrap.php';
 
+// ============================================
+// CORS Headers pour l'app mobile Capacitor
+// ============================================
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+
+// Détecter si c'est une requête depuis l'app mobile
+$isMobileApp = (
+    str_contains($origin, 'localhost') ||
+    str_contains($origin, '127.0.0.1') ||
+    str_contains($origin, 'capacitor') ||
+    str_contains($origin, 'ionic') ||
+    $origin === 'null' ||
+    $origin === '' ||
+    str_contains($userAgent, 'TripSalama') ||
+    str_contains($userAgent, 'Capacitor') ||
+    (str_contains($userAgent, 'Android') && str_contains($userAgent, 'wv'))
+);
+
+if ($isMobileApp) {
+    // Pour l'app mobile, autoriser toutes les origines
+    $responseOrigin = $origin ?: '*';
+    if ($responseOrigin === 'null' || $responseOrigin === '') {
+        $responseOrigin = '*';
+    }
+    header('Access-Control-Allow-Origin: ' . $responseOrigin);
+    header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token, Authorization, Accept, Origin, X-Requested-With');
+    header('Access-Control-Max-Age: 86400');
+}
+
+// Gérer les requêtes OPTIONS (preflight CORS)
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
+
 // Headers API
 header('Content-Type: application/json; charset=utf-8');
 header('X-Content-Type-Options: nosniff');

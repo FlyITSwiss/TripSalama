@@ -170,43 +170,29 @@
             isNative = checkCapacitor();
             console.log('Platform:', isNative ? 'Native (Capacitor)' : 'Web');
 
-            try {
-                // Vérifier la connectivité
-                setStatus('Vérification du réseau...');
+            // Approche simplifiée : rediriger directement vers login
+            // Le serveur gérera la session et redirigera si déjà connecté
+            setStatus('Chargement de l\'application...');
 
+            try {
+                // Test simple de connectivité avec un HEAD request
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-                const response = await fetch(APP_URL + '/api/auth?action=check', {
-                    method: 'GET',
-                    credentials: 'include',
-                    signal: controller.signal,
-                    headers: {
-                        'Accept': 'application/json'
-                    }
+                const response = await fetch(APP_URL + '/login', {
+                    method: 'HEAD',
+                    mode: 'no-cors', // Éviter les problèmes CORS
+                    signal: controller.signal
                 });
 
                 clearTimeout(timeoutId);
 
-                if (!response.ok) {
-                    throw new Error('Server responded with ' + response.status);
-                }
-
-                const data = await response.json();
-                console.log('Auth check:', data);
-
-                setStatus('Chargement de l\'application...');
-
-                // Rediriger vers l'app
-                if (data.authenticated) {
-                    const dashboard = data.user.role === 'driver' ? '/driver/dashboard' : '/passenger/dashboard';
-                    window.location.href = APP_URL + dashboard;
-                } else {
-                    window.location.href = APP_URL + '/login';
-                }
+                // Si on arrive ici, le serveur est accessible
+                console.log('Server reachable, redirecting to login...');
+                window.location.replace(APP_URL + '/login');
 
             } catch (error) {
-                console.error('Load error:', error);
+                console.error('Load error:', error.message);
                 retryCount++;
 
                 if (retryCount < 3) {
