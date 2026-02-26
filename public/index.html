@@ -163,45 +163,22 @@
         }
 
         // Charger l'application
-        async function loadApp() {
+        function loadApp() {
             hideError();
-            setStatus('Connexion en cours...');
+            setStatus('Chargement...');
 
             isNative = checkCapacitor();
             console.log('Platform:', isNative ? 'Native (Capacitor)' : 'Web');
 
-            // Approche simplifiée : rediriger directement vers login
-            // Le serveur gérera la session et redirigera si déjà connecté
-            setStatus('Chargement de l\'application...');
+            // Redirection directe - pas de fetch, pas de vérification
+            // Le WebView peut naviguer directement vers l'URL
+            setStatus('Ouverture de TripSalama...');
 
-            try {
-                // Test simple de connectivité avec un HEAD request
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-                const response = await fetch(APP_URL + '/login', {
-                    method: 'HEAD',
-                    mode: 'no-cors', // Éviter les problèmes CORS
-                    signal: controller.signal
-                });
-
-                clearTimeout(timeoutId);
-
-                // Si on arrive ici, le serveur est accessible
-                console.log('Server reachable, redirecting to login...');
-                window.location.replace(APP_URL + '/login');
-
-            } catch (error) {
-                console.error('Load error:', error.message);
-                retryCount++;
-
-                if (retryCount < 3) {
-                    setStatus('Nouvelle tentative (' + retryCount + '/3)...');
-                    setTimeout(loadApp, 2000);
-                } else {
-                    showError();
-                }
-            }
+            // Petit délai pour afficher le message
+            setTimeout(function() {
+                // Redirection directe vers le serveur
+                window.location.href = APP_URL + '/login';
+            }, 500);
         }
 
         // Initialiser Capacitor si disponible
