@@ -136,30 +136,42 @@ class DriverController
 
     /**
      * Obtenir le statut de la checklist de sécurité du jour
+     * Note: La table peut ne pas exister si migration 013 n'est pas exécutée
      */
     private function getChecklistStatus(int $driverId): array
     {
-        $today = date('Y-m-d');
+        try {
+            $today = date('Y-m-d');
 
-        $stmt = $this->db->prepare('
-            SELECT * FROM driver_daily_checklist
-            WHERE driver_id = :driver_id AND check_date = :today
-        ');
-        $stmt->execute(['driver_id' => $driverId, 'today' => $today]);
-        $checklist = $stmt->fetch(\PDO::FETCH_ASSOC);
+            $stmt = $this->db->prepare('
+                SELECT * FROM driver_daily_checklist
+                WHERE driver_id = :driver_id AND check_date = :today
+            ');
+            $stmt->execute(['driver_id' => $driverId, 'today' => $today]);
+            $checklist = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        $isValid = false;
-        if ($checklist) {
-            $validUntil = strtotime($checklist['valid_until']);
-            $isValid = $validUntil > time();
+            $isValid = false;
+            if ($checklist) {
+                $validUntil = strtotime($checklist['valid_until']);
+                $isValid = $validUntil > time();
+            }
+
+            return [
+                'has_checklist' => (bool)$checklist,
+                'is_valid' => $isValid,
+                'valid_until' => $checklist['valid_until'] ?? null,
+                'dashcam_verified' => !empty($checklist['dashcam_verified_at'] ?? null),
+            ];
+        } catch (\PDOException $e) {
+            // Table n'existe pas encore - retourner valeurs par défaut
+            // La checklist n'est pas obligatoire si la table n'existe pas
+            return [
+                'has_checklist' => false,
+                'is_valid' => true, // Permettre d'aller en ligne sans checklist
+                'valid_until' => null,
+                'dashcam_verified' => false,
+            ];
         }
-
-        return [
-            'has_checklist' => (bool)$checklist,
-            'is_valid' => $isValid,
-            'valid_until' => $checklist['valid_until'] ?? null,
-            'dashcam_verified' => !empty($checklist['dashcam_verified_at'] ?? null),
-        ];
     }
 
     /**

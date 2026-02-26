@@ -33,27 +33,41 @@ class DriverStatus
 
     /**
      * Obtenir le statut ou créer un statut par défaut
+     * Note: Gère le cas où la table n'existe pas
      */
     public function getOrCreate(int $driverId): array
     {
-        $status = $this->findByDriverId($driverId);
+        try {
+            $status = $this->findByDriverId($driverId);
 
-        if ($status) {
-            return $status;
+            if ($status) {
+                return $status;
+            }
+
+            // Créer un statut par défaut
+            $this->create($driverId);
+
+            return [
+                'driver_id' => $driverId,
+                'is_available' => false,
+                'current_lat' => null,
+                'current_lng' => null,
+                'heading' => null,
+                'speed' => null,
+                'last_update' => date('Y-m-d H:i:s'),
+            ];
+        } catch (\PDOException $e) {
+            // Table n'existe pas - retourner valeurs par défaut
+            return [
+                'driver_id' => $driverId,
+                'is_available' => false,
+                'current_lat' => null,
+                'current_lng' => null,
+                'heading' => null,
+                'speed' => null,
+                'last_update' => date('Y-m-d H:i:s'),
+            ];
         }
-
-        // Créer un statut par défaut
-        $this->create($driverId);
-
-        return [
-            'driver_id' => $driverId,
-            'is_available' => false,
-            'current_lat' => null,
-            'current_lng' => null,
-            'heading' => null,
-            'speed' => null,
-            'last_update' => date('Y-m-d H:i:s'),
-        ];
     }
 
     /**
