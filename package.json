@@ -7,6 +7,7 @@
     "test": "tests"
   },
   "scripts": {
+    "postinstall": "node scripts/patch-ios-dependencies.js",
     "lint": "eslint public/assets/js --ext .js",
     "lint:fix": "eslint public/assets/js --ext .js --fix",
     "test": "node tests/puppeteer/smoke-tests.js",
@@ -41,7 +42,7 @@
   },
   "homepage": "https://github.com/FlyITSwiss/TripSalama#readme",
   "dependencies": {
-    "@capacitor-community/background-geolocation": "^1.2.0",
+    "@capacitor-community/background-geolocation": "^1.2.26",
     "@capacitor/android": "^8.1.0",
     "@capacitor/app": "^8.0.1",
     "@capacitor/camera": "^8.0.1",
