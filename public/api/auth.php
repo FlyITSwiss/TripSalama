@@ -80,6 +80,16 @@ try {
             }
             break;
 
+        case 'csrf':
+            // Génère un token CSRF pour l'app mobile
+            if ($method !== 'GET') {
+                errorResponse('Method not allowed', 405);
+            }
+            jsonResponse([
+                'token' => generate_csrf()
+            ]);
+            break;
+
         default:
             errorResponse('Action not found', 404);
     }
