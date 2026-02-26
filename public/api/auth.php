@@ -55,6 +55,31 @@ try {
             $controller->apiMe();
             break;
 
+        case 'check':
+            // Vérifie si l'utilisateur est connecté (pour l'app mobile)
+            if ($method !== 'GET') {
+                errorResponse('Method not allowed', 405);
+            }
+            $user = current_user();
+            if ($user) {
+                jsonResponse([
+                    'authenticated' => true,
+                    'user' => [
+                        'id' => $user['id'],
+                        'email' => $user['email'],
+                        'first_name' => $user['first_name'],
+                        'last_name' => $user['last_name'],
+                        'role' => $user['role'],
+                    ]
+                ]);
+            } else {
+                jsonResponse([
+                    'authenticated' => false,
+                    'user' => null
+                ]);
+            }
+            break;
+
         default:
             errorResponse('Action not found', 404);
     }
