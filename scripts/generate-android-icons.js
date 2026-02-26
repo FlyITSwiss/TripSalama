@@ -125,7 +125,7 @@ async function generateIcons() {
 
     const drawableDir = path.join(ANDROID_RES_DIR, 'drawable');
     const valuesDir = path.join(ANDROID_RES_DIR, 'values');
-    const drawableV24Dir = path.join(ANDROID_RES_DIR, 'drawable-v24');
+    const drawableV24Dir = path.join(ANDROID_RES_DIR, 'mipmap-anydpi-v26');
 
     // Create directories
     [drawableDir, valuesDir, drawableV24Dir].forEach(dir => {
@@ -152,8 +152,8 @@ async function generateIcons() {
 
     fs.writeFileSync(path.join(drawableV24Dir, 'ic_launcher.xml'), launcherXml);
     fs.writeFileSync(path.join(drawableV24Dir, 'ic_launcher_round.xml'), launcherXml);
-    console.log('✅ drawable-v24/ic_launcher.xml');
-    console.log('✅ drawable-v24/ic_launcher_round.xml');
+    console.log('✅ mipmap-anydpi-v26/ic_launcher.xml');
+    console.log('✅ mipmap-anydpi-v26/ic_launcher_round.xml');
 
     // colors.xml for background
     const colorsXml = `<?xml version="1.0" encoding="utf-8"?>
