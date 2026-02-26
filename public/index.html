@@ -10,95 +10,94 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
 
     <title>TripSalama</title>
 
-    <!-- Manifest PWA -->
-    <link rel="manifest" href="/manifest.json">
-
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link rel="apple-touch-icon" href="/assets/images/icons/icon-192x192.png">
-
-    <!-- Preconnect -->
-    <link rel="preconnect" href="https://unpkg.com">
-    <link rel="preconnect" href="https://cartodb-basemaps-a.global.ssl.fastly.net">
-
-    <!-- CSS -->
-    <link rel="stylesheet" href="/assets/css/tripsalama-design-system.css">
-    <link rel="stylesheet" href="/assets/css/tripsalama-core.css">
-    <link rel="stylesheet" href="/assets/css/tripsalama-components.css">
-    <link rel="stylesheet" href="/assets/css/tripsalama-responsive.css">
-
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-
-    <!-- Safe Area CSS pour iOS -->
     <style>
-        /* Safe Area Insets pour iOS (notch, home indicator) */
-        :root {
-            --safe-area-inset-top: env(safe-area-inset-top, 0px);
-            --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
-            --safe-area-inset-left: env(safe-area-inset-left, 0px);
-            --safe-area-inset-right: env(safe-area-inset-right, 0px);
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            padding-top: var(--safe-area-inset-top);
-            padding-bottom: var(--safe-area-inset-bottom);
-            padding-left: var(--safe-area-inset-left);
-            padding-right: var(--safe-area-inset-right);
-        }
-
-        /* Header fixe avec safe area */
-        .app-header {
-            padding-top: calc(var(--space-13) + var(--safe-area-inset-top));
-        }
-
-        /* Navigation mobile avec safe area */
-        .mobile-nav {
-            padding-bottom: calc(var(--space-8) + var(--safe-area-inset-bottom));
-        }
-
-        /* Splash screen natif */
-        .capacitor-splash {
-            position: fixed;
-            inset: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #2D5A4A 0%, #1A3D33 100%);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 9999;
-            transition: opacity 0.3s ease;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
         }
 
-        .capacitor-splash.hidden {
-            opacity: 0;
-            pointer-events: none;
+        .splash {
+            text-align: center;
+            color: white;
         }
 
-        .capacitor-splash-logo {
+        .splash-logo {
             width: 120px;
             height: 120px;
             margin-bottom: 24px;
         }
 
-        .capacitor-splash-text {
-            color: white;
-            font-size: 24px;
-            font-weight: 600;
+        .splash-title {
+            font-size: 28px;
+            font-weight: 700;
             letter-spacing: 2px;
+            margin-bottom: 8px;
         }
 
-        .capacitor-splash-loading {
-            margin-top: 32px;
+        .splash-subtitle {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-bottom: 32px;
+        }
+
+        .splash-loading {
             width: 40px;
             height: 40px;
             border: 3px solid rgba(255,255,255,0.3);
             border-top-color: white;
             border-radius: 50%;
             animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        .splash-status {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .error-container {
+            display: none;
+            text-align: center;
+            color: white;
+            padding: 24px;
+        }
+
+        .error-container.visible {
+            display: block;
+        }
+
+        .error-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .error-message {
+            font-size: 16px;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .retry-btn {
+            background: white;
+            color: #2D5A4A;
+            border: none;
+            padding: 14px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 25px;
+            cursor: pointer;
         }
 
         @keyframes spin {
@@ -107,165 +106,165 @@
     </style>
 </head>
 <body>
-    <!-- Splash Screen Capacitor -->
-    <div id="capacitor-splash" class="capacitor-splash">
-        <svg class="capacitor-splash-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Splash Screen -->
+    <div id="splash" class="splash">
+        <svg class="splash-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="50" cy="50" r="45" fill="white" fill-opacity="0.15"/>
             <path d="M50 15C30.67 15 15 30.67 15 50s15.67 35 35 35 35-15.67 35-35S69.33 15 50 15zm0 63c-15.46 0-28-12.54-28-28s12.54-28 28-28 28 12.54 28 28-12.54 28-28 28z" fill="white"/>
             <path d="M50 30c-11.05 0-20 8.95-20 20s8.95 20 20 20 20-8.95 20-20-8.95-20-20-20zm0 33c-7.18 0-13-5.82-13-13s5.82-13 13-13 13 5.82 13 13-5.82 13-13 13z" fill="white"/>
             <circle cx="50" cy="50" r="8" fill="#D4A574"/>
         </svg>
-        <div class="capacitor-splash-text">TripSalama</div>
-        <div class="capacitor-splash-loading"></div>
+        <div class="splash-title">TripSalama</div>
+        <div class="splash-subtitle">Sécurité et sérénité au féminin</div>
+        <div class="splash-loading"></div>
+        <div id="status" class="splash-status">Connexion en cours...</div>
     </div>
 
-    <!-- App Container -->
-    <div id="app"></div>
+    <!-- Error Container -->
+    <div id="error" class="error-container">
+        <div class="error-icon">📡</div>
+        <div class="error-message">
+            Impossible de se connecter au serveur.<br>
+            Vérifiez votre connexion internet.
+        </div>
+        <button class="retry-btn" onclick="loadApp()">Réessayer</button>
+    </div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-
-    <!-- Core Services -->
-    <script src="/assets/js/core/app-config.js"></script>
-    <script src="/assets/js/core/event-bus.js"></script>
-    <script src="/assets/js/core/state-manager.js"></script>
-    <script src="/assets/js/core/api-service.js"></script>
-    <script src="/assets/js/core/fetch-utils.js"></script>
-    <script src="/assets/js/core/i18n.js"></script>
-    <script src="/assets/js/core/navigation.js"></script>
-
-    <!-- Geolocation Services -->
-    <script src="/assets/js/core/geolocation-service.js"></script>
-    <script src="/assets/js/core/background-geolocation.js"></script>
-    <script src="/assets/js/core/offline-sync.js"></script>
-
-    <!-- Map -->
-    <script src="/assets/js/modules/map-controller.js"></script>
-
-    <!-- Components -->
-    <script src="/assets/js/components/toast-notification.js"></script>
-    <script src="/assets/js/components/modal.js"></script>
-
-    <!-- Capacitor -->
-    <script type="module">
-        // Importer Capacitor uniquement en mode natif
-        let isNative = false;
-
-        try {
-            // Vérifier si on est dans Capacitor
-            if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-                isNative = true;
-
-                // Importer les plugins Capacitor
-                const { App } = await import('@capacitor/app');
-                const { StatusBar, Style } = await import('@capacitor/status-bar');
-                const { SplashScreen } = await import('@capacitor/splash-screen');
-                const { Keyboard } = await import('@capacitor/keyboard');
-                const { Network } = await import('@capacitor/network');
-                const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
-
-                // Configurer la barre de statut (iOS/Android)
-                await StatusBar.setStyle({ style: Style.Dark });
-                await StatusBar.setBackgroundColor({ color: '#2D5A4A' });
-
-                // Écouter le retour arrière (Android)
-                App.addListener('backButton', ({ canGoBack }) => {
-                    if (canGoBack) {
-                        window.history.back();
-                    } else {
-                        App.exitApp();
-                    }
-                });
-
-                // Écouter l'état du réseau
-                Network.addListener('networkStatusChange', (status) => {
-                    console.log('Network status changed:', status.connected);
-                    EventBus.emit('network:change', status);
-                });
-
-                // Configurer le clavier (iOS)
-                Keyboard.addListener('keyboardWillShow', (info) => {
-                    document.body.style.setProperty('--keyboard-height', `${info.keyboardHeight}px`);
-                });
-
-                Keyboard.addListener('keyboardWillHide', () => {
-                    document.body.style.setProperty('--keyboard-height', '0px');
-                });
-
-                // Haptic feedback global
-                window.triggerHaptic = async (style = 'light') => {
-                    const impactMap = {
-                        light: ImpactStyle.Light,
-                        medium: ImpactStyle.Medium,
-                        heavy: ImpactStyle.Heavy
-                    };
-                    await Haptics.impact({ style: impactMap[style] || ImpactStyle.Light });
-                };
-
-                // Masquer le splash après initialisation
-                await SplashScreen.hide();
-
-                console.log('Capacitor initialized in native mode');
-            }
-        } catch (error) {
-            console.log('Running in web mode (Capacitor not available)');
-        }
-
-        // Exposer l'état
-        window.TripSalama = {
-            isNative,
-            version: '1.0.0'
-        };
-
-        // Masquer le splash HTML
-        setTimeout(() => {
-            const splash = document.getElementById('capacitor-splash');
-            if (splash) {
-                splash.classList.add('hidden');
-                setTimeout(() => splash.remove(), 300);
-            }
-        }, 500);
-
-        // Rediriger vers la page de login (mode web/PWA)
-        if (!isNative) {
-            // Vérifier si connecté via cookie/session
-            const checkAuth = async () => {
-                try {
-                    const response = await fetch('/api/auth?action=check', {
-                        credentials: 'include'
-                    });
-                    const data = await response.json();
-
-                    if (data.authenticated) {
-                        window.location.href = data.user.role === 'driver'
-                            ? '/driver/dashboard'
-                            : '/passenger/dashboard';
-                    } else {
-                        window.location.href = '/login';
-                    }
-                } catch (error) {
-                    window.location.href = '/login';
-                }
-            };
-
-            checkAuth();
-        }
-    </script>
-
-    <!-- Service Worker Registration -->
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', async () => {
-                try {
-                    const registration = await navigator.serviceWorker.register('/sw.js', {
-                        scope: '/'
-                    });
-                    console.log('Service Worker registered:', registration.scope);
-                } catch (error) {
-                    console.error('Service Worker registration failed:', error);
-                }
-            });
+        // Configuration
+        const APP_URL = 'https://stabilis-it.ch/internal/tripsalama';
+        const TIMEOUT_MS = 10000;
+
+        // État de l'app
+        let isNative = false;
+        let retryCount = 0;
+
+        // Détecter si on est dans Capacitor
+        function checkCapacitor() {
+            return window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
         }
+
+        // Mettre à jour le statut
+        function setStatus(text) {
+            const el = document.getElementById('status');
+            if (el) el.textContent = text;
+        }
+
+        // Afficher l'erreur
+        function showError() {
+            document.getElementById('splash').style.display = 'none';
+            document.getElementById('error').classList.add('visible');
+        }
+
+        // Masquer l'erreur
+        function hideError() {
+            document.getElementById('splash').style.display = 'block';
+            document.getElementById('error').classList.remove('visible');
+        }
+
+        // Charger l'application
+        async function loadApp() {
+            hideError();
+            setStatus('Connexion en cours...');
+
+            isNative = checkCapacitor();
+            console.log('Platform:', isNative ? 'Native (Capacitor)' : 'Web');
+
+            try {
+                // Vérifier la connectivité
+                setStatus('Vérification du réseau...');
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+                const response = await fetch(APP_URL + '/api/auth?action=check', {
+                    method: 'GET',
+                    credentials: 'include',
+                    signal: controller.signal,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error('Server responded with ' + response.status);
+                }
+
+                const data = await response.json();
+                console.log('Auth check:', data);
+
+                setStatus('Chargement de l\'application...');
+
+                // Rediriger vers l'app
+                if (data.authenticated) {
+                    const dashboard = data.user.role === 'driver' ? '/driver/dashboard' : '/passenger/dashboard';
+                    window.location.href = APP_URL + dashboard;
+                } else {
+                    window.location.href = APP_URL + '/login';
+                }
+
+            } catch (error) {
+                console.error('Load error:', error);
+                retryCount++;
+
+                if (retryCount < 3) {
+                    setStatus('Nouvelle tentative (' + retryCount + '/3)...');
+                    setTimeout(loadApp, 2000);
+                } else {
+                    showError();
+                }
+            }
+        }
+
+        // Initialiser Capacitor si disponible
+        async function initCapacitor() {
+            if (!checkCapacitor()) return;
+
+            try {
+                const { Capacitor } = window;
+                const plugins = Capacitor.Plugins;
+
+                // Status Bar
+                if (plugins.StatusBar) {
+                    await plugins.StatusBar.setBackgroundColor({ color: '#2D5A4A' });
+                    await plugins.StatusBar.setStyle({ style: 'DARK' });
+                }
+
+                // Splash Screen natif
+                if (plugins.SplashScreen) {
+                    await plugins.SplashScreen.hide();
+                }
+
+                // Back button (Android)
+                if (plugins.App) {
+                    plugins.App.addListener('backButton', ({ canGoBack }) => {
+                        if (canGoBack) {
+                            window.history.back();
+                        } else {
+                            plugins.App.exitApp();
+                        }
+                    });
+                }
+
+                console.log('Capacitor initialized');
+            } catch (e) {
+                console.warn('Capacitor init error:', e);
+            }
+        }
+
+        // Démarrer
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initCapacitor();
+            loadApp();
+        });
+
+        // Aussi gérer deviceready pour Cordova/Capacitor
+        document.addEventListener('deviceready', async () => {
+            await initCapacitor();
+            loadApp();
+        }, false);
     </script>
 </body>
 </html>

@@ -6,11 +6,11 @@
   "server": {
     "androidScheme": "https",
     "iosScheme": "https",
-    "hostname": "app.tripsalama.com",
     "allowNavigation": [
-      "https://api.tripsalama.com/*",
+      "https://stabilis-it.ch/*",
       "https://*.stripe.com/*",
-      "https://*.openstreetmap.org/*"
+      "https://*.openstreetmap.org/*",
+      "https://unpkg.com/*"
     ]
   },
   "plugins": {
