@@ -1228,6 +1228,13 @@
             }
         }
 
+        // Expose functions globally for testing and debugging
+        window.showToast = showToast;
+        window.showPage = showPage;
+        window.showDashboard = showDashboard;
+        window.logout = logout;
+        window.updateDriverStatus = updateDriverStatus;
+
         // Start app
         init();
     </script>

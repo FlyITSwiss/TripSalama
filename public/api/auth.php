@@ -86,7 +86,7 @@ try {
                 errorResponse('Method not allowed', 405);
             }
             jsonResponse([
-                'token' => generate_csrf()
+                'token' => csrf_token()
             ]);
             break;
 
