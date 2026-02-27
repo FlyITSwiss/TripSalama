@@ -73,6 +73,32 @@ if ($isSuccess && $apkUrl) {
           Version #$version • Cliquez depuis votre téléphone Android
         </p>
       </div>
+
+      <!-- Test credentials section -->
+      <div style="background: #f0f4f8; border-radius: 12px; padding: 20px; margin: 20px 0; border-left: 4px solid #2D5A4A;">
+        <p style="color: #2D5A4A; font-size: 16px; font-weight: 700; margin: 0 0 15px 0;">
+          🔑 Identifiants de test
+        </p>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <tr>
+            <td style="padding: 8px 0; color: #666; width: 100px;">👩 Passagère</td>
+            <td style="padding: 8px 0;">
+              <strong>passenger@tripsalama.ch</strong><br>
+              <span style="color: #888;">Mdp: TripSalama2025!</span>
+            </td>
+          </tr>
+          <tr style="border-top: 1px solid #ddd;">
+            <td style="padding: 8px 0; color: #666;">🚗 Conductrice</td>
+            <td style="padding: 8px 0;">
+              <strong>driver@tripsalama.ch</strong><br>
+              <span style="color: #888;">Mdp: TripSalama2025!</span>
+            </td>
+          </tr>
+        </table>
+        <p style="color: #888; font-size: 11px; margin: 12px 0 0 0; font-style: italic;">
+          ⚠️ Comptes de test uniquement - Ne pas utiliser en production
+        </p>
+      </div>
 HTML;
 }
 

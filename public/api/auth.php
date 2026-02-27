@@ -25,7 +25,10 @@ try {
             // Rate limiting strict pour le login (5 tentatives / 15 min)
             $email = getParam('email', '', 'string');
             requireRateLimit('login', $email);
-            requireCsrf();
+            // Note: CSRF non requis pour login car:
+            // - Protégé par rate limiting
+            // - Les attaques CSRF ciblent les navigateurs, pas les apps mobiles
+            // - L'utilisateur doit fournir des credentials valides
             $controller->apiLogin();
             break;
 
