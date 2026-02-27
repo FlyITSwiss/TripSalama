@@ -121,6 +121,44 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
+      # Upload APK to VPS for direct download
+      - name: Setup SSH for APK upload
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          cat > ~/.ssh/config << 'SSHCONFIG'
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            ConnectTimeout 30
+          SSHCONFIG
+          chmod 600 ~/.ssh/config
+
+      - name: Upload APK to VPS
+        id: upload_apk
+        run: |
+          APK_NAME="TripSalama-v${{ github.run_number }}.apk"
+          APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
+
+          if [ -f "$APK_PATH" ]; then
+            # Create downloads directory on VPS
+            ssh debian@83.228.205.222 "sudo mkdir -p /var/www/tripsalama/public/downloads && sudo chown www-data:www-data /var/www/tripsalama/public/downloads && sudo chmod 755 /var/www/tripsalama/public/downloads"
+
+            # Upload APK with versioned name
+            scp "$APK_PATH" "debian@83.228.205.222:/tmp/$APK_NAME"
+            ssh debian@83.228.205.222 "sudo mv /tmp/$APK_NAME /var/www/tripsalama/public/downloads/$APK_NAME && sudo chown www-data:www-data /var/www/tripsalama/public/downloads/$APK_NAME"
+
+            # Also keep a "latest" version
+            ssh debian@83.228.205.222 "sudo cp /var/www/tripsalama/public/downloads/$APK_NAME /var/www/tripsalama/public/downloads/TripSalama-latest.apk"
+
+            echo "apk_url=https://stabilis-it.ch/internal/tripsalama/downloads/$APK_NAME" >> $GITHUB_OUTPUT
+            echo "✅ APK uploaded: $APK_NAME"
+          else
+            echo "apk_url=" >> $GITHUB_OUTPUT
+            echo "⚠️ Release APK not found"
+          fi
+
       - name: Build Summary
         if: always()
         run: |
@@ -138,9 +176,8 @@ jobs:
           echo "| Branche | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Auteur | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "- [Download Debug APK](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
-          echo "- [Download Release APK](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Téléchargement direct" >> $GITHUB_STEP_SUMMARY
+          echo "- [📱 Télécharger l'APK](https://stabilis-it.ch/internal/tripsalama/downloads/TripSalama-v${{ github.run_number }}.apk)" >> $GITHUB_STEP_SUMMARY
 
       # Email notification via VPS webhook (bypasses GitHub IP restrictions on Office 365)
       - name: Send Build Notification Email
@@ -155,7 +192,9 @@ jobs:
               "branch": "${{ github.ref_name }}",
               "actor": "${{ github.actor }}",
               "message": "",
-              "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+              "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+              "apk_url": "https://stabilis-it.ch/internal/tripsalama/downloads/TripSalama-v${{ github.run_number }}.apk",
+              "version": "${{ github.run_number }}"
             }' \
             --fail --silent --show-error || echo "Email notification failed (non-blocking)"
         continue-on-error: true

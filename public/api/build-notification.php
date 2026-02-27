@@ -39,6 +39,8 @@ $branch = $input['branch'] ?? 'main';
 $actor = $input['actor'] ?? 'GitHub';
 $runUrl = $input['run_url'] ?? '#';
 $message = $input['message'] ?? '';
+$apkUrl = $input['apk_url'] ?? '';
+$version = $input['version'] ?? '';
 
 // SMTP Configuration (same as Helios)
 $smtpHost = 'smtp.office365.com';
@@ -54,50 +56,78 @@ $isSuccess = ($status === 'success');
 $statusEmoji = $isSuccess ? '✅' : '❌';
 $statusText = $isSuccess ? 'Build réussi' : 'Build échoué';
 $statusClass = $isSuccess ? 'status-success' : 'status-failure';
-$subject = "🚀 TripSalama Android Build - $statusEmoji $statusText";
+$subject = "🚀 TripSalama Android Build #$version - $statusEmoji $statusText";
+
+// APK download section (only if build succeeded and URL provided)
+$apkSection = '';
+if ($isSuccess && $apkUrl) {
+    $apkSection = <<<HTML
+      <div style="background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); border-radius: 12px; padding: 25px; margin: 25px 0; text-align: center;">
+        <p style="color: white; font-size: 18px; font-weight: 600; margin: 0 0 15px 0;">
+          📱 APK prêt à installer !
+        </p>
+        <a href="$apkUrl" style="display: inline-block; background: white; color: #2E7D32; text-decoration: none; padding: 16px 40px; border-radius: 30px; font-size: 16px; font-weight: 700; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+          ⬇️ TÉLÉCHARGER L'APK
+        </a>
+        <p style="color: rgba(255,255,255,0.8); font-size: 12px; margin: 15px 0 0 0;">
+          Version #$version • Cliquez depuis votre téléphone Android
+        </p>
+      </div>
+HTML;
+}
+
+$shortCommit = substr($commit, 0, 7);
 
 $htmlBody = <<<HTML
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: 'Inter', Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
-    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-    .header { background: linear-gradient(135deg, #2D5A4A 0%, #1a3d32 100%); color: white; padding: 30px; text-align: center; }
-    .header h1 { margin: 0; font-size: 28px; font-weight: 700; }
-    .header p { margin: 10px 0 0; opacity: 0.9; font-size: 14px; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .header { background: linear-gradient(135deg, #2D5A4A 0%, #1a3d32 100%); color: white; padding: 35px; text-align: center; }
+    .header h1 { margin: 0; font-size: 32px; font-weight: 700; }
+    .header p { margin: 12px 0 0; opacity: 0.9; font-size: 15px; }
     .content { padding: 30px; }
-    .status-badge { display: inline-block; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 14px; }
+    .status-badge { display: inline-block; padding: 12px 24px; border-radius: 25px; font-weight: 700; font-size: 16px; }
     .status-success { background: #E6F9EF; color: #06C167; }
     .status-failure { background: #FFEFEC; color: #E11900; }
-    .info-box { background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0; }
-    .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .info-box { background: #f8f9fa; border-radius: 12px; padding: 20px; margin: 20px 0; }
+    .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
     .info-row:last-child { border-bottom: none; }
     .info-label { color: #666; font-size: 14px; }
-    .info-value { font-weight: 600; color: #333; }
-    .btn { display: inline-block; background: #2D5A4A; color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; margin: 10px 5px; }
+    .info-value { font-weight: 600; color: #333; font-size: 14px; }
+    .btn { display: inline-block; background: #2D5A4A; color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; margin: 8px 5px; font-size: 14px; }
     .btn:hover { background: #1a3d32; }
-    .btn-secondary { background: #276EF1; }
-    .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; }
+    .btn-secondary { background: #6c757d; }
+    .footer { background: #f8f9fa; padding: 25px; text-align: center; font-size: 13px; color: #666; border-top: 1px solid #eee; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
       <h1>🚗 TripSalama</h1>
-      <p>Build Android - Notification automatique</p>
+      <p>Build Android #$version</p>
     </div>
     <div class="content">
-      <p style="text-align: center;">
+      <p style="text-align: center; margin-bottom: 25px;">
         <span class="status-badge $statusClass">
           $statusEmoji $statusText
         </span>
       </p>
 
+      $apkSection
+
       <div class="info-box">
         <div class="info-row">
+          <span class="info-label">Version</span>
+          <span class="info-value">#$version</span>
+        </div>
+        <div class="info-row">
           <span class="info-label">Commit</span>
-          <span class="info-value">$commit</span>
+          <span class="info-value">$shortCommit</span>
         </div>
         <div class="info-row">
           <span class="info-label">Branche</span>
@@ -107,20 +137,16 @@ $htmlBody = <<<HTML
           <span class="info-label">Auteur</span>
           <span class="info-value">$actor</span>
         </div>
-        <div class="info-row">
-          <span class="info-label">Message</span>
-          <span class="info-value">$message</span>
-        </div>
       </div>
 
-      <p style="text-align: center; margin-top: 30px;">
-        <a href="https://stabilis-it.ch/internal/tripsalama" class="btn">🌐 Ouvrir TripSalama</a>
-        <a href="$runUrl" class="btn btn-secondary">📋 Voir le build</a>
+      <p style="text-align: center; margin-top: 25px;">
+        <a href="https://stabilis-it.ch/internal/tripsalama" class="btn">🌐 Ouvrir l'app web</a>
+        <a href="$runUrl" class="btn btn-secondary">📋 Logs du build</a>
       </p>
     </div>
     <div class="footer">
-      <p>TripSalama - VTC sécurisé pour femmes</p>
-      <p>© 2026 Stabilis IT - Genève, Suisse</p>
+      <p style="margin: 0 0 8px 0;"><strong>TripSalama</strong> - VTC sécurisé pour femmes</p>
+      <p style="margin: 0; color: #999;">© 2026 Stabilis IT - Genève, Suisse</p>
     </div>
   </div>
 </body>
@@ -132,7 +158,7 @@ $result = sendViaSMTP($toEmail, $subject, $htmlBody, $smtpHost, $smtpPort, $smtp
 
 header('Content-Type: application/json');
 if ($result) {
-    echo json_encode(['success' => true, 'message' => 'Email sent']);
+    echo json_encode(['success' => true, 'message' => 'Email sent', 'apk_url' => $apkUrl]);
 } else {
     http_response_code(500);
     echo json_encode(['success' => false, 'error' => 'Failed to send email']);
@@ -197,7 +223,6 @@ function sendViaSMTP(string $to, string $subject, string $htmlBody,
         }
 
         // Build message
-        $boundary = md5(uniqid(time()));
         $message = "From: =?UTF-8?B?" . base64_encode($fromName) . "?= <$fromEmail>\r\n";
         $message .= "To: $to\r\n";
         $message .= "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=\r\n";
