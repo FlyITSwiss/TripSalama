@@ -127,7 +127,7 @@ jobs:
         with:
           server_address: smtp.office365.com
           server_port: 587
-          secure: true
+          secure: false
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
           subject: "🚀 TripSalama Android Build - ${{ job.status == 'success' && '✅ Succès' || '❌ Échec' }}"
