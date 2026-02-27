@@ -405,6 +405,69 @@ include /etc/nginx/snippets/tripsalama.conf;
 | Secret | Usage |
 |--------|-------|
 | `SSH_PRIVATE_KEY` | Accès SSH au VPS (debian@83.228.205.222) |
+| `SMTP_USERNAME` | Email Office 365 (information-contact@stabilis-it.ch) |
+| `SMTP_PASSWORD` | Mot de passe SMTP Office 365 |
+
+---
+
+## BUILD MOBILE - Android & iOS
+
+### Workflow automatique
+
+Chaque push sur `main` déclenche :
+1. **Build Android APK** (Debug + Release signée)
+2. **Email de notification** à tarik.gilani@stabilis-it.ch
+3. **Upload artifacts** sur GitHub Actions
+
+### Email de build OBLIGATOIRE
+
+**À chaque build, un email est envoyé automatiquement avec :**
+- Status (succès/échec)
+- Lien vers l'app : https://stabilis-it.ch/internal/tripsalama
+- Lien vers le build GitHub Actions (téléchargement APK)
+- Détails du commit (auteur, message, branche)
+
+**Template :** Style Helios 2FA avec branding TripSalama (émeraude #2D5A4A)
+
+### Configuration Capacitor
+
+| Paramètre | Valeur |
+|-----------|--------|
+| App ID | `com.tripsalama.app` |
+| Java | 21 |
+| Gradle | 8.11.1 |
+| AGP | 8.7.3 |
+| SDK (compile/target) | 35 |
+| Capacitor | 8.1.0 |
+
+### Keystore Android
+
+- **Généré automatiquement** par GitHub Actions à chaque build
+- **Mot de passe :** `tripsalama2026`
+- **Alias :** `tripsalama`
+- **Pour Play Store :** Sauvegarder le keystore du premier build réussi
+
+### Commandes locales (si Java 21 installé)
+
+```bash
+# Sync Capacitor
+npm run cap:sync
+
+# Build Debug APK
+cd android && ./gradlew assembleDebug
+
+# Build Release APK (signée)
+cd android && ./gradlew assembleRelease
+```
+
+### RÈGLE : Email systématique
+
+**CHAQUE build Android doit envoyer un email à tarik.gilani@stabilis-it.ch** contenant :
+- ✅ ou ❌ selon le résultat
+- URL de TripSalama : https://stabilis-it.ch/internal/tripsalama
+- URL du build GitHub Actions avec lien de téléchargement APK
+
+Si l'email n'est pas envoyé → vérifier les secrets `SMTP_USERNAME` et `SMTP_PASSWORD`
 
 ### INTERDICTIONS ABSOLUES
 
