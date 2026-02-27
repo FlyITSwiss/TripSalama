@@ -1228,12 +1228,14 @@
             }
         }
 
-        // Expose functions globally for testing and debugging
+        // Expose functions and state globally for testing and debugging
         window.showToast = showToast;
         window.showPage = showPage;
         window.showDashboard = showDashboard;
         window.logout = logout;
         window.updateDriverStatus = updateDriverStatus;
+        window.setCurrentUser = (user) => { currentUser = user; };
+        window.getCurrentUser = () => currentUser;
 
         // Start app
         init();
