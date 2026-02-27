@@ -18,6 +18,10 @@ class AuthService
     private User $userModel;
     private Vehicle $vehicleModel;
 
+    // Remember me cookie settings (30 days - standard)
+    private const REMEMBER_COOKIE_NAME = 'tripsalama_remember';
+    private const REMEMBER_TOKEN_EXPIRY_DAYS = 30;
+
     public function __construct(PDO $db)
     {
         $this->db = $db;
@@ -124,6 +128,11 @@ class AuthService
      */
     public function logout(): void
     {
+        // Effacer le token "Remember Me" si présent
+        if (isset($_SESSION['user']['id'])) {
+            $this->clearRememberTokens((int)$_SESSION['user']['id']);
+        }
+
         $_SESSION = [];
 
         if (ini_get('session.use_cookies')) {
@@ -231,5 +240,198 @@ class AuthService
     public function verifyPassword(string $password, string $hash): bool
     {
         return password_verify($password, $hash);
+    }
+
+    // ========================================
+    // REMEMBER ME FUNCTIONALITY
+    // ========================================
+
+    /**
+     * Créer un token "Remember Me" pour l'utilisateur
+     */
+    public function createRememberToken(int $userId): void
+    {
+        // Générer un token sécurisé
+        $token = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $token);
+
+        // Date d'expiration (30 jours)
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+' . self::REMEMBER_TOKEN_EXPIRY_DAYS . ' days'));
+
+        // Supprimer les anciens tokens de cet utilisateur (limite à 5 appareils)
+        $this->cleanupOldTokens($userId);
+
+        // Insérer le nouveau token
+        $stmt = $this->db->prepare('
+            INSERT INTO remember_tokens (user_id, token_hash, expires_at, user_agent, ip_address)
+            VALUES (?, ?, ?, ?, ?)
+        ');
+        $stmt->execute([
+            $userId,
+            $tokenHash,
+            $expiresAt,
+            $_SERVER['HTTP_USER_AGENT'] ?? null,
+            $_SERVER['REMOTE_ADDR'] ?? null
+        ]);
+
+        // Définir le cookie
+        $this->setRememberCookie($userId . ':' . $token, self::REMEMBER_TOKEN_EXPIRY_DAYS);
+    }
+
+    /**
+     * Valider un token "Remember Me" et reconnecter l'utilisateur
+     */
+    public function validateRememberToken(): bool
+    {
+        $cookie = $_COOKIE[self::REMEMBER_COOKIE_NAME] ?? null;
+
+        if (!$cookie) {
+            return false;
+        }
+
+        // Le cookie contient "userId:token"
+        $parts = explode(':', $cookie, 2);
+        if (count($parts) !== 2) {
+            $this->clearRememberCookie();
+            return false;
+        }
+
+        [$userId, $token] = $parts;
+        $userId = (int)$userId;
+        $tokenHash = hash('sha256', $token);
+
+        // Vérifier le token en base
+        $stmt = $this->db->prepare('
+            SELECT rt.*, u.is_active
+            FROM remember_tokens rt
+            JOIN users u ON u.id = rt.user_id
+            WHERE rt.user_id = ?
+              AND rt.token_hash = ?
+              AND rt.expires_at > NOW()
+        ');
+        $stmt->execute([$userId, $tokenHash]);
+        $tokenData = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$tokenData || !$tokenData['is_active']) {
+            $this->clearRememberCookie();
+            return false;
+        }
+
+        // Récupérer l'utilisateur et le connecter
+        $user = $this->userModel->findById($userId);
+        if (!$user) {
+            $this->clearRememberCookie();
+            return false;
+        }
+
+        // Créer la session
+        $_SESSION['user'] = [
+            'id' => (int)$user['id'],
+            'email' => $user['email'],
+            'first_name' => $user['first_name'],
+            'last_name' => $user['last_name'],
+            'role' => $user['role'],
+            'avatar_path' => $user['avatar_path'] ?? null,
+            'is_verified' => (bool)$user['is_verified'],
+        ];
+
+        // Mettre à jour la dernière connexion
+        $this->userModel->updateLastLogin($userId);
+
+        // Rotation du token (sécurité)
+        $this->deleteRememberToken($tokenHash);
+        $this->createRememberToken($userId);
+
+        return true;
+    }
+
+    /**
+     * Supprimer tous les tokens "Remember Me" de l'utilisateur
+     */
+    public function clearRememberTokens(int $userId): void
+    {
+        $stmt = $this->db->prepare('DELETE FROM remember_tokens WHERE user_id = ?');
+        $stmt->execute([$userId]);
+        $this->clearRememberCookie();
+    }
+
+    /**
+     * Supprimer un token spécifique
+     */
+    private function deleteRememberToken(string $tokenHash): void
+    {
+        $stmt = $this->db->prepare('DELETE FROM remember_tokens WHERE token_hash = ?');
+        $stmt->execute([$tokenHash]);
+    }
+
+    /**
+     * Nettoyer les anciens tokens (garder max 5 par utilisateur)
+     */
+    private function cleanupOldTokens(int $userId): void
+    {
+        // Supprimer les tokens expirés
+        $stmt = $this->db->prepare('DELETE FROM remember_tokens WHERE user_id = ? AND expires_at < NOW()');
+        $stmt->execute([$userId]);
+
+        // Garder seulement les 4 plus récents (le 5ème sera le nouveau)
+        $stmt = $this->db->prepare('
+            DELETE FROM remember_tokens
+            WHERE user_id = ?
+              AND id NOT IN (
+                  SELECT id FROM (
+                      SELECT id FROM remember_tokens
+                      WHERE user_id = ?
+                      ORDER BY created_at DESC
+                      LIMIT 4
+                  ) AS recent
+              )
+        ');
+        $stmt->execute([$userId, $userId]);
+    }
+
+    /**
+     * Définir le cookie "Remember Me"
+     */
+    private function setRememberCookie(string $value, int $days): void
+    {
+        $expiry = time() + ($days * 24 * 60 * 60);
+        $secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+        $basePath = config('base_path', '') ?: '/';
+
+        setcookie(
+            self::REMEMBER_COOKIE_NAME,
+            $value,
+            [
+                'expires' => $expiry,
+                'path' => $basePath,
+                'domain' => '',
+                'secure' => $secure,
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]
+        );
+    }
+
+    /**
+     * Supprimer le cookie "Remember Me"
+     */
+    private function clearRememberCookie(): void
+    {
+        $basePath = config('base_path', '') ?: '/';
+
+        setcookie(
+            self::REMEMBER_COOKIE_NAME,
+            '',
+            [
+                'expires' => time() - 3600,
+                'path' => $basePath,
+                'domain' => '',
+                'secure' => true,
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]
+        );
+
+        unset($_COOKIE[self::REMEMBER_COOKIE_NAME]);
     }
 }

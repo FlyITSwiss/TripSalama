@@ -18,9 +18,10 @@ return [
     'default_lang' => $_ENV['DEFAULT_LANG'] ?? 'fr',
     'available_langs' => ['fr', 'en'],
 
-    // Session
-    'session_lifetime' => (int)($_ENV['SESSION_LIFETIME'] ?? 120),
+    // Session (24h par défaut, remember me pour 30 jours)
+    'session_lifetime' => (int)($_ENV['SESSION_LIFETIME'] ?? 1440), // 24 heures
     'session_secure' => filter_var($_ENV['SESSION_SECURE'] ?? false, FILTER_VALIDATE_BOOLEAN),
+    'remember_me_days' => (int)($_ENV['REMEMBER_ME_DAYS'] ?? 30),
 
     // Uploads
     'max_upload_size' => 5 * 1024 * 1024, // 5MB

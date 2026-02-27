@@ -70,6 +70,7 @@ class AuthController
 
         $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
+        $rememberMe = isset($_POST['remember_me']);
 
         if (empty($email) || empty($password)) {
             flash('error', __('msg.login_failed'));
@@ -101,6 +102,12 @@ class AuthController
 
         $this->rateLimitService->clear($rateLimitKey, 'login');
         $_SESSION['user'] = $result['user'];
+
+        // Créer token "Remember Me" si demandé
+        if ($rememberMe) {
+            $this->authService->createRememberToken((int)$result['user']['id']);
+        }
+
         flash('success', __('msg.login_success'));
         $this->redirectToDashboard();
     }
@@ -245,6 +252,8 @@ class AuthController
         $data = getRequestData();
         $email = trim($data['email'] ?? '');
         $password = $data['password'] ?? '';
+        // Pour l'app mobile, remember_me est true par défaut
+        $rememberMe = $data['remember_me'] ?? true;
 
         if (empty($email) || empty($password)) {
             errorResponse(__('msg.login_failed'), 400);
@@ -267,6 +276,12 @@ class AuthController
 
         $this->rateLimitService->clear($rateLimitKey, 'login');
         $_SESSION['user'] = $result['user'];
+
+        // Créer token "Remember Me" (toujours pour l'app mobile)
+        if ($rememberMe) {
+            $this->authService->createRememberToken((int)$result['user']['id']);
+        }
+
         successResponse($result['user'], __('msg.login_success'));
     }
 

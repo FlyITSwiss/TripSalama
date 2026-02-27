@@ -97,10 +97,45 @@ function current_user(): ?array
 
 /**
  * Verifier si l'utilisateur est connecte
+ * Inclut auto-login via remember me token
  */
 function is_authenticated(): bool
 {
-    return isset($_SESSION['user']) && !empty($_SESSION['user']['id']);
+    // Vérifier si session utilisateur existe
+    if (isset($_SESSION['user']) && !empty($_SESSION['user']['id'])) {
+        return true;
+    }
+
+    // Sinon, tenter auto-login via remember token
+    if (isset($_COOKIE['tripsalama_remember'])) {
+        return try_remember_me_login();
+    }
+
+    return false;
+}
+
+/**
+ * Tenter une connexion automatique via remember me token
+ */
+function try_remember_me_login(): bool
+{
+    static $attempted = false;
+
+    // Éviter les boucles infinies
+    if ($attempted) {
+        return false;
+    }
+    $attempted = true;
+
+    try {
+        $db = getDbConnection();
+        require_once BACKEND_PATH . '/Services/AuthService.php';
+        $authService = new \TripSalama\Services\AuthService($db);
+        return $authService->validateRememberToken();
+    } catch (\Exception $e) {
+        app_log('warning', 'Remember me auto-login failed: ' . $e->getMessage());
+        return false;
+    }
 }
 
 /**

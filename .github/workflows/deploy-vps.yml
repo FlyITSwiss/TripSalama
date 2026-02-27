@@ -145,6 +145,15 @@ jobs:
               "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:${{ env.REMOTE_PATH }}/database/"
           fi
 
+      - name: Deploy scripts
+        run: |
+          if [ -d "scripts" ]; then
+            rsync -avz \
+              -e "ssh" \
+              "scripts/" \
+              "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:${{ env.REMOTE_PATH }}/scripts/"
+          fi
+
       - name: Setup MySQL user and database
         run: |
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} '
@@ -167,10 +176,22 @@ jobs:
               sudo mysql tripsalama < /var/www/tripsalama/database/migrations/006_identity_verification.sql 2>/dev/null || echo "Migration already applied or skipped"
             fi
 
+            # Run remember_tokens migration
+            if [ -f /var/www/tripsalama/database/migrations/014_remember_tokens.sql ]; then
+              echo "Running remember_tokens migration..."
+              sudo mysql tripsalama < /var/www/tripsalama/database/migrations/014_remember_tokens.sql 2>/dev/null || echo "Migration already applied or skipped"
+            fi
+
             # Mark all pending/in_progress rides as completed
             echo "=== Cleaning up rides ==="
             sudo mysql tripsalama -e "UPDATE rides SET status = '"'"'completed'"'"', completed_at = NOW() WHERE status IN ('"'"'pending'"'"', '"'"'accepted'"'"', '"'"'driver_arriving'"'"', '"'"'in_progress'"'"');"
             echo "All pending rides marked as completed"
+
+            # Fix test users passwords
+            echo "=== Fixing test users ==="
+            if [ -f /var/www/tripsalama/scripts/fix-test-users.php ]; then
+              php /var/www/tripsalama/scripts/fix-test-users.php
+            fi
           '
 
       - name: Create production config
