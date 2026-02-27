@@ -4,7 +4,7 @@
 
 workflows:
   # ============================================
-  # ANDROID BUILD
+  # ANDROID BUILD (Debug + Signed Release)
   # ============================================
   android-workflow:
     name: Android Build
@@ -14,6 +14,11 @@ workflows:
     environment:
       node: 20
       java: 17
+      vars:
+        # Keystore auto-generated if not provided via CM_KEYSTORE
+        KEYSTORE_PASSWORD: tripsalama2026
+        KEY_ALIAS: tripsalama
+        KEY_PASSWORD: tripsalama2026
 
     triggering:
       events:
@@ -35,13 +40,52 @@ workflows:
       - name: Generate Android icons
         script: node scripts/generate-android-icons.js || true
 
+      - name: Setup Keystore
+        script: |
+          # Generate keystore for signing
+          KEYSTORE_PATH="$CM_BUILD_DIR/android/app/release.keystore"
+
+          if [ -n "$CM_KEYSTORE" ]; then
+            echo "Using provided keystore from CM_KEYSTORE"
+            echo $CM_KEYSTORE | base64 --decode > "$KEYSTORE_PATH"
+          else
+            echo "Generating new keystore for this build..."
+            keytool -genkey -v \
+              -keystore "$KEYSTORE_PATH" \
+              -alias "$KEY_ALIAS" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass "$KEYSTORE_PASSWORD" \
+              -keypass "$KEY_PASSWORD" \
+              -dname "CN=TripSalama, OU=Mobile, O=Stabilis IT, L=Geneva, ST=Geneva, C=CH"
+
+            # Export keystore as base64 for future use
+            echo ""
+            echo "=========================================="
+            echo "IMPORTANT: Save this keystore for Play Store releases!"
+            echo "Add as CM_KEYSTORE environment variable in Codemagic:"
+            echo "=========================================="
+            base64 -w 0 "$KEYSTORE_PATH"
+            echo ""
+            echo "=========================================="
+          fi
+
+          # Create keystore.properties for Gradle
+          cat > "$CM_BUILD_DIR/android/keystore.properties" << EOF
+          storeFile=app/release.keystore
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
       - name: Build Debug APK
         script: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Build Release APK
+      - name: Build Release APK (Signed)
         script: |
           cd android
           ./gradlew assembleRelease
@@ -68,8 +112,10 @@ workflows:
     environment:
       node: 20
       java: 17
-      groups:
-        - android_signing
+      vars:
+        KEYSTORE_PASSWORD: tripsalama2026
+        KEY_ALIAS: tripsalama
+        KEY_PASSWORD: tripsalama2026
 
     triggering:
       events:
@@ -87,6 +133,26 @@ workflows:
 
       - name: Generate icons
         script: node scripts/generate-android-icons.js || true
+
+      - name: Setup Keystore
+        script: |
+          KEYSTORE_PATH="$CM_BUILD_DIR/android/app/release.keystore"
+
+          if [ -n "$CM_KEYSTORE" ]; then
+            echo "Using provided keystore from CM_KEYSTORE"
+            echo $CM_KEYSTORE | base64 --decode > "$KEYSTORE_PATH"
+          else
+            echo "ERROR: CM_KEYSTORE not set! Cannot release to Play Store without consistent keystore."
+            echo "Please set CM_KEYSTORE environment variable in Codemagic with your keystore base64."
+            exit 1
+          fi
+
+          cat > "$CM_BUILD_DIR/android/keystore.properties" << EOF
+          storeFile=app/release.keystore
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
 
       - name: Build Release Bundle (AAB)
         script: |
