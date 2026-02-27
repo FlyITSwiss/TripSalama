@@ -56,6 +56,16 @@ coverage/
 *.crt
 secrets/
 
+# Android signing
+android/keystore.properties
+android/app/release.keystore
+android/app/google-services.json
+*.keystore
+*.jks
+
+# iOS signing
+ios/App/App/GoogleService-Info.plist
+
 # Temporary files
 tmp/
 temp/
