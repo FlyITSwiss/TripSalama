@@ -138,25 +138,44 @@ jobs:
       - name: Upload APK to VPS
         id: upload_apk
         run: |
+          set -e  # Exit on any error
           APK_NAME="TripSalama-v${{ github.run_number }}.apk"
           APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
 
           if [ -f "$APK_PATH" ]; then
+            echo "📦 APK found: $(ls -lh $APK_PATH)"
+
             # Create downloads directory on VPS
-            ssh debian@83.228.205.222 "sudo mkdir -p /var/www/tripsalama/public/downloads && sudo chown www-data:www-data /var/www/tripsalama/public/downloads && sudo chmod 755 /var/www/tripsalama/public/downloads"
+            echo "📁 Creating downloads directory..."
+            ssh -v debian@83.228.205.222 "sudo mkdir -p /var/www/tripsalama/public/downloads && sudo chown www-data:www-data /var/www/tripsalama/public/downloads && sudo chmod 755 /var/www/tripsalama/public/downloads" 2>&1
 
             # Upload APK with versioned name
-            scp "$APK_PATH" "debian@83.228.205.222:/tmp/$APK_NAME"
-            ssh debian@83.228.205.222 "sudo mv /tmp/$APK_NAME /var/www/tripsalama/public/downloads/$APK_NAME && sudo chown www-data:www-data /var/www/tripsalama/public/downloads/$APK_NAME"
+            echo "📤 Uploading APK to VPS..."
+            scp -v "$APK_PATH" "debian@83.228.205.222:/tmp/$APK_NAME" 2>&1
+
+            echo "📂 Moving APK to downloads directory..."
+            ssh debian@83.228.205.222 "sudo mv /tmp/$APK_NAME /var/www/tripsalama/public/downloads/$APK_NAME && sudo chown www-data:www-data /var/www/tripsalama/public/downloads/$APK_NAME && sudo chmod 644 /var/www/tripsalama/public/downloads/$APK_NAME"
 
             # Also keep a "latest" version
-            ssh debian@83.228.205.222 "sudo cp /var/www/tripsalama/public/downloads/$APK_NAME /var/www/tripsalama/public/downloads/TripSalama-latest.apk"
+            ssh debian@83.228.205.222 "sudo cp /var/www/tripsalama/public/downloads/$APK_NAME /var/www/tripsalama/public/downloads/TripSalama-latest.apk && sudo chown www-data:www-data /var/www/tripsalama/public/downloads/TripSalama-latest.apk"
 
-            echo "apk_url=https://stabilis-it.ch/internal/tripsalama/downloads/$APK_NAME" >> $GITHUB_OUTPUT
-            echo "✅ APK uploaded: $APK_NAME"
+            # Verify upload
+            echo "🔍 Verifying upload..."
+            VERIFY=$(ssh debian@83.228.205.222 "ls -la /var/www/tripsalama/public/downloads/$APK_NAME 2>&1")
+            echo "$VERIFY"
+
+            if echo "$VERIFY" | grep -q "$APK_NAME"; then
+              echo "apk_url=https://stabilis-it.ch/internal/tripsalama/downloads/$APK_NAME" >> $GITHUB_OUTPUT
+              echo "✅ APK uploaded and verified: $APK_NAME"
+            else
+              echo "❌ APK verification failed!"
+              exit 1
+            fi
           else
             echo "apk_url=" >> $GITHUB_OUTPUT
-            echo "⚠️ Release APK not found"
+            echo "⚠️ Release APK not found at $APK_PATH"
+            ls -la android/app/build/outputs/apk/ || true
+            exit 1
           fi
 
       - name: Build Summary
