@@ -90,9 +90,9 @@ jobs:
             -keypass $KEY_PASSWORD \
             -dname "CN=TripSalama, OU=Mobile, O=Stabilis IT, L=Geneva, ST=Geneva, C=CH"
 
-          # Create keystore.properties
+          # Create keystore.properties (path relative to android/ dir)
           cat > android/keystore.properties << EOF
-          storeFile=app/release.keystore
+          storeFile=release.keystore
           storePassword=$KEYSTORE_PASSWORD
           keyAlias=$KEY_ALIAS
           keyPassword=$KEY_PASSWORD
@@ -120,3 +120,86 @@ jobs:
           path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
           if-no-files-found: warn
+
+      - name: Send Build Notification Email
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.office365.com
+          server_port: 587
+          secure: true
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "🚀 TripSalama Android Build - ${{ job.status == 'success' && '✅ Succès' || '❌ Échec' }}"
+          to: tarik.gilani@stabilis-it.ch
+          from: "TripSalama CI <information-contact@stabilis-it.ch>"
+          html_body: |
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <style>
+                body { font-family: 'Inter', Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+                .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+                .header { background: linear-gradient(135deg, #2D5A4A 0%, #1a3d32 100%); color: white; padding: 30px; text-align: center; }
+                .header h1 { margin: 0; font-size: 28px; font-weight: 700; }
+                .header p { margin: 10px 0 0; opacity: 0.9; font-size: 14px; }
+                .content { padding: 30px; }
+                .status-badge { display: inline-block; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 14px; }
+                .status-success { background: #E6F9EF; color: #06C167; }
+                .status-failure { background: #FFEFEC; color: #E11900; }
+                .info-box { background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0; }
+                .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+                .info-row:last-child { border-bottom: none; }
+                .info-label { color: #666; font-size: 14px; }
+                .info-value { font-weight: 600; color: #333; }
+                .btn { display: inline-block; background: #2D5A4A; color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; margin: 10px 5px; }
+                .btn:hover { background: #1a3d32; }
+                .btn-secondary { background: #276EF1; }
+                .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>🚗 TripSalama</h1>
+                  <p>Build Android - Notification automatique</p>
+                </div>
+                <div class="content">
+                  <p style="text-align: center;">
+                    <span class="status-badge ${{ job.status == 'success' && 'status-success' || 'status-failure' }}">
+                      ${{ job.status == 'success' && '✅ Build réussi' || '❌ Build échoué' }}
+                    </span>
+                  </p>
+
+                  <div class="info-box">
+                    <div class="info-row">
+                      <span class="info-label">Commit</span>
+                      <span class="info-value">${{ github.sha }}</span>
+                    </div>
+                    <div class="info-row">
+                      <span class="info-label">Branche</span>
+                      <span class="info-value">${{ github.ref_name }}</span>
+                    </div>
+                    <div class="info-row">
+                      <span class="info-label">Auteur</span>
+                      <span class="info-value">${{ github.actor }}</span>
+                    </div>
+                    <div class="info-row">
+                      <span class="info-label">Message</span>
+                      <span class="info-value">${{ github.event.head_commit.message }}</span>
+                    </div>
+                  </div>
+
+                  <p style="text-align: center; margin-top: 30px;">
+                    <a href="https://stabilis-it.ch/internal/tripsalama" class="btn">🌐 Ouvrir TripSalama</a>
+                    <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" class="btn btn-secondary">📋 Voir le build</a>
+                  </p>
+                </div>
+                <div class="footer">
+                  <p>TripSalama - VTC sécurisé pour femmes</p>
+                  <p>© 2026 Stabilis IT - Genève, Suisse</p>
+                </div>
+              </div>
+            </body>
+            </html>
+        continue-on-error: true
