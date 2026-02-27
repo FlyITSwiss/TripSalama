@@ -15,7 +15,7 @@ on:
 
 env:
   NODE_VERSION: '22'
-  JAVA_VERSION: '17'
+  JAVA_VERSION: '21'
   KEYSTORE_PASSWORD: tripsalama2026
   KEY_ALIAS: tripsalama
   KEY_PASSWORD: tripsalama2026

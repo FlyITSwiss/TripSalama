@@ -13,7 +13,7 @@ workflows:
 
     environment:
       node: 20
-      java: 17
+      java: 21
       vars:
         # Keystore auto-generated if not provided via CM_KEYSTORE
         KEYSTORE_PASSWORD: tripsalama2026
@@ -111,7 +111,7 @@ workflows:
 
     environment:
       node: 20
-      java: 17
+      java: 21
       vars:
         KEYSTORE_PASSWORD: tripsalama2026
         KEY_ALIAS: tripsalama
