@@ -73,7 +73,7 @@ workflows:
 
           # Create keystore.properties for Gradle
           cat > "$CM_BUILD_DIR/android/keystore.properties" << EOF
-          storeFile=app/release.keystore
+          storeFile=release.keystore
           storePassword=$KEYSTORE_PASSWORD
           keyAlias=$KEY_ALIAS
           keyPassword=$KEY_PASSWORD
