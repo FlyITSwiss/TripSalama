@@ -144,9 +144,9 @@ jobs:
 
       # Email notification - requires Office 365 App Password
       # To enable: Create App Password in https://account.microsoft.com/security
-      # Then add SMTP_PASSWORD secret with the App Password
+      # Then add SMTP_PASSWORD secret with the App Password (not regular password)
       - name: Send Build Notification Email
-        if: always() && secrets.SMTP_PASSWORD != ''
+        if: always()
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.office365.com
