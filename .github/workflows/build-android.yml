@@ -121,8 +121,32 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
-      - name: Send Build Notification Email
+      - name: Build Summary
         if: always()
+        run: |
+          echo "## 🚗 TripSalama Android Build" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "### ✅ Build réussi" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Build échoué" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Info | Valeur |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branche | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Auteur | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- [Download Debug APK](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [Download Release APK](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+
+      # Email notification - requires Office 365 App Password
+      # To enable: Create App Password in https://account.microsoft.com/security
+      # Then add SMTP_PASSWORD secret with the App Password
+      - name: Send Build Notification Email
+        if: always() && secrets.SMTP_PASSWORD != ''
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.office365.com
