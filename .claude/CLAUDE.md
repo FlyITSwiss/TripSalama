@@ -414,20 +414,29 @@ include /etc/nginx/snippets/tripsalama.conf;
 
 ### Workflow automatique
 
-Chaque push sur `main` déclenche :
+Chaque push sur `main` (ou workflow_dispatch manuel) déclenche :
 1. **Build Android APK** (Debug + Release signée)
-2. **Email de notification** à tarik.gilani@stabilis-it.ch
-3. **Upload artifacts** sur GitHub Actions
+2. **Upload APK sur VPS** pour téléchargement direct
+3. **Email de notification** à tarik.gilani@stabilis-it.ch avec lien de téléchargement
 
-### Email de build OBLIGATOIRE
+### Email de build OBLIGATOIRE avec lien de téléchargement APK
 
-**À chaque build, un email est envoyé automatiquement avec :**
-- Status (succès/échec)
-- Lien vers l'app : https://stabilis-it.ch/internal/tripsalama
-- Lien vers le build GitHub Actions (téléchargement APK)
-- Détails du commit (auteur, message, branche)
+**À chaque build RÉUSSI, un email est envoyé automatiquement avec :**
+- ✅ ou ❌ selon le résultat
+- **GROS BOUTON VERT "TÉLÉCHARGER L'APK"** (lien direct, cliquable depuis téléphone)
+- Numéro de version (#run_number)
+- Lien vers l'app web : https://stabilis-it.ch/internal/tripsalama
+- Lien vers les logs GitHub Actions
+- Détails du commit (auteur, branche)
 
-**Template :** Style Helios 2FA avec branding TripSalama (émeraude #2D5A4A)
+**Template :** Style TripSalama (émeraude #2D5A4A) avec section verte pour le téléchargement
+
+### URLs de téléchargement APK
+
+| URL | Description |
+|-----|-------------|
+| `https://stabilis-it.ch/internal/tripsalama/downloads/TripSalama-v{N}.apk` | Version spécifique |
+| `https://stabilis-it.ch/internal/tripsalama/downloads/TripSalama-latest.apk` | Dernière version |
 
 ### Configuration Capacitor
 
@@ -460,14 +469,22 @@ cd android && ./gradlew assembleDebug
 cd android && ./gradlew assembleRelease
 ```
 
-### RÈGLE : Email systématique
+### RÈGLE CRITIQUE : Email avec lien de téléchargement direct
 
-**CHAQUE build Android doit envoyer un email à tarik.gilani@stabilis-it.ch** contenant :
-- ✅ ou ❌ selon le résultat
-- URL de TripSalama : https://stabilis-it.ch/internal/tripsalama
-- URL du build GitHub Actions avec lien de téléchargement APK
+**CHAQUE build Android DOIT :**
+1. Uploader l'APK sur le VPS dans `/var/www/tripsalama/public/downloads/`
+2. Envoyer un email à tarik.gilani@stabilis-it.ch
+3. L'email DOIT contenir un **bouton de téléchargement direct** (pas juste un lien GitHub)
 
-Si l'email n'est pas envoyé → vérifier les secrets `SMTP_USERNAME` et `SMTP_PASSWORD`
+**L'utilisateur doit pouvoir :**
+- Ouvrir l'email sur son téléphone Android
+- Cliquer sur le bouton "TÉLÉCHARGER L'APK"
+- Installer l'APK directement
+
+**Si l'email n'est pas envoyé ou le lien ne fonctionne pas :**
+1. Vérifier le secret `SSH_PRIVATE_KEY` (pour upload VPS)
+2. Vérifier que le webhook `/api/build-notification.php` est déployé
+3. Vérifier les logs du workflow GitHub Actions
 
 ### INTERDICTIONS ABSOLUES
 
