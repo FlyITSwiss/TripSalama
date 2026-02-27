@@ -15,7 +15,10 @@ on:
 
 env:
   NODE_VERSION: '22'
-  JAVA_VERSION: '21'
+  JAVA_VERSION: '17'
+  KEYSTORE_PASSWORD: tripsalama2026
+  KEY_ALIAS: tripsalama
+  KEY_PASSWORD: tripsalama2026
 
 jobs:
   build-android:
@@ -74,6 +77,27 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
+      - name: Setup Keystore for Signing
+        run: |
+          # Generate keystore for release signing
+          keytool -genkey -v \
+            -keystore android/app/release.keystore \
+            -alias $KEY_ALIAS \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass $KEYSTORE_PASSWORD \
+            -keypass $KEY_PASSWORD \
+            -dname "CN=TripSalama, OU=Mobile, O=Stabilis IT, L=Geneva, ST=Geneva, C=CH"
+
+          # Create keystore.properties
+          cat > android/keystore.properties << EOF
+          storeFile=app/release.keystore
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
       - name: Clean and Build Debug APK
         working-directory: android
         run: ./gradlew clean assembleDebug --no-daemon
@@ -85,15 +109,14 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
-      - name: Build Release APK (unsigned)
+      - name: Build Release APK (Signed)
         working-directory: android
         run: ./gradlew assembleRelease --no-daemon
-        continue-on-error: true
 
-      - name: Upload Release APK (unsigned)
+      - name: Upload Release APK (Signed)
         uses: actions/upload-artifact@v4
         with:
-          name: tripsalama-release-unsigned-apk
-          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+          name: tripsalama-release-signed-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
-          if-no-files-found: ignore
+          if-no-files-found: warn
