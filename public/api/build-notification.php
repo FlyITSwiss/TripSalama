@@ -75,27 +75,27 @@ if ($isSuccess && $apkUrl) {
       </div>
 
       <!-- Test credentials section -->
-      <div style="background: #f0f4f8; border-radius: 12px; padding: 20px; margin: 20px 0; border-left: 4px solid #2D5A4A;">
+      <div style="background: #ffffff; border: 2px solid #2D5A4A; border-radius: 12px; padding: 20px; margin: 20px 0;">
         <p style="color: #2D5A4A; font-size: 16px; font-weight: 700; margin: 0 0 15px 0;">
           🔑 Identifiants de test
         </p>
         <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
           <tr>
-            <td style="padding: 8px 0; color: #666; width: 100px;">👩 Passagère</td>
-            <td style="padding: 8px 0;">
-              <strong>passenger@tripsalama.ch</strong><br>
-              <span style="color: #888;">Mdp: TripSalama2025!</span>
+            <td style="padding: 8px 0; color: #2D5A4A; width: 100px; font-weight: 600;">👩 Passagère</td>
+            <td style="padding: 8px 0; color: #1a1a1a;">
+              <strong style="color: #2D5A4A;">passenger@tripsalama.ch</strong><br>
+              <span style="color: #1a1a1a; font-weight: 600;">Mdp: TripSalama2025!</span>
             </td>
           </tr>
-          <tr style="border-top: 1px solid #ddd;">
-            <td style="padding: 8px 0; color: #666;">🚗 Conductrice</td>
-            <td style="padding: 8px 0;">
-              <strong>driver@tripsalama.ch</strong><br>
-              <span style="color: #888;">Mdp: TripSalama2025!</span>
+          <tr style="border-top: 2px solid #E6F9EF;">
+            <td style="padding: 8px 0; color: #2D5A4A; font-weight: 600;">🚗 Conductrice</td>
+            <td style="padding: 8px 0; color: #1a1a1a;">
+              <strong style="color: #2D5A4A;">driver@tripsalama.ch</strong><br>
+              <span style="color: #1a1a1a; font-weight: 600;">Mdp: TripSalama2025!</span>
             </td>
           </tr>
         </table>
-        <p style="color: #888; font-size: 11px; margin: 12px 0 0 0; font-style: italic;">
+        <p style="color: #E11900; font-size: 11px; margin: 12px 0 0 0; font-style: italic; font-weight: 600; background: #FFEFEC; padding: 8px; border-radius: 6px;">
           ⚠️ Comptes de test uniquement - Ne pas utiliser en production
         </p>
       </div>

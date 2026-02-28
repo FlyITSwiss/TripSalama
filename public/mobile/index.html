@@ -80,13 +80,11 @@
         .splash-logo {
             width: 80px;
             height: 80px;
-            background: white;
             border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-bottom: 16px;
-            font-size: 32px;
         }
         .splash-title {
             font-size: 28px;
@@ -120,14 +118,11 @@
         .login-logo {
             width: 60px;
             height: 60px;
-            background: var(--primary);
             border-radius: 16px;
             margin: 0 auto 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 24px;
         }
         .login-title {
             font-size: 24px;
@@ -388,7 +383,9 @@
 <body>
     <!-- Splash Screen -->
     <div id="splash-screen" class="screen active">
-        <div class="splash-logo">🚗</div>
+        <div class="splash-logo">
+            <img src="../assets/images/icons/icon.svg" alt="TripSalama" style="width: 80px; height: 80px; border-radius: 20px;">
+        </div>
         <div class="splash-title">TripSalama</div>
         <div class="splash-subtitle">Sécurité et sérénité au féminin</div>
         <div class="splash-loader"></div>
@@ -397,7 +394,9 @@
     <!-- Login Screen -->
     <div id="login-screen" class="screen">
         <div class="login-header">
-            <div class="login-logo">🚗</div>
+            <div class="login-logo">
+                <img src="../assets/images/icons/icon.svg" alt="TripSalama" style="width: 60px; height: 60px; border-radius: 16px;">
+            </div>
             <h1 class="login-title">TripSalama</h1>
             <p class="login-subtitle">Connectez-vous pour continuer</p>
         </div>
@@ -622,8 +621,8 @@
                         body: { email, password, _csrf_token: csrfToken }
                     });
 
-                    if (data.success && data.data && data.data.user) {
-                        currentUser = data.data.user;
+                    if (data.success && data.data) {
+                        currentUser = data.data;
                         localStorage.setItem('tripsalama_user', JSON.stringify(currentUser));
                         this.showDashboard();
                     } else {

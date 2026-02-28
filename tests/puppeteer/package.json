@@ -9,6 +9,8 @@
     "test:booking": "node test-booking-flow.js",
     "test:driver": "node test-driver-dashboard.js",
     "test:identity": "node test-identity-verification.js",
+    "test:mobile": "node test-mobile-app.js",
+    "diagnose:mobile": "node diagnose-mobile-login.js",
     "check:identity": "node check-identity-setup.js"
   },
   "dependencies": {

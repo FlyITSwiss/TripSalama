@@ -157,16 +157,16 @@ jobs:
             ssh debian@83.228.205.222 "sudo mv /tmp/$APK_NAME /var/www/tripsalama/public/downloads/$APK_NAME && sudo chown www-data:www-data /var/www/tripsalama/public/downloads/$APK_NAME && sudo chmod 644 /var/www/tripsalama/public/downloads/$APK_NAME"
 
             # Also keep a "latest" version
-            ssh debian@83.228.205.222 "sudo cp /var/www/tripsalama/public/downloads/$APK_NAME /var/www/tripsalama/public/downloads/TripSalama-latest.apk && sudo chown www-data:www-data /var/www/tripsalama/public/downloads/TripSalama-latest.apk"
+            ssh debian@83.228.205.222 "sudo cp /var/www/tripsalama/public/downloads/$APK_NAME /var/www/tripsalama/public/downloads/TripSalama-latest.apk && sudo chown www-data:www-data /var/www/tripsalama/public/downloads/TripSalama-latest.apk && sudo chmod 644 /var/www/tripsalama/public/downloads/TripSalama-latest.apk"
 
-            # Verify upload
-            echo "🔍 Verifying upload..."
+            # Verify upload via SSH
+            echo "🔍 Verifying upload via SSH..."
             VERIFY=$(ssh debian@83.228.205.222 "ls -la /var/www/tripsalama/public/downloads/$APK_NAME 2>&1")
             echo "$VERIFY"
 
             if echo "$VERIFY" | grep -q "$APK_NAME"; then
               echo "apk_url=https://stabilis-it.ch/internal/tripsalama/downloads/$APK_NAME" >> $GITHUB_OUTPUT
-              echo "✅ APK uploaded and verified: $APK_NAME"
+              echo "✅ APK uploaded and verified via SSH: $APK_NAME"
             else
               echo "❌ APK verification failed!"
               exit 1
@@ -175,6 +175,43 @@ jobs:
             echo "apk_url=" >> $GITHUB_OUTPUT
             echo "⚠️ Release APK not found at $APK_PATH"
             ls -la android/app/build/outputs/apk/ || true
+            exit 1
+          fi
+
+      # VERIFICATION CRITIQUE: Tester l'accès HTTP à l'APK
+      - name: Verify APK HTTP Access
+        run: |
+          echo "🌐 Vérification accès HTTP APK..."
+          sleep 5  # Attendre que nginx propage les changements
+
+          # Test HTTP avec curl
+          APK_URL="https://stabilis-it.ch/internal/tripsalama/downloads/TripSalama-v${{ github.run_number }}.apk"
+          HTTP_CODE=$(curl -sI -w "%{http_code}" -o /dev/null "$APK_URL")
+
+          echo "HTTP Code: $HTTP_CODE"
+
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ APK accessible via HTTP (200 OK)"
+
+            # Vérifier MIME type
+            MIME=$(curl -sI "$APK_URL" | grep -i "content-type:" | awk '{print $2}')
+            echo "MIME Type: $MIME"
+
+            # Vérifier taille
+            SIZE=$(curl -sI "$APK_URL" | grep -i "content-length:" | awk '{print $2}' | tr -d '\r')
+            SIZE_MB=$(echo "scale=2; $SIZE / 1024 / 1024" | bc)
+            echo "Taille: ${SIZE_MB} MB"
+
+          elif [ "$HTTP_CODE" = "403" ]; then
+            echo "❌ ERREUR: APK retourne 403 Forbidden"
+            echo "Vérifier permissions et config nginx"
+            exit 1
+          elif [ "$HTTP_CODE" = "404" ]; then
+            echo "❌ ERREUR: APK retourne 404 Not Found"
+            echo "Le fichier n'existe pas ou nginx ne le trouve pas"
+            exit 1
+          else
+            echo "❌ ERREUR: HTTP Code inattendu: $HTTP_CODE"
             exit 1
           fi
 
