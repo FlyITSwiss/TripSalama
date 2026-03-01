@@ -431,6 +431,22 @@
             z-index: 1 !important;
         }
 
+        /* Driver Car Marker */
+        .driver-car-marker {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+            transition: transform 0.3s ease;
+        }
+
+        .driver-car-marker svg {
+            width: 40px;
+            height: 40px;
+        }
+
         .maplibregl-map {
             width: 100% !important;
             height: 100% !important;
@@ -2333,12 +2349,20 @@
 
                 if (data.success && data.data) {
                     const rides = data.data.rides || [];
-                    const stats = data.data.stats || {};
+
+                    // Calculate stats from rides array
+                    const completed = rides.filter(r => r.status === 'completed').length;
+                    const totalSpent = rides.reduce((sum, r) => {
+                        if (r.status === 'completed') {
+                            return sum + (parseFloat(r.final_price) || parseFloat(r.estimated_price) || 0);
+                        }
+                        return sum;
+                    }, 0);
 
                     // Update stats
-                    totalEl.textContent = stats.total || rides.length || 0;
-                    completedEl.textContent = stats.completed || 0;
-                    spentEl.textContent = Math.round(stats.total_spent || 0);
+                    totalEl.textContent = rides.length || 0;
+                    completedEl.textContent = completed;
+                    spentEl.textContent = Math.round(totalSpent);
 
                     if (rides.length === 0) {
                         listEl.innerHTML = '';
@@ -2347,12 +2371,32 @@
                         listEl.innerHTML = rides.map(ride => renderHistoryRide(ride)).join('');
                     }
                 } else {
+                    // No data or error - show empty state
                     listEl.innerHTML = '';
                     emptyEl.classList.remove('hidden');
+                    totalEl.textContent = '0';
+                    completedEl.textContent = '0';
+                    spentEl.textContent = '0';
                 }
             } catch (error) {
                 console.error('Error loading history:', error);
-                listEl.innerHTML = '<div class="history-loading"><p>Erreur de chargement</p></div>';
+                // Show error but allow navigation
+                listEl.innerHTML = `
+                    <div class="history-error" style="text-align: center; padding: 40px 20px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" width="48" height="48" style="margin: 0 auto 16px;">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                        <p style="color: #666; margin-bottom: 16px;">Erreur de chargement</p>
+                        <button class="btn-secondary" onclick="loadHistory()" style="padding: 8px 16px; border-radius: 8px; border: 1px solid #ddd; background: white;">
+                            Réessayer
+                        </button>
+                    </div>
+                `;
+                totalEl.textContent = '-';
+                completedEl.textContent = '-';
+                spentEl.textContent = '-';
             }
         }
 
@@ -2833,6 +2877,16 @@
             document.getElementById('bookingDriverFound').classList.add('hidden');
             document.getElementById('bookingDropoffDropdown').classList.add('hidden');
 
+            // Clean up driver marker and animation
+            if (driverAnimationInterval) {
+                clearInterval(driverAnimationInterval);
+                driverAnimationInterval = null;
+            }
+            if (driverMarker) {
+                driverMarker.remove();
+                driverMarker = null;
+            }
+
             // Remove route if exists
             if (bookingMap && bookingMap.getSource('route')) {
                 bookingMap.removeLayer('route-line');
@@ -3193,6 +3247,9 @@
             }, searchTime);
         }
 
+        let driverMarker = null;
+        let driverAnimationInterval = null;
+
         function showDriverFound() {
             // Pick random driver name
             const driverName = DRIVER_NAMES[Math.floor(Math.random() * DRIVER_NAMES.length)];
@@ -3203,6 +3260,94 @@
             document.getElementById('bookingDriverFound').classList.remove('hidden');
 
             showToast('Conductrice trouvée !', 'success');
+
+            // Add car marker on map and animate it
+            if (pickupCoords && bookingMap) {
+                addDriverCarMarker(eta);
+            }
+        }
+
+        function addDriverCarMarker(etaMinutes) {
+            // Remove existing driver marker if any
+            if (driverMarker) {
+                driverMarker.remove();
+            }
+            if (driverAnimationInterval) {
+                clearInterval(driverAnimationInterval);
+            }
+
+            // Calculate random starting position (nearby but not at pickup)
+            const offsetLat = (Math.random() - 0.5) * 0.02; // ~1-2 km offset
+            const offsetLng = (Math.random() - 0.5) * 0.02;
+            let driverLat = pickupCoords.lat + offsetLat;
+            let driverLng = pickupCoords.lng + offsetLng;
+
+            // Create custom car icon element
+            const carEl = document.createElement('div');
+            carEl.className = 'driver-car-marker';
+            carEl.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="#06C167" width="40" height="40">
+                    <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
+                </svg>
+            `;
+
+            // Create marker with custom element
+            driverMarker = new maplibregl.Marker({
+                element: carEl,
+                anchor: 'center'
+            })
+            .setLngLat([driverLng, driverLat])
+            .addTo(bookingMap);
+
+            // Calculate steps for animation (update every 500ms)
+            const totalSteps = etaMinutes * 60 * 2; // 2 updates per second
+            const latStep = (pickupCoords.lat - driverLat) / totalSteps;
+            const lngStep = (pickupCoords.lng - driverLng) / totalSteps;
+            let currentStep = 0;
+
+            // Animate car moving towards pickup
+            driverAnimationInterval = setInterval(() => {
+                currentStep++;
+                driverLat += latStep;
+                driverLng += lngStep;
+
+                if (driverMarker) {
+                    driverMarker.setLngLat([driverLng, driverLat]);
+
+                    // Calculate rotation angle towards destination
+                    const angle = Math.atan2(
+                        pickupCoords.lng - driverLng,
+                        pickupCoords.lat - driverLat
+                    ) * (180 / Math.PI);
+                    carEl.style.transform = `rotate(${angle}deg)`;
+                }
+
+                // Update ETA countdown
+                const remainingMinutes = Math.ceil((totalSteps - currentStep) / 120);
+                const etaEl = document.getElementById('driverETA');
+                if (etaEl && remainingMinutes > 0) {
+                    etaEl.textContent = remainingMinutes + ' min';
+                }
+
+                // Stop when arrived
+                if (currentStep >= totalSteps) {
+                    clearInterval(driverAnimationInterval);
+                    document.getElementById('driverETA').textContent = 'Arrivée !';
+                    showToast('Votre conductrice est arrivée !', 'success');
+                }
+            }, 500);
+
+            // Fit map to show both car and pickup
+            const bounds = new maplibregl.LngLatBounds();
+            bounds.extend([driverLng, driverLat]);
+            bounds.extend([pickupCoords.lng, pickupCoords.lat]);
+            if (dropoffCoords) {
+                bounds.extend([dropoffCoords.lng, dropoffCoords.lat]);
+            }
+            bookingMap.fitBounds(bounds, {
+                padding: { top: 100, bottom: 320, left: 50, right: 50 },
+                maxZoom: 15
+            });
         }
 
         // Booking page event listeners
