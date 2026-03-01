@@ -565,17 +565,73 @@ Chaque push sur `main` (ou workflow_dispatch manuel) déclenche :
 - **Alias :** `tripsalama`
 - **Pour Play Store :** Sauvegarder le keystore du premier build réussi
 
-### Commandes locales (si Java 21 installé)
+### Environnement de développement local (OBLIGATOIRE)
+
+**Ces paths sont configurés sur la machine de dev - NE JAMAIS demander à l'utilisateur :**
+
+| Variable | Chemin |
+|----------|--------|
+| **JAVA_HOME** | `C:\Users\Tarik Gilani\java\jdk-21.0.5+11` |
+| **ANDROID_SDK** | `C:\Users\Tarik Gilani\Android` |
+| **ADB** | `C:\Users\Tarik Gilani\Android\platform-tools\adb.exe` |
+| **Émulateur** | `emulator-5554` (déjà configuré) |
+
+### Commandes de build (avec JAVA_HOME configuré automatiquement)
 
 ```bash
+# ✅ TOUJOURS utiliser ces commandes avec JAVA_HOME
+export JAVA_HOME="/c/Users/Tarik Gilani/java/jdk-21.0.5+11"
+export PATH="$JAVA_HOME/bin:$PATH"
+
 # Sync Capacitor
-npm run cap:sync
+npx cap sync android
 
 # Build Debug APK
-cd android && ./gradlew assembleDebug
+cd android && ./gradlew.bat assembleDebug
 
 # Build Release APK (signée)
-cd android && ./gradlew assembleRelease
+cd android && ./gradlew.bat assembleRelease
+
+# Installer sur émulateur
+"/c/Users/Tarik Gilani/Android/platform-tools/adb.exe" -s emulator-5554 install -r android/app/build/outputs/apk/debug/app-debug.apk
+
+# Lancer l'app
+"/c/Users/Tarik Gilani/Android/platform-tools/adb.exe" -s emulator-5554 shell am start -n com.tripsalama.app/com.tripsalama.app.MainActivity
+```
+
+### Script de build complet (à utiliser directement)
+
+```bash
+# Build + Install + Launch en une commande
+export JAVA_HOME="/c/Users/Tarik Gilani/java/jdk-21.0.5+11" && \
+export PATH="$JAVA_HOME/bin:$PATH" && \
+cd "/c/Users/Tarik Gilani/Desktop/TripSalama" && \
+npx cap sync android && \
+cd android && ./gradlew.bat assembleDebug && \
+"/c/Users/Tarik Gilani/Android/platform-tools/adb.exe" -s emulator-5554 install -r app/build/outputs/apk/debug/app-debug.apk && \
+"/c/Users/Tarik Gilani/Android/platform-tools/adb.exe" -s emulator-5554 shell am start -n com.tripsalama.app/com.tripsalama.app.MainActivity
+```
+
+### Commandes ADB utiles
+
+```bash
+ADB="/c/Users/Tarik Gilani/Android/platform-tools/adb.exe"
+
+# Liste des devices
+$ADB devices
+
+# Screenshot
+$ADB -s emulator-5554 exec-out screencap -p > screenshot.png
+
+# Simuler tap (x, y)
+$ADB -s emulator-5554 shell input tap 350 2200
+
+# Logs Capacitor
+$ADB -s emulator-5554 logcat -d | grep -i "capacitor\|tripsalama"
+
+# Redémarrer l'app
+$ADB -s emulator-5554 shell am force-stop com.tripsalama.app
+$ADB -s emulator-5554 shell am start -n com.tripsalama.app/com.tripsalama.app.MainActivity
 ```
 
 ### RÈGLE CRITIQUE : Email avec lien de téléchargement direct
@@ -1038,6 +1094,129 @@ setx ANDROID_HOME "C:\Users\VotreNom\AppData\Local\Android\Sdk"
 - **Guide tests Appium** : `tests/appium/README.md`
 - **Script validation** : `scripts/validate-play-store.js`
 - **Workflow CI/CD** : `.github/workflows/apk-tests.yml`
+
+---
+
+## 🎓 LEÇONS APPRISES - TESTS ÉMULATEUR ANDROID
+
+### Problèmes rencontrés et solutions (Mars 2026)
+
+#### 1. VPN bloque le réseau de l'émulateur
+
+| Symptôme | Cause | Solution |
+|----------|-------|----------|
+| 100% packet loss depuis l'émulateur | NordVPN (ou autre VPN) intercepte le trafic réseau | **Désinstaller le VPN** avant de tester sur émulateur |
+| `ping 8.8.8.8` timeout | Adaptateur VPN (NordLynx) bloque les routes | Vérifier avec `route print` que 10.0.2.0/24 route vers le bon adaptateur |
+
+**Commande de diagnostic :**
+```bash
+# Depuis l'émulateur
+adb shell ping -c 3 10.0.2.2   # Host = doit répondre
+adb shell ping -c 3 8.8.8.8    # Internet = peut échouer si VPN actif
+```
+
+#### 2. CORS avec Credentials (CRITIQUE)
+
+| ❌ ERREUR | ✅ SOLUTION |
+|-----------|-------------|
+| `Access-Control-Allow-Origin: *` | Retourner l'origin exact : `Access-Control-Allow-Origin: https://localhost` |
+| Pas de header credentials | Ajouter `Access-Control-Allow-Credentials: true` |
+| Requête OPTIONS répond mais GET/POST échoue | Vérifier que les headers CORS sont identiques pour preflight ET réponse |
+
+**Code proxy corrigé :**
+```javascript
+// proxy-server.js
+const allowedOrigin = req.headers.origin || '*';
+res.writeHead(200, {
+    'Access-Control-Allow-Origin': allowedOrigin,  // PAS '*' si credentials
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-CSRF-Token'
+});
+```
+
+#### 3. Proxy HTTP pour émulateur sans internet
+
+Quand l'émulateur ne peut pas atteindre internet directement mais peut ping le host (10.0.2.2) :
+
+**Solution : Proxy local sur le host**
+```javascript
+// proxy-server.js - Port 8888, forward vers production HTTPS
+const PROXY_PORT = 8888;
+const TARGET_HOST = 'stabilis-it.ch';
+
+// L'émulateur appelle http://10.0.2.2:8888/internal/tripsalama/api
+// Le proxy forward vers https://stabilis-it.ch/internal/tripsalama/api
+```
+
+**Configuration app (index.html) :**
+```javascript
+// Pour émulateur via proxy
+const API_BASE = 'http://10.0.2.2:8888/internal/tripsalama/api';
+
+// Pour production (remettre après tests)
+const API_BASE = 'https://stabilis-it.ch/internal/tripsalama/api';
+```
+
+#### 4. Network Security Config Android
+
+Android 9+ bloque HTTP cleartext par défaut. Pour autoriser 10.0.2.2 :
+
+```xml
+<!-- android/app/src/main/res/xml/network_security_config.xml -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>
+```
+
+#### 5. Adresses réseau émulateur
+
+| Adresse | Signification |
+|---------|---------------|
+| `10.0.2.2` | **Host machine** (utiliser pour API locale) |
+| `10.0.2.3` | Serveur DNS premier |
+| `10.0.2.15` | IP propre de l'émulateur |
+| `127.0.0.1` | Loopback (pointe vers l'émulateur, pas le host!) |
+
+#### 6. ADB input text ne fonctionne pas bien avec WebView
+
+| Méthode | Fiabilité | Usage |
+|---------|-----------|-------|
+| `adb shell input text "texte"` | ❌ Peu fiable | Champs natifs uniquement |
+| `adb shell input tap X Y` | ⚠️ Moyen | OK pour navigation |
+| **Appium** | ✅ Fiable | Recommandé pour formulaires WebView |
+
+**Recommandation :** Utiliser Appium pour les tests E2E complets sur APK.
+
+#### 7. Bypass CSRF pour émulateur (côté serveur)
+
+```php
+// public/api/_bootstrap.php
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (
+    strpos($origin, 'https://localhost') === 0 ||   // Capacitor scheme
+    strpos($origin, 'capacitor://') === 0 ||
+    strpos($origin, 'http://10.0.2.2') === 0 ||     // Emulator proxy
+    strpos($origin, 'http://localhost') === 0
+) {
+    return; // Bypass CSRF check
+}
+```
+
+### Checklist avant test émulateur
+
+| # | Vérification | Commande |
+|---|--------------|----------|
+| 1 | **VPN désactivé** | Vérifier qu'aucun adaptateur VPN n'est actif |
+| 2 | **Proxy démarré** | `node proxy-server.js` (port 8888) |
+| 3 | **API_BASE configuré** | `http://10.0.2.2:8888/internal/tripsalama/api` |
+| 4 | **APK rebuilé** | `npx cap sync android && ./gradlew assembleDebug` |
+| 5 | **Émulateur ping host** | `adb shell ping -c 1 10.0.2.2` = réponse |
+| 6 | **Logs proxy** | Voir les requêtes OPTIONS et GET/POST passer |
 
 ---
 
