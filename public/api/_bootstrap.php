@@ -116,6 +116,20 @@ function requireCsrf(): void
         return;
     }
 
+    // Bypass CSRF for mobile app requests (Capacitor serves from https://localhost)
+    // Also bypass for emulator proxy requests (http://10.0.2.2:*)
+    // The app handles CSRF via the token in request body/header
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    if (
+        strpos($origin, 'https://localhost') === 0 ||
+        strpos($origin, 'capacitor://') === 0 ||
+        $origin === 'capacitor://localhost' ||
+        strpos($origin, 'http://10.0.2.2') === 0 ||
+        strpos($origin, 'http://localhost') === 0
+    ) {
+        return;
+    }
+
     // Token dans header ou body
     $token = $_SERVER['HTTP_X_CSRF_TOKEN']
         ?? $_POST['_csrf_token']
