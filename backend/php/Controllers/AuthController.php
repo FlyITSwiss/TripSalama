@@ -206,6 +206,105 @@ class AuthController
         redirect_to('login');
     }
 
+    public function showForgotPassword(): void
+    {
+        if (is_authenticated()) {
+            $this->redirectToDashboard();
+            return;
+        }
+        $this->render('auth/forgot-password', ['pageTitle' => __('auth.forgot_password')]);
+    }
+
+    public function processForgotPassword(): void
+    {
+        if (!verify_csrf($_POST['_csrf_token'] ?? '')) {
+            flash('error', __('error.csrf'));
+            redirect_to('forgot-password');
+        }
+
+        $email = trim($_POST['email'] ?? '');
+
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            flash('error', __('validation.email_invalid'));
+            redirect_to('forgot-password');
+        }
+
+        // Rate Limiting
+        $rateLimitKey = RateLimitService::generateKey($email);
+        if (!$this->rateLimitService->isAllowed($rateLimitKey, 'password_reset')) {
+            $retryAfter = $this->rateLimitService->getRetryAfter($rateLimitKey, 'password_reset');
+            $minutes = (int) ceil($retryAfter / 60);
+            flash('error', __('error.too_many_attempts', ['minutes' => $minutes]));
+            redirect_to('forgot-password');
+        }
+
+        // Generate reset token (always show success to prevent email enumeration)
+        $result = $this->authService->createPasswordResetToken($email);
+        $this->rateLimitService->hit($rateLimitKey, 'password_reset');
+
+        // In a real app, send email here
+        // For now, just show success message
+        flash('success', __('msg.password_reset_sent'));
+        redirect_to('login');
+    }
+
+    public function showResetPassword(string $token): void
+    {
+        if (is_authenticated()) {
+            $this->redirectToDashboard();
+            return;
+        }
+
+        // Verify token is valid
+        $isValid = $this->authService->verifyPasswordResetToken($token);
+        if (!$isValid) {
+            flash('error', __('error.invalid_reset_token'));
+            redirect_to('forgot-password');
+        }
+
+        $this->render('auth/reset-password', [
+            'pageTitle' => __('auth.reset_password'),
+            'token' => $token
+        ]);
+    }
+
+    public function processResetPassword(): void
+    {
+        if (!verify_csrf($_POST['_csrf_token'] ?? '')) {
+            flash('error', __('error.csrf'));
+            redirect_to('login');
+        }
+
+        $token = $_POST['token'] ?? '';
+        $password = $_POST['password'] ?? '';
+        $passwordConfirm = $_POST['password_confirm'] ?? '';
+
+        if (empty($token)) {
+            flash('error', __('error.invalid_reset_token'));
+            redirect_to('forgot-password');
+        }
+
+        if (strlen($password) < 8) {
+            flash('error', __('validation.password_min_length'));
+            redirect_to('reset-password/' . $token);
+        }
+
+        if ($password !== $passwordConfirm) {
+            flash('error', __('validation.password_mismatch'));
+            redirect_to('reset-password/' . $token);
+        }
+
+        $result = $this->authService->resetPassword($token, $password);
+
+        if (!$result['success']) {
+            flash('error', __('error.invalid_reset_token'));
+            redirect_to('forgot-password');
+        }
+
+        flash('success', __('msg.password_reset_success'));
+        redirect_to('login');
+    }
+
     private function redirectToDashboard(): void
     {
         $user = current_user();

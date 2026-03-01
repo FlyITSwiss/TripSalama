@@ -434,4 +434,103 @@ class AuthService
 
         unset($_COOKIE[self::REMEMBER_COOKIE_NAME]);
     }
+
+    // ========================================
+    // PASSWORD RESET FUNCTIONALITY
+    // ========================================
+
+    /**
+     * Creer un token de reset de mot de passe
+     */
+    public function createPasswordResetToken(string $email): array
+    {
+        $user = $this->userModel->findByEmail($email);
+
+        // Always return success to prevent email enumeration
+        if (!$user) {
+            return ['success' => true, 'message' => 'reset_email_sent'];
+        }
+
+        // Generate secure token
+        $token = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $token);
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+        // Delete existing reset tokens for this user
+        $stmt = $this->db->prepare('DELETE FROM password_resets WHERE user_id = ?');
+        $stmt->execute([$user['id']]);
+
+        // Insert new token
+        $stmt = $this->db->prepare('
+            INSERT INTO password_resets (user_id, token_hash, expires_at)
+            VALUES (?, ?, ?)
+        ');
+        $stmt->execute([$user['id'], $tokenHash, $expiresAt]);
+
+        // In production, send email with reset link
+        // For now, log the token for testing
+        error_log("Password reset token for {$email}: {$token}");
+
+        return [
+            'success' => true,
+            'message' => 'reset_email_sent',
+            'token' => $token // Only for testing, remove in production
+        ];
+    }
+
+    /**
+     * Verifier un token de reset
+     */
+    public function verifyPasswordResetToken(string $token): bool
+    {
+        $tokenHash = hash('sha256', $token);
+
+        $stmt = $this->db->prepare('
+            SELECT * FROM password_resets
+            WHERE token_hash = ? AND expires_at > NOW()
+        ');
+        $stmt->execute([$tokenHash]);
+
+        return $stmt->fetch(\PDO::FETCH_ASSOC) !== false;
+    }
+
+    /**
+     * Reinitialiser le mot de passe
+     */
+    public function resetPassword(string $token, string $newPassword): array
+    {
+        $tokenHash = hash('sha256', $token);
+
+        // Get the reset request
+        $stmt = $this->db->prepare('
+            SELECT * FROM password_resets
+            WHERE token_hash = ? AND expires_at > NOW()
+        ');
+        $stmt->execute([$tokenHash]);
+        $resetData = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$resetData) {
+            return ['success' => false, 'error' => 'invalid_token'];
+        }
+
+        // Validate new password
+        $passwordErrors = ValidationHelper::validatePassword($newPassword);
+        if (!empty($passwordErrors)) {
+            return ['success' => false, 'error' => $passwordErrors[0]];
+        }
+
+        // Update password
+        $passwordHash = $this->hashPassword($newPassword);
+        $stmt = $this->db->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+        $stmt->execute([$passwordHash, $resetData['user_id']]);
+
+        // Delete used token
+        $stmt = $this->db->prepare('DELETE FROM password_resets WHERE user_id = ?');
+        $stmt->execute([$resetData['user_id']]);
+
+        // Clear all remember tokens (security)
+        $this->clearRememberTokens((int)$resetData['user_id']);
+
+        return ['success' => true];
+    }
 }

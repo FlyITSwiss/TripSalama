@@ -18,6 +18,12 @@ return [
     'GET /register/passenger' => ['AuthController', 'showRegisterPassenger'],
     'GET /register/driver' => ['AuthController', 'showRegisterDriver'],
 
+    // Password reset
+    'GET /forgot-password' => ['AuthController', 'showForgotPassword'],
+    'POST /forgot-password' => ['AuthController', 'processForgotPassword'],
+    'GET /reset-password/{token}' => ['AuthController', 'showResetPassword'],
+    'POST /reset-password' => ['AuthController', 'processResetPassword'],
+
     // Actions auth
     'POST /login' => ['AuthController', 'processLogin'],
     'POST /register/passenger' => ['AuthController', 'processRegisterPassenger'],
