@@ -2,31 +2,38 @@ name: Build Android APK
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - 'public/**'
       - 'android/**'
       - 'capacitor.config.json'
       - 'package.json'
-      - '.github/workflows/build-android.yml'
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
 
+# Versions pinées - DOIT correspondre à CLAUDE.md
 env:
-  NODE_VERSION: '22'
+  NODE_VERSION: '20'
   JAVA_VERSION: '21'
-  KEYSTORE_PASSWORD: tripsalama2026
-  KEY_ALIAS: tripsalama
-  KEY_PASSWORD: tripsalama2026
+  ANDROID_COMPILE_SDK: '35'
+  ANDROID_BUILD_TOOLS: '35.0.0'
 
 jobs:
-  build-android:
-    name: Build Android APK
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -35,27 +42,38 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - name: Setup Java
+      - name: Setup JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
           java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'gradle'
 
-      - name: Verify Android SDK
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '11076708'
+
+      - name: Install Android SDK components
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          ls -la $ANDROID_HOME/platforms/ || true
+          sdkmanager --install "platforms;android-${{ env.ANDROID_COMPILE_SDK }}"
+          sdkmanager --install "build-tools;${{ env.ANDROID_BUILD_TOOLS }}"
 
-      - name: Cache Gradle packages
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: npm-
+
+      - name: Cache Gradle
         uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+          key: gradle-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/app/build.gradle') }}
+          restore-keys: gradle-
 
       - name: Install dependencies
         run: npm ci
@@ -63,194 +81,77 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Fix adaptive-icon placement
-        run: |
-          # Remove adaptive-icon from drawable-v24 (requires SDK 26+)
-          rm -f android/app/src/main/res/drawable-v24/ic_launcher.xml
-          rm -f android/app/src/main/res/drawable-v24/ic_launcher_round.xml
-          echo "Cleaned up adaptive-icon files from drawable-v24"
-
-      - name: Generate Android icons
-        run: node scripts/generate-android-icons.js
-        continue-on-error: true
-
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      - name: Setup Keystore for Signing
-        run: |
-          # Generate keystore for release signing
-          keytool -genkey -v \
-            -keystore android/app/release.keystore \
-            -alias $KEY_ALIAS \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass $KEYSTORE_PASSWORD \
-            -keypass $KEY_PASSWORD \
-            -dname "CN=TripSalama, OU=Mobile, O=Stabilis IT, L=Geneva, ST=Geneva, C=CH"
-
-          # Create keystore.properties (path relative to android/ dir)
-          cat > android/keystore.properties << EOF
-          storeFile=release.keystore
-          storePassword=$KEYSTORE_PASSWORD
-          keyAlias=$KEY_ALIAS
-          keyPassword=$KEY_PASSWORD
-          EOF
-
-      - name: Clean and Build Debug APK
+      - name: Build Debug APK
+        if: github.event.inputs.build_type != 'release'
         working-directory: android
-        run: ./gradlew clean assembleDebug --no-daemon
+        run: ./gradlew assembleDebug
+
+      - name: Build Release APK
+        if: github.event.inputs.build_type == 'release'
+        working-directory: android
+        run: ./gradlew assembleRelease
+
+      - name: Sign Release APK
+        if: github.event.inputs.build_type == 'release'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+            -keystore android/app/release.keystore \
+            -storepass "$KEYSTORE_PASSWORD" \
+            -keypass "$KEY_PASSWORD" \
+            android/app/build/outputs/apk/release/app-release-unsigned.apk \
+            "$KEY_ALIAS"
+          ${ANDROID_SDK_ROOT}/build-tools/${{ env.ANDROID_BUILD_TOOLS }}/zipalign -v 4 \
+            android/app/build/outputs/apk/release/app-release-unsigned.apk \
+            android/app/build/outputs/apk/release/app-release.apk
+          rm android/app/release.keystore
+
+      - name: Get APK size
+        id: apk_size
+        run: |
+          if [ "${{ github.event.inputs.build_type }}" == "release" ]; then
+            APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
+          else
+            APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
+          fi
+          APK_SIZE=$(stat -c%s "$APK_PATH" 2>/dev/null || stat -f%z "$APK_PATH")
+          APK_SIZE_MB=$(echo "scale=2; $APK_SIZE / 1048576" | bc)
+          echo "size=$APK_SIZE" >> $GITHUB_OUTPUT
+          echo "size_mb=$APK_SIZE_MB" >> $GITHUB_OUTPUT
+          echo "APK Size: ${APK_SIZE_MB} MB"
 
       - name: Upload Debug APK
+        if: github.event.inputs.build_type != 'release'
         uses: actions/upload-artifact@v4
         with:
-          name: tripsalama-debug-apk
+          name: app-debug-${{ github.sha }}
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
-      - name: Build Release APK (Signed)
-        working-directory: android
-        run: ./gradlew assembleRelease --no-daemon
-
-      - name: Upload Release APK (Signed)
+      - name: Upload Release APK
+        if: github.event.inputs.build_type == 'release'
         uses: actions/upload-artifact@v4
         with:
-          name: tripsalama-release-signed-apk
+          name: app-release-${{ github.sha }}
           path: android/app/build/outputs/apk/release/app-release.apk
-          retention-days: 30
-          if-no-files-found: warn
-
-      # Upload APK to VPS for direct download
-      - name: Setup SSH for APK upload
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          cat > ~/.ssh/config << 'SSHCONFIG'
-          Host *
-            StrictHostKeyChecking no
-            UserKnownHostsFile /dev/null
-            ConnectTimeout 30
-          SSHCONFIG
-          chmod 600 ~/.ssh/config
-
-      - name: Upload APK to VPS
-        id: upload_apk
-        run: |
-          set -e  # Exit on any error
-          APK_NAME="TripSalama-v${{ github.run_number }}.apk"
-          APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
-
-          if [ -f "$APK_PATH" ]; then
-            echo "📦 APK found: $(ls -lh $APK_PATH)"
-
-            # Create downloads directory on VPS
-            echo "📁 Creating downloads directory..."
-            ssh -v debian@83.228.205.222 "sudo mkdir -p /var/www/tripsalama/public/downloads && sudo chown www-data:www-data /var/www/tripsalama/public/downloads && sudo chmod 755 /var/www/tripsalama/public/downloads" 2>&1
-
-            # Upload APK with versioned name
-            echo "📤 Uploading APK to VPS..."
-            scp -v "$APK_PATH" "debian@83.228.205.222:/tmp/$APK_NAME" 2>&1
-
-            echo "📂 Moving APK to downloads directory..."
-            ssh debian@83.228.205.222 "sudo mv /tmp/$APK_NAME /var/www/tripsalama/public/downloads/$APK_NAME && sudo chown www-data:www-data /var/www/tripsalama/public/downloads/$APK_NAME && sudo chmod 644 /var/www/tripsalama/public/downloads/$APK_NAME"
-
-            # Also keep a "latest" version
-            ssh debian@83.228.205.222 "sudo cp /var/www/tripsalama/public/downloads/$APK_NAME /var/www/tripsalama/public/downloads/TripSalama-latest.apk && sudo chown www-data:www-data /var/www/tripsalama/public/downloads/TripSalama-latest.apk && sudo chmod 644 /var/www/tripsalama/public/downloads/TripSalama-latest.apk"
-
-            # Verify upload via SSH
-            echo "🔍 Verifying upload via SSH..."
-            VERIFY=$(ssh debian@83.228.205.222 "ls -la /var/www/tripsalama/public/downloads/$APK_NAME 2>&1")
-            echo "$VERIFY"
-
-            if echo "$VERIFY" | grep -q "$APK_NAME"; then
-              echo "apk_url=https://stabilis-it.ch/internal/tripsalama/downloads/$APK_NAME" >> $GITHUB_OUTPUT
-              echo "✅ APK uploaded and verified via SSH: $APK_NAME"
-            else
-              echo "❌ APK verification failed!"
-              exit 1
-            fi
-          else
-            echo "apk_url=" >> $GITHUB_OUTPUT
-            echo "⚠️ Release APK not found at $APK_PATH"
-            ls -la android/app/build/outputs/apk/ || true
-            exit 1
-          fi
-
-      # VERIFICATION CRITIQUE: Tester l'accès HTTP à l'APK
-      - name: Verify APK HTTP Access
-        run: |
-          echo "🌐 Vérification accès HTTP APK..."
-          sleep 5  # Attendre que nginx propage les changements
-
-          # Test HTTP avec curl
-          APK_URL="https://stabilis-it.ch/internal/tripsalama/downloads/TripSalama-v${{ github.run_number }}.apk"
-          HTTP_CODE=$(curl -sI -w "%{http_code}" -o /dev/null "$APK_URL")
-
-          echo "HTTP Code: $HTTP_CODE"
-
-          if [ "$HTTP_CODE" = "200" ]; then
-            echo "✅ APK accessible via HTTP (200 OK)"
-
-            # Vérifier MIME type
-            MIME=$(curl -sI "$APK_URL" | grep -i "content-type:" | awk '{print $2}')
-            echo "MIME Type: $MIME"
-
-            # Vérifier taille
-            SIZE=$(curl -sI "$APK_URL" | grep -i "content-length:" | awk '{print $2}' | tr -d '\r')
-            SIZE_MB=$(echo "scale=2; $SIZE / 1024 / 1024" | bc)
-            echo "Taille: ${SIZE_MB} MB"
-
-          elif [ "$HTTP_CODE" = "403" ]; then
-            echo "❌ ERREUR: APK retourne 403 Forbidden"
-            echo "Vérifier permissions et config nginx"
-            exit 1
-          elif [ "$HTTP_CODE" = "404" ]; then
-            echo "❌ ERREUR: APK retourne 404 Not Found"
-            echo "Le fichier n'existe pas ou nginx ne le trouve pas"
-            exit 1
-          else
-            echo "❌ ERREUR: HTTP Code inattendu: $HTTP_CODE"
-            exit 1
-          fi
+          retention-days: 90
 
       - name: Build Summary
-        if: always()
         run: |
-          echo "## 🚗 TripSalama Android Build" >> $GITHUB_STEP_SUMMARY
+          echo "## Android Build Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" == "success" ]; then
-            echo "### ✅ Build réussi" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "### ❌ Build échoué" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Info | Valeur |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Branche | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Auteur | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📦 Téléchargement direct" >> $GITHUB_STEP_SUMMARY
-          echo "- [📱 Télécharger l'APK](https://stabilis-it.ch/internal/tripsalama/downloads/TripSalama-v${{ github.run_number }}.apk)" >> $GITHUB_STEP_SUMMARY
-
-      # Email notification via VPS webhook (bypasses GitHub IP restrictions on Office 365)
-      - name: Send Build Notification Email
-        if: always()
-        run: |
-          curl -X POST "https://stabilis-it.ch/internal/tripsalama/api/build-notification.php" \
-            -H "Content-Type: application/json" \
-            -H "X-API-KEY: tripsalama-build-2026" \
-            -d '{
-              "status": "${{ job.status }}",
-              "commit": "${{ github.sha }}",
-              "branch": "${{ github.ref_name }}",
-              "actor": "${{ github.actor }}",
-              "message": "",
-              "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-              "apk_url": "https://stabilis-it.ch/internal/tripsalama/downloads/TripSalama-v${{ github.run_number }}.apk",
-              "version": "${{ github.run_number }}"
-            }' \
-            --fail --silent --show-error || echo "Email notification failed (non-blocking)"
-        continue-on-error: true
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Type | ${{ github.event.inputs.build_type || 'debug' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| APK Size | ${{ steps.apk_size.outputs.size_mb }} MB |" >> $GITHUB_STEP_SUMMARY
+          echo "| Node.js | ${{ env.NODE_VERSION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| JDK | ${{ env.JAVA_VERSION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Android SDK | ${{ env.ANDROID_COMPILE_SDK }} |" >> $GITHUB_STEP_SUMMARY

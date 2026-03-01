@@ -26,11 +26,11 @@
     "StatusBar": {
       "style": "dark",
       "backgroundColor": "#2D5A4A",
-      "overlaysWebView": false
+      "overlaysWebView": true
     },
     "Keyboard": {
-      "resize": "body",
-      "resizeOnFullScreen": true,
+      "resize": "none",
+      "resizeOnFullScreen": false,
       "style": "dark"
     },
     "PushNotifications": {
@@ -70,10 +70,10 @@
     }
   },
   "android": {
-    "allowMixedContent": false,
+    "allowMixedContent": true,
     "captureInput": true,
-    "webContentsDebuggingEnabled": false,
-    "loggingBehavior": "none",
+    "webContentsDebuggingEnabled": true,
+    "loggingBehavior": "debug",
     "backgroundColor": "#2D5A4A",
     "buildOptions": {
       "keystorePath": "release.keystore",
