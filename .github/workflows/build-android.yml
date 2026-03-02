@@ -155,3 +155,49 @@ jobs:
           echo "| Node.js | ${{ env.NODE_VERSION }} |" >> $GITHUB_STEP_SUMMARY
           echo "| JDK | ${{ env.JAVA_VERSION }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Android SDK | ${{ env.ANDROID_COMPILE_SDK }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Send APK notification email
+        if: success()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: mail.infomaniak.com
+          server_port: 587
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "🚀 TripSalama - Nouvelle APK disponible"
+          to: tarik.gilani@stabilis-it.ch
+          from: TripSalama Build <noreply@stabilis-it.ch>
+          html_body: |
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background: linear-gradient(135deg, #1B4D3E 0%, #2D5A4A 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+                <h1 style="margin: 0;">🚗 TripSalama</h1>
+                <p style="margin: 10px 0 0 0; opacity: 0.9;">Nouvelle version APK disponible</p>
+              </div>
+              <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 12px 12px;">
+                <p>Une nouvelle version de l'APK TripSalama est disponible.</p>
+
+                <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #1B4D3E;">
+                  <p><strong>📦 Build Info:</strong></p>
+                  <ul>
+                    <li>Type: ${{ github.event.inputs.build_type || 'debug' }}</li>
+                    <li>Taille: ${{ steps.apk_size.outputs.size_mb }} MB</li>
+                    <li>Commit: <code>${{ github.sha }}</code></li>
+                    <li>Message: ${{ github.event.head_commit.message }}</li>
+                  </ul>
+                </div>
+
+                <p style="text-align: center;">
+                  <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                     style="background: #C9A962; color: #1B4D3E; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                    📥 Télécharger l'APK
+                  </a>
+                </p>
+
+                <p style="font-size: 14px; color: #666;">
+                  <strong>Instructions:</strong><br>
+                  1. Cliquez sur le bouton ci-dessus<br>
+                  2. Dans "Artifacts", téléchargez le fichier ZIP<br>
+                  3. Extrayez et installez l'APK
+                </p>
+              </div>
+            </div>
