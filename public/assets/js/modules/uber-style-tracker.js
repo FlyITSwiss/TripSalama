@@ -108,7 +108,7 @@ const UberStyleTracker = (function() {
     /**
      * Démarrer le tracking sur une route
      * @param {string|Array} route - Polyline encodée ou tableau de [lat, lng]
-     * @param {Object} options - Options
+     * @param {Object} options - Options incluant startPosition pour forcer le point de départ
      */
     function start(route, options = {}) {
         if (isRunning) stop();
@@ -117,12 +117,32 @@ const UberStyleTracker = (function() {
         if (typeof route === 'string') {
             fullRoutePoints = MapController.decodePolyline(route);
         } else {
-            fullRoutePoints = route;
+            fullRoutePoints = route.map(p => Array.isArray(p) ? p : [p.lat, p.lng]);
         }
 
         if (fullRoutePoints.length < 2) {
             AppConfig.debug('UberStyleTracker: Route trop courte');
             return false;
+        }
+
+        // Si une position de départ est fournie, l'insérer comme premier point
+        // Cela évite le "saut" quand OSRM retourne un premier point différent
+        if (options.startPosition) {
+            const startLat = options.startPosition.lat;
+            const startLng = options.startPosition.lng;
+            const firstRoutePoint = fullRoutePoints[0];
+
+            // Vérifier si le premier point est différent de la position de départ
+            const distToFirst = calculateDistance(
+                { lat: startLat, lng: startLng },
+                { lat: firstRoutePoint[0], lng: firstRoutePoint[1] }
+            );
+
+            // Si la distance est > 50m, ajouter le point de départ au début
+            if (distToFirst > 50) {
+                fullRoutePoints.unshift([startLat, startLng]);
+                AppConfig.debug('UberStyleTracker: Start position added to route');
+            }
         }
 
         // Callbacks
@@ -136,10 +156,10 @@ const UberStyleTracker = (function() {
         isRunning = true;
         isPaused = false;
 
-        // Position initiale
-        const startPoint = fullRoutePoints[0];
-        currentPosition = { lat: startPoint[0], lng: startPoint[1] };
-        targetPosition = { ...currentPosition };
+        // Position initiale - utiliser startPosition si fournie, sinon le premier point de la route
+        const startPoint = options.startPosition || { lat: fullRoutePoints[0][0], lng: fullRoutePoints[0][1] };
+        currentPosition = { lat: startPoint.lat, lng: startPoint.lng };
+        targetPosition = { lat: startPoint.lat, lng: startPoint.lng };
 
         // Calculer le cap initial
         if (fullRoutePoints.length > 1) {
@@ -163,18 +183,25 @@ const UberStyleTracker = (function() {
         // Dessiner la route
         drawRoute();
 
-        // Centrer la carte
-        MapController.fitBounds(fullRoutePoints.map(p => [p[0], p[1]]), 80);
+        // Centrer la carte - inclure le point de départ dans les bounds
+        const boundsPoints = fullRoutePoints.map(p => [p[0], p[1]]);
+        if (options.startPosition) {
+            boundsPoints.push([options.startPosition.lat, options.startPosition.lng]);
+        }
+        MapController.fitBounds(boundsPoints, 80);
 
-        // Démarrer l'animation
-        lastFrameTime = performance.now();
-        animationFrameId = requestAnimationFrame(animationLoop);
+        // Petit délai avant de démarrer l'animation pour éviter les sauts visuels
+        setTimeout(() => {
+            // Démarrer l'animation
+            lastFrameTime = performance.now();
+            animationFrameId = requestAnimationFrame(animationLoop);
+        }, 100);
 
         // Timer ETA
         startETAUpdater();
 
-        EventBus.emit('tracker:started', { stats });
-        AppConfig.debug('UberStyleTracker: Started');
+        EventBus.emit('tracker:started', { stats, startPosition: currentPosition });
+        AppConfig.debug('UberStyleTracker: Started from', currentPosition.lat.toFixed(4), currentPosition.lng.toFixed(4));
 
         return true;
     }
@@ -317,12 +344,18 @@ const UberStyleTracker = (function() {
 
     /**
      * Avancer sur la route
+     * Optimisé pour éviter les sauts visuels même à vitesse élevée
      */
     function advanceOnRoute(progressDelta) {
-        segmentProgress += progressDelta;
+        // Limiter la progression par frame pour éviter les sauts visuels
+        // Max 1 segment par frame (équivaut à ~50-100m max selon la route)
+        const maxProgressPerFrame = 0.5;
+        const clampedDelta = Math.min(progressDelta, maxProgressPerFrame);
 
-        // Passer au segment suivant si nécessaire
-        while (segmentProgress >= 1 && currentSegmentIndex < fullRoutePoints.length - 2) {
+        segmentProgress += clampedDelta;
+
+        // Passer au segment suivant si nécessaire (un seul à la fois pour la fluidité)
+        if (segmentProgress >= 1 && currentSegmentIndex < fullRoutePoints.length - 2) {
             segmentProgress -= 1;
             currentSegmentIndex++;
 
@@ -343,10 +376,25 @@ const UberStyleTracker = (function() {
         const nextPoint = fullRoutePoints[nextIndex];
 
         // Interpolation linéaire entre les deux points
-        targetPosition = {
+        const newTargetPosition = {
             lat: currentPoint[0] + (nextPoint[0] - currentPoint[0]) * segmentProgress,
             lng: currentPoint[1] + (nextPoint[1] - currentPoint[1]) * segmentProgress
         };
+
+        // Vérifier si le mouvement est raisonnable (éviter les sauts)
+        const distToNewTarget = calculateDistance(targetPosition, newTargetPosition);
+        const maxMovePerFrame = 100; // 100m max par frame
+
+        if (distToNewTarget > maxMovePerFrame) {
+            // Mouvement trop grand - interpoler progressivement vers la nouvelle cible
+            const ratio = maxMovePerFrame / distToNewTarget;
+            targetPosition = {
+                lat: targetPosition.lat + (newTargetPosition.lat - targetPosition.lat) * ratio,
+                lng: targetPosition.lng + (newTargetPosition.lng - targetPosition.lng) * ratio
+            };
+        } else {
+            targetPosition = newTargetPosition;
+        }
 
         // Calculer le cap cible
         if (nextIndex > currentSegmentIndex) {
@@ -362,13 +410,34 @@ const UberStyleTracker = (function() {
 
     /**
      * Interpoler la position pour fluidité
+     * Amélioré pour éviter les sauts et comportements erratiques
      */
     function interpolatePosition(deltaTime) {
-        const factor = Math.min(deltaTime / config.interpolationDuration * 10, 1);
+        // Facteur d'interpolation limité pour éviter les sauts
+        const baseFactor = Math.min(deltaTime / config.interpolationDuration * 10, 1);
 
-        // Interpolation position
-        currentPosition.lat += (targetPosition.lat - currentPosition.lat) * factor;
-        currentPosition.lng += (targetPosition.lng - currentPosition.lng) * factor;
+        // Calculer la distance entre position actuelle et cible
+        const distToTarget = calculateDistance(currentPosition, targetPosition);
+
+        // Si la distance est très petite, aller directement à la cible
+        if (distToTarget < 1) { // < 1 mètre
+            currentPosition.lat = targetPosition.lat;
+            currentPosition.lng = targetPosition.lng;
+        }
+        // Si la distance est très grande (> 500m), c'est probablement un saut, réduire le facteur
+        else if (distToTarget > 500) {
+            // Saut détecté - utiliser un facteur très faible ou snap directement
+            AppConfig.debug('UberStyleTracker: Jump detected, distance:', Math.round(distToTarget), 'm');
+            // Snap à la position cible pour éviter un mouvement bizarre
+            currentPosition.lat = targetPosition.lat;
+            currentPosition.lng = targetPosition.lng;
+        }
+        else {
+            // Interpolation normale avec facteur adaptatif
+            const factor = Math.min(baseFactor, 0.3); // Limiter à 30% max par frame
+            currentPosition.lat += (targetPosition.lat - currentPosition.lat) * factor;
+            currentPosition.lng += (targetPosition.lng - currentPosition.lng) * factor;
+        }
 
         // Interpolation rotation (avec gestion du passage 360°->0°)
         let headingDiff = targetHeading - currentHeading;
@@ -377,7 +446,11 @@ const UberStyleTracker = (function() {
         while (headingDiff > 180) headingDiff -= 360;
         while (headingDiff < -180) headingDiff += 360;
 
-        currentHeading += headingDiff * config.rotationSmoothing;
+        // Limiter la vitesse de rotation pour éviter les rotations trop rapides
+        const maxRotationPerFrame = 15; // degrés max par frame
+        const clampedDiff = Math.max(-maxRotationPerFrame, Math.min(maxRotationPerFrame, headingDiff * config.rotationSmoothing * 3));
+
+        currentHeading += clampedDiff;
 
         // Normaliser le cap (0-360)
         currentHeading = ((currentHeading % 360) + 360) % 360;

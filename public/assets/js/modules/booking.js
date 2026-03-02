@@ -440,10 +440,14 @@ const Booking = (function() {
     /**
      * Scroll automatique pour afficher le dropdown de suggestions
      * Fait scroller la bottom sheet pour que le dropdown soit visible
+     * Optimisé pour mobile avec clavier virtuel (Capacitor/APK)
      */
     function scrollDropdownIntoView(dropdown) {
-        // Petit timeout pour laisser le DOM se mettre a jour
-        requestAnimationFrame(() => {
+        // Délai plus long pour attendre que le clavier virtuel s'ouvre sur mobile
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const delay = isMobile ? 350 : 50; // Plus de temps sur mobile pour le clavier
+
+        setTimeout(() => {
             // Trouver le container scrollable (booking-sheet)
             const sheet = document.querySelector('.booking-sheet');
             if (!sheet) return;
@@ -452,31 +456,71 @@ const Booking = (function() {
             const inputWrapper = dropdown.closest('.booking-input-wrapper');
             if (!inputWrapper) return;
 
-            // Calculer si le dropdown depasse la zone visible de la sheet
+            const input = inputWrapper.querySelector('input');
+
+            // Sur mobile, utiliser visualViewport si disponible pour gérer le clavier
+            const viewportHeight = window.visualViewport
+                ? window.visualViewport.height
+                : window.innerHeight;
+
+            // Calculer les positions
             const sheetRect = sheet.getBoundingClientRect();
             const dropdownRect = dropdown.getBoundingClientRect();
+            const inputRect = input ? input.getBoundingClientRect() : null;
 
-            // Si le bas du dropdown depasse le bas de la sheet visible
-            if (dropdownRect.bottom > sheetRect.bottom) {
-                // Calculer de combien il faut scroller
-                const scrollNeeded = dropdownRect.bottom - sheetRect.bottom + 16; // +16px de marge
+            // Zone visible = min entre la sheet et le viewport (moins le clavier)
+            const visibleBottom = Math.min(sheetRect.bottom, viewportHeight - 20);
 
-                // Smooth scroll de la sheet
+            // D'abord, s'assurer que l'input est visible
+            if (inputRect && inputRect.top < sheetRect.top) {
                 sheet.scrollBy({
-                    top: scrollNeeded,
+                    top: inputRect.top - sheetRect.top - 20,
                     behavior: 'smooth'
                 });
             }
 
-            // Aussi, scroller l'input en vue si necessaire
-            const input = inputWrapper.querySelector('input');
-            if (input) {
-                input.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'nearest'
+            // Ensuite, s'assurer que le dropdown est visible
+            if (dropdownRect.bottom > visibleBottom) {
+                const scrollNeeded = dropdownRect.bottom - visibleBottom + 30; // Marge pour bien voir
+
+                // Sur mobile, aussi forcer le scroll du body/window
+                if (isMobile) {
+                    // Scroller la sheet
+                    sheet.scrollBy({
+                        top: scrollNeeded,
+                        behavior: 'smooth'
+                    });
+
+                    // Et forcer le focus scroll natif après un court délai
+                    setTimeout(() => {
+                        if (input && document.activeElement === input) {
+                            // Utiliser scrollIntoView avec block: 'center' pour mobile
+                            inputWrapper.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center'
+                            });
+                        }
+                    }, 100);
+                } else {
+                    sheet.scrollBy({
+                        top: scrollNeeded,
+                        behavior: 'smooth'
+                    });
+                }
+            }
+
+            // Listener pour visualViewport resize (clavier qui s'ouvre/ferme)
+            if (window.visualViewport && !window._bookingViewportListener) {
+                window._bookingViewportListener = true;
+                window.visualViewport.addEventListener('resize', () => {
+                    // Re-ajuster si un dropdown est visible
+                    const visibleDropdown = document.querySelector('.booking-dropdown:not(.hidden)');
+                    if (visibleDropdown) {
+                        requestAnimationFrame(() => scrollDropdownIntoView(visibleDropdown));
+                    }
                 });
             }
-        });
+        }, delay);
     }
 
     /**

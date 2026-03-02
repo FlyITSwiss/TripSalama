@@ -983,16 +983,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Generate random driver position around pickup (within 1-2km)
+    // Store the driver start position globally for tracking
+    let driverStartPosition = null;
+
     function generateRandomDriverPosition() {
         // Random angle (0-360 degrees)
         const angle = Math.random() * 2 * Math.PI;
         // Random distance (1-2km = 0.009-0.018 degrees approximately)
         const distance = 0.009 + Math.random() * 0.009;
 
-        return {
+        driverStartPosition = {
             lat: config.pickup.lat + Math.cos(angle) * distance,
             lng: config.pickup.lng + Math.sin(angle) * distance
         };
+
+        return driverStartPosition;
     }
 
     // Generate approach route (driver coming to pickup)
@@ -1061,8 +1066,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         console.log('[Demo] Map bounds adjusted to show route');
 
+        // Ajouter un marker temporaire pour montrer le point de départ du chauffeur
+        if (driverStartPosition) {
+            MapController.addMarker('driver_start', driverStartPosition.lat, driverStartPosition.lng, 'vehicle', 'Position du chauffeur');
+            console.log('[Demo] Driver start marker added at:', driverStartPosition.lat.toFixed(4), driverStartPosition.lng.toFixed(4));
+        }
+
         let updateCount = 0;
         const started = UberStyleTracker.start(approachRoute, {
+            // Passer la position de départ pour éviter les sauts
+            startPosition: driverStartPosition,
             onPositionUpdate: function(data) {
                 updateCount++;
                 if (updateCount % 30 === 1) {
@@ -1074,9 +1087,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 elements.progressFill.style.width = data.stats.progress + '%';
                 elements.progressPercent.textContent = Math.round(data.stats.progress) + '%';
                 elements.speedDisplay.textContent = Math.round(data.stats.currentSpeedKmh) + ' km/h';
+
+                // Supprimer le marker de départ après quelques updates
+                if (updateCount === 5) {
+                    MapController.removeMarker('driver_start');
+                    console.log('[Demo] Driver start marker removed');
+                }
             },
             onArrival: function() {
                 console.log('[Demo] *** DRIVER ARRIVED! *** Updates:', updateCount);
+                MapController.removeMarker('driver_start'); // S'assurer qu'il est supprimé
                 startBoarding();
             }
         });
