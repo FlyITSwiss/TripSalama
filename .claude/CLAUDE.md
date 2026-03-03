@@ -259,8 +259,8 @@ TripSalama/
 │   ├── migrations/        # 001_users, 002_vehicles, 003_rides, etc.
 │   └── seeds/             # demo_data.sql
 ├── docker/                # docker-compose.yml, Dockerfile, nginx.conf
-├── tests/playwright/      # auth.spec.ts, booking.spec.ts, etc. (Playwright)
-├── tests/puppeteer/       # Anciens tests (conservés pour référence)
+├── tests/playwright/      # SEULS TESTS AUTORISÉS (Playwright)
+├── tests/puppeteer/       # ⚠️ ARCHIVÉ - NE PLUS UTILISER
 ├── scripts/               # deploy.sh, setup.sh
 └── .github/workflows/     # CI/CD
 ```
@@ -314,12 +314,16 @@ TripSalama/
 
 ---
 
-## TESTS PLAYWRIGHT (Migration de Puppeteer)
+## TESTS PLAYWRIGHT (Puppeteer INTERDIT)
 
-> **NOTE (Mars 2025)** : Migration de Puppeteer vers Playwright pour une meilleure stabilité,
-> des assertions plus robustes, et le support natif des tests mobile.
-> Les anciens tests Puppeteer dans `tests/puppeteer/` sont conservés pour référence
-> mais les NOUVEAUX tests doivent être écrits avec Playwright dans `tests/playwright/`.
+> **RÈGLE STRICTE (Mars 2026)** : **Puppeteer est INTERDIT.** Seul Playwright est autorisé.
+> - ❌ `require('puppeteer')` → INTERDIT
+> - ❌ `node tests/puppeteer/*.js` → INTERDIT
+> - ❌ Création de nouveaux fichiers dans `tests/puppeteer/` → INTERDIT
+> - ✅ `@playwright/test` → SEUL FRAMEWORK DE TEST AUTORISÉ
+> - ✅ `npx playwright test` → COMMANDE OBLIGATOIRE
+>
+> Les anciens tests Puppeteer dans `tests/puppeteer/` sont **ARCHIVÉS et ne doivent plus être utilisés.**
 
 ### Configuration Playwright
 
@@ -355,8 +359,8 @@ export default defineConfig({
 
 | Rôle | Email | Password |
 |------|-------|----------|
-| Passagère | fatima@example.com | Test1234! |
-| Conductrice | khadija@example.com | Test1234! |
+| Passagère | passenger@tripsalama.ch | TripSalama2025! |
+| Conductrice | driver@tripsalama.ch | TripSalama2025! |
 
 ### Commandes Playwright
 
@@ -387,13 +391,23 @@ npx playwright show-report
 
 ```
 tests/
-├── playwright/              # NOUVEAUX TESTS (Playwright)
-│   ├── auth.spec.ts         # Login, register, logout
-│   ├── booking.spec.ts      # Réservation course
-│   ├── tracking.spec.ts     # Suivi véhicule
-│   ├── driver.spec.ts       # Dashboard conductrice
+├── playwright/              # SEULS TESTS AUTORISÉS
+│   ├── smoke-tests.spec.js  # Tests de validation rapides (OBLIGATOIRE avant deploy)
+│   ├── app.spec.js          # Tests application
+│   ├── booking.spec.js      # Réservation course
+│   ├── functional-audit.spec.js # Audit fonctionnel
 │   └── fixtures/            # Test fixtures et helpers
-└── puppeteer/               # ANCIENS TESTS (conservés pour référence)
+└── puppeteer/               # ⚠️ ARCHIVÉ - NE JAMAIS EXÉCUTER
+```
+
+### Commande de smoke test (OBLIGATOIRE)
+
+```bash
+# Smoke tests avant chaque deploy
+npm run test:smoke
+
+# Ou en headed pour voir les tests
+npm run test:smoke -- --headed
 ```
 
 ### Avantages de Playwright vs Puppeteer
@@ -486,6 +500,91 @@ include /etc/nginx/snippets/tripsalama.conf;
 | `SSH_PRIVATE_KEY` | Accès SSH au VPS (debian@83.228.205.222) |
 | `SMTP_USERNAME` | Email Office 365 (information-contact@stabilis-it.ch) |
 | `SMTP_PASSWORD` | Mot de passe SMTP Office 365 |
+
+---
+
+## 🚀 COMMANDE "DÉPLOIES" - DÉPLOIEMENT UNIFIÉ
+
+> **Quand l'utilisateur dit "Déploies", TOUT doit être fait automatiquement en une seule action.**
+
+### Ce que "Déploies" déclenche
+
+La commande "Déploies" lance le workflow **`deploy-complet.yml`** qui exécute **5 phases** :
+
+| Phase | Nom | Description |
+|-------|-----|-------------|
+| 1 | **Validation PHP** | Vérifie syntaxe PHP (lint) |
+| 2 | **Deploy Webapp** | Rsync vers `/var/www/tripsalama` + nginx reload |
+| 3 | **Build APK** | Gradle assembleRelease avec keystore |
+| 4 | **Upload APK** | SCP vers VPS + vérification HTTP 200 (NO 404!) |
+| 5 | **Email** | Notification avec lien APK + credentials |
+
+### Workflow GitHub Actions
+
+```yaml
+# .github/workflows/deploy-complet.yml
+# Déclenché par: push main OU workflow_dispatch
+
+Résumé:
+├── validate-php     → PHP syntax check
+├── deploy-webapp    → rsync + nginx
+├── build-apk        → Gradle Release
+├── upload-apk       → SCP + HTTP 200 check (BLOQUANT si 404)
+└── send-email       → Lien APK + Identifiants de test
+```
+
+### Email de déploiement (OBLIGATOIRE)
+
+L'email **DOIT** contenir :
+
+| Section | Contenu |
+|---------|---------|
+| **Bouton APK** | 🟢 GROS BOUTON VERT "TÉLÉCHARGER L'APK" (lien direct) |
+| **Credentials** | Passagère: `passenger@tripsalama.ch` / `TripSalama2025!` |
+|                 | Conductrice: `driver@tripsalama.ch` / `TripSalama2025!` |
+| **Lien Web** | https://stabilis-it.ch/internal/tripsalama |
+| **Logs** | Lien vers GitHub Actions run |
+
+### Vérification APK 404 (CRITIQUE)
+
+**Le workflow ÉCHOUE si l'APK retourne 404 ou 403.**
+
+```bash
+# Phase 4 vérifie automatiquement:
+HTTP_CODE=$(curl -sI "https://stabilis-it.ch/internal/tripsalama/downloads/TripSalama-vXX.apk" | head -1 | awk '{print $2}')
+if [ "$HTTP_CODE" != "200" ]; then
+    exit 1  # BLOQUE le deploy
+fi
+```
+
+### Comment déclencher "Déploies"
+
+| Méthode | Action |
+|---------|--------|
+| **Push main** | `git push origin main` → deploy-complet.yml démarre |
+| **Manuel** | GitHub Actions → deploy-complet.yml → Run workflow |
+| **CLI** | `gh workflow run deploy-complet.yml` |
+
+### Checklist "Déploies" (BLOQUANTE)
+
+| # | Vérification | Si échec |
+|---|--------------|----------|
+| 1 | Tests Playwright passent localement | STOP, corriger |
+| 2 | `npm run validate:playstore` passe | STOP, corriger |
+| 3 | Push sur main | Attend workflow |
+| 4 | Workflow deploy-complet.yml = ✅ | Si ❌, voir logs |
+| 5 | Email reçu avec lien APK | Si non reçu, vérifier SMTP |
+| 6 | Clic lien APK → téléchargement démarre | Si 404, voir logs "Upload APK" |
+
+### INTERDICTIONS "Déploies"
+
+| ❌ INTERDIT | ✅ OBLIGATOIRE |
+|-------------|----------------|
+| Déployer webapp sans APK | Workflow unifié (5 phases) |
+| Envoyer email sans vérifier APK | Phase 4 vérifie HTTP 200 |
+| Email sans credentials | Template inclut identifiants |
+| Déploiement manuel SSH | Push main → GitHub Actions |
+| Workflow partiel (juste webapp) | `deploy-complet.yml` complet |
 
 ---
 
@@ -1310,6 +1409,145 @@ if (
 | 4 | **APK rebuilé** | `npx cap sync android && ./gradlew assembleDebug` |
 | 5 | **Émulateur ping host** | `adb shell ping -c 1 10.0.2.2` = réponse |
 | 6 | **Logs proxy** | Voir les requêtes OPTIONS et GET/POST passer |
+
+---
+
+## 🎨 LEÇONS APPRISES - CSS DESKTOP/MOBILE
+
+### 1. JAMAIS utiliser `inset: 0` si override nécessaire (CRITIQUE)
+
+| ❌ ERREUR | ✅ SOLUTION |
+|-----------|-------------|
+| `inset: 0` puis override `left/right` | `top: 0; left: 0; right: 0; bottom: 0;` explicites |
+
+**Problème :** `inset` est un shorthand qui définit les 4 côtés. Les overrides `left: 50%; right: auto;` créent des conflits de spécificité → **width: 0px** !
+
+```css
+/* ❌ CASSÉ - width devient 0 sur desktop */
+.container {
+    position: fixed;
+    inset: 0;
+}
+@media (min-width: 519px) {
+    .container {
+        left: 50%;
+        right: auto;
+        max-width: 420px;
+    }
+}
+
+/* ✅ CORRECT - fonctionne */
+.container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+@media (min-width: 519px) {
+    .container {
+        width: 420px;
+        left: 50%;
+        right: auto;
+        margin-left: -210px;
+    }
+}
+```
+
+### 2. Centrage élément fixed sur desktop
+
+| Méthode | Fiabilité | Recommandation |
+|---------|-----------|----------------|
+| `transform: translateX(-50%)` | ⚠️ Peut confliter | Éviter avec `inset` |
+| `margin-left: -width/2` | ✅ Fiable | **Recommandé** |
+| `left: calc(50% - width/2)` | ✅ Fiable | Alternative |
+
+```css
+/* ✅ Centrage fiable pour élément fixed */
+.mobile-container {
+    position: fixed;
+    width: 420px;
+    left: 50%;
+    margin-left: -210px; /* -width/2 */
+}
+```
+
+### 3. Tester CSS desktop avec Playwright AVANT push
+
+```bash
+# Script de test rapide
+node -e "
+const { chromium } = require('@playwright/test');
+(async () => {
+    const browser = await chromium.launch({ headless: false });
+    const page = await browser.newPage();
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.goto('URL_PAGE');
+
+    // Vérifier dimensions
+    const analysis = await page.evaluate(() => {
+        const el = document.querySelector('.container');
+        return { width: el?.offsetWidth, height: el?.offsetHeight };
+    });
+    console.log(analysis); // width doit être > 0 !
+
+    await page.screenshot({ path: 'test-desktop.png' });
+    await browser.close();
+})();
+"
+```
+
+### 4. Format mobile sur desktop - Pattern standard
+
+Pour afficher une page en format mobile (420px) centrée sur desktop :
+
+```css
+/* Mobile: plein écran */
+.page-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+/* Desktop: conteneur mobile centré */
+@media (min-width: 519px) {
+    .page-container {
+        width: 420px;
+        left: 50%;
+        right: auto;
+        margin-left: -210px;
+        box-shadow: 0 0 60px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Fond sombre derrière */
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #0a0a0a;
+        z-index: -1;
+    }
+}
+```
+
+### 5. Variables CSS - Breakpoints φ
+
+| Variable | Valeur | Usage |
+|----------|--------|-------|
+| `--bp-mobile` | 320px | Petit mobile |
+| `--bp-tablet` | 518px | Tablet / seuil mobile→desktop |
+| `--bp-desktop` | 838px | Desktop standard |
+| `--bp-wide` | 1355px | Grand écran |
+
+**Media query standard pour passer en mode "desktop avec vue mobile" :**
+```css
+@media (min-width: 519px) { /* > 518px = desktop */ }
+```
 
 ---
 
