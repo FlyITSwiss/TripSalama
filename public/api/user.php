@@ -73,8 +73,12 @@ try {
             errorResponse(__('error.not_found'), 404);
     }
 } catch (Throwable $e) {
-    error_log('API User error: ' . $e->getMessage());
-    errorResponse(__('error.generic'), 500);
+    error_log('API User error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+    // DEBUG: Show full error for troubleshooting - REMOVE IN PRODUCTION
+    errorResponse(
+        __('error.generic') . ' [DEBUG: ' . $e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine() . ']',
+        500
+    );
 }
 
 /**
