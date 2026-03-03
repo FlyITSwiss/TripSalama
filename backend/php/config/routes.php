@@ -53,4 +53,5 @@ return [
     'GET /admin/settings' => ['AdminController', 'settings', 'auth' => true, 'role' => 'admin'],
     'POST /admin/settings' => ['AdminController', 'updateSettings', 'auth' => true, 'role' => 'admin'],
     'GET /admin/dashboard' => ['AdminController', 'dashboard', 'auth' => true, 'role' => 'admin'],
+    'GET /admin/countries' => ['AdminController', 'countries', 'auth' => true, 'role' => 'admin'],
 ];

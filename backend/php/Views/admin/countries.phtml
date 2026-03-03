@@ -1,0 +1,750 @@
+<?php
+/**
+ * TripSalama - Admin Countries Management Page
+ * Gestion des pays (activation/désactivation, devise, fonctionnalités régionales)
+ */
+?>
+
+<style>
+/* Admin Countries Page - Premium Design */
+.admin-countries {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: var(--space-5);
+    padding-bottom: calc(var(--nav-height) + var(--space-8));
+}
+
+.admin-header {
+    margin-bottom: var(--space-8);
+}
+
+.admin-title {
+    font-size: var(--text-3xl);
+    font-weight: var(--font-bold);
+    color: var(--uber-black);
+    margin-bottom: var(--space-2);
+}
+
+.admin-subtitle {
+    font-size: var(--text-base);
+    color: var(--uber-gray-500);
+}
+
+/* Stats Bar */
+.countries-stats {
+    display: flex;
+    gap: var(--space-6);
+    margin-bottom: var(--space-8);
+    flex-wrap: wrap;
+}
+
+.stat-pill {
+    background: var(--uber-white);
+    border-radius: var(--radius-full);
+    padding: var(--space-3) var(--space-5);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    box-shadow: var(--shadow-sm);
+}
+
+.stat-pill-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-pill-icon.default { background: var(--uber-green-soft); color: var(--uber-green); }
+.stat-pill-icon.active { background: #DBEAFE; color: #3B82F6; }
+.stat-pill-icon.total { background: #F3F4F6; color: #6B7280; }
+
+.stat-pill-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.stat-pill-value {
+    font-size: var(--text-lg);
+    font-weight: var(--font-bold);
+    color: var(--uber-black);
+}
+
+.stat-pill-label {
+    font-size: var(--text-sm);
+    color: var(--uber-gray-500);
+}
+
+/* Country Cards Grid */
+.countries-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--space-6);
+}
+
+.country-card {
+    background: var(--uber-white);
+    border-radius: var(--radius-2xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s ease;
+}
+
+.country-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
+}
+
+.country-card.inactive {
+    opacity: 0.6;
+}
+
+.country-card-header {
+    padding: var(--space-5);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.country-card.country-fr .country-card-header {
+    background: linear-gradient(135deg, #0055A4 0%, #EF4135 100%);
+}
+
+.country-card.country-ma .country-card-header {
+    background: linear-gradient(135deg, #006233 0%, #C1272D 100%);
+}
+
+.country-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.country-flag {
+    font-size: 2.5rem;
+}
+
+.country-name {
+    font-size: var(--text-xl);
+    font-weight: var(--font-bold);
+}
+
+.country-currency {
+    font-size: var(--text-sm);
+    opacity: 0.9;
+}
+
+.country-badges {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.badge {
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--font-bold);
+    text-transform: uppercase;
+}
+
+.badge-default {
+    background: rgba(255,255,255,0.3);
+    color: white;
+}
+
+.badge-active {
+    background: var(--uber-green);
+    color: white;
+}
+
+.badge-inactive {
+    background: rgba(0,0,0,0.3);
+    color: white;
+}
+
+/* Card Body */
+.country-card-body {
+    padding: var(--space-5);
+}
+
+.country-section {
+    margin-bottom: var(--space-5);
+}
+
+.country-section:last-child {
+    margin-bottom: 0;
+}
+
+.country-section-title {
+    font-size: var(--text-sm);
+    font-weight: var(--font-bold);
+    color: var(--uber-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-3);
+}
+
+/* Toggle Rows */
+.toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--uber-gray-100);
+}
+
+.toggle-row:last-child {
+    border-bottom: none;
+}
+
+.toggle-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.toggle-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--uber-gray-100);
+    color: var(--uber-gray-600);
+}
+
+.toggle-icon.active { background: var(--uber-green-soft); color: var(--uber-green); }
+.toggle-icon.prayer { background: #FEF3C7; color: #F59E0B; }
+.toggle-icon.arabic { background: #DBEAFE; color: #3B82F6; }
+
+.toggle-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.toggle-label {
+    font-size: var(--text-base);
+    font-weight: var(--font-medium);
+    color: var(--uber-black);
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-switch-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--uber-gray-300);
+    border-radius: var(--radius-full);
+    transition: background 0.3s ease;
+}
+
+.toggle-switch-slider::before {
+    position: absolute;
+    content: '';
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    bottom: 3px;
+    background: var(--uber-white);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.toggle-switch input:checked + .toggle-switch-slider {
+    background: var(--uber-green);
+}
+
+.toggle-switch input:checked + .toggle-switch-slider::before {
+    transform: translateX(24px);
+}
+
+.toggle-switch input:disabled + .toggle-switch-slider {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Pricing Grid */
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+}
+
+.pricing-item {
+    background: var(--uber-gray-50);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
+    text-align: center;
+}
+
+.pricing-label {
+    font-size: var(--text-xs);
+    color: var(--uber-gray-500);
+    margin-bottom: var(--space-1);
+}
+
+.pricing-value {
+    font-size: var(--text-lg);
+    font-weight: var(--font-bold);
+    color: var(--uber-black);
+}
+
+/* Action Buttons */
+.country-actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--uber-gray-100);
+}
+
+.btn-action {
+    flex: 1;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+    font-weight: var(--font-bold);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    border: none;
+}
+
+.btn-action svg {
+    width: 16px;
+    height: 16px;
+}
+
+.btn-set-default {
+    background: var(--uber-green);
+    color: white;
+}
+
+.btn-set-default:hover {
+    background: #04A054;
+    transform: translateY(-2px);
+}
+
+.btn-set-default:disabled {
+    background: var(--uber-gray-300);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-edit-pricing {
+    background: var(--uber-gray-100);
+    color: var(--uber-black);
+}
+
+.btn-edit-pricing:hover {
+    background: var(--uber-gray-200);
+}
+
+/* Toast Notification */
+.toast {
+    position: fixed;
+    bottom: calc(var(--nav-height) + var(--space-4));
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--uber-black);
+    color: white;
+    padding: var(--space-4) var(--space-6);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    z-index: 9999;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.toast.success {
+    background: var(--uber-green);
+}
+
+.toast.error {
+    background: #DC2626;
+}
+
+/* Animation */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.admin-header { animation: fadeInUp 0.4s ease-out; }
+.countries-stats { animation: fadeInUp 0.4s ease-out 0.05s backwards; }
+.country-card:nth-child(1) { animation: fadeInUp 0.4s ease-out 0.1s backwards; }
+.country-card:nth-child(2) { animation: fadeInUp 0.4s ease-out 0.15s backwards; }
+
+/* Responsive */
+@media (max-width: 640px) {
+    .admin-countries {
+        padding: var(--space-4);
+    }
+
+    .countries-stats {
+        flex-direction: column;
+    }
+
+    .pricing-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .country-actions {
+        flex-direction: column;
+    }
+}
+</style>
+
+<div class="admin-countries">
+    <!-- Header -->
+    <header class="admin-header">
+        <h1 class="admin-title"><?= __('admin.countries') ?></h1>
+        <p class="admin-subtitle"><?= __('admin.countries_desc') ?></p>
+    </header>
+
+    <!-- Stats Bar -->
+    <div class="countries-stats">
+        <div class="stat-pill">
+            <div class="stat-pill-icon default">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+            </div>
+            <div>
+                <div class="stat-pill-value"><?= htmlspecialchars($stats['default_country_name']) ?></div>
+                <div class="stat-pill-label"><?= __('admin.default_country') ?></div>
+            </div>
+        </div>
+
+        <div class="stat-pill">
+            <div class="stat-pill-icon active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+            </div>
+            <div>
+                <div class="stat-pill-value"><?= $stats['active_countries'] ?></div>
+                <div class="stat-pill-label"><?= __('admin.active_countries') ?></div>
+            </div>
+        </div>
+
+        <div class="stat-pill">
+            <div class="stat-pill-icon total">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="2" y1="12" x2="22" y2="12"/>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+            </div>
+            <div>
+                <div class="stat-pill-value"><?= $stats['total_countries'] ?></div>
+                <div class="stat-pill-label"><?= __('admin.total_countries') ?></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Countries Grid -->
+    <div class="countries-grid">
+        <?php foreach ($countries as $country): ?>
+        <?php
+            $isActive = (bool) $country['is_active'];
+            $isDefault = (bool) $country['is_default'];
+            $hasPrayer = (bool) $country['prayer_times_enabled'];
+            $hasArabic = (bool) $country['arabic_enabled'];
+            $countryLower = strtolower($country['country_code']);
+            $flag = $countryLower === 'fr' ? '🇫🇷' : ($countryLower === 'ma' ? '🇲🇦' : '🌍');
+        ?>
+        <div class="country-card country-<?= $countryLower ?> <?= !$isActive ? 'inactive' : '' ?>"
+             data-country="<?= htmlspecialchars($country['country_code']) ?>">
+
+            <div class="country-card-header">
+                <div class="country-info">
+                    <span class="country-flag"><?= $flag ?></span>
+                    <div>
+                        <div class="country-name"><?= htmlspecialchars($country['name']) ?></div>
+                        <div class="country-currency"><?= htmlspecialchars($country['currency']) ?> (<?= htmlspecialchars($country['currency_symbol']) ?>)</div>
+                    </div>
+                </div>
+                <div class="country-badges">
+                    <?php if ($isDefault): ?>
+                    <span class="badge badge-default"><?= __('admin.default') ?></span>
+                    <?php endif; ?>
+                    <span class="badge <?= $isActive ? 'badge-active' : 'badge-inactive' ?>">
+                        <?= $isActive ? __('admin.active') : __('admin.inactive') ?>
+                    </span>
+                </div>
+            </div>
+
+            <div class="country-card-body">
+                <!-- Activation -->
+                <div class="country-section">
+                    <div class="country-section-title"><?= __('admin.status') ?></div>
+                    <div class="toggle-row">
+                        <div class="toggle-info">
+                            <div class="toggle-icon <?= $isActive ? 'active' : '' ?>">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                    <polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                            </div>
+                            <span class="toggle-label"><?= __('admin.country_active') ?></span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox"
+                                   class="toggle-country-active"
+                                   data-country="<?= htmlspecialchars($country['country_code']) ?>"
+                                   <?= $isActive ? 'checked' : '' ?>
+                                   <?= $isDefault ? 'disabled' : '' ?>>
+                            <span class="toggle-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Fonctionnalités régionales -->
+                <div class="country-section">
+                    <div class="country-section-title"><?= __('admin.regional_features') ?></div>
+
+                    <div class="toggle-row">
+                        <div class="toggle-info">
+                            <div class="toggle-icon prayer <?= $hasPrayer ? 'active' : '' ?>">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/>
+                                    <circle cx="12" cy="12" r="4"/>
+                                </svg>
+                            </div>
+                            <span class="toggle-label"><?= __('admin.prayer_times') ?></span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox"
+                                   class="toggle-prayer"
+                                   data-country="<?= htmlspecialchars($country['country_code']) ?>"
+                                   <?= $hasPrayer ? 'checked' : '' ?>>
+                            <span class="toggle-switch-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle-row">
+                        <div class="toggle-info">
+                            <div class="toggle-icon arabic <?= $hasArabic ? 'active' : '' ?>">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M5 8l6 6m-4-4l6 6"/>
+                                    <circle cx="19" cy="5" r="3"/>
+                                    <circle cx="5" cy="19" r="3"/>
+                                </svg>
+                            </div>
+                            <span class="toggle-label"><?= __('admin.arabic_lang') ?></span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox"
+                                   class="toggle-arabic"
+                                   data-country="<?= htmlspecialchars($country['country_code']) ?>"
+                                   <?= $hasArabic ? 'checked' : '' ?>>
+                            <span class="toggle-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Tarification -->
+                <div class="country-section">
+                    <div class="country-section-title"><?= __('admin.pricing') ?></div>
+                    <div class="pricing-grid">
+                        <div class="pricing-item">
+                            <div class="pricing-label"><?= __('admin.base_price') ?></div>
+                            <div class="pricing-value"><?= number_format((float) $country['base_price'], 2, ',', ' ') ?> <?= $country['currency_symbol'] ?></div>
+                        </div>
+                        <div class="pricing-item">
+                            <div class="pricing-label"><?= __('admin.price_per_km') ?></div>
+                            <div class="pricing-value"><?= number_format((float) $country['price_per_km'], 2, ',', ' ') ?> <?= $country['currency_symbol'] ?></div>
+                        </div>
+                        <div class="pricing-item">
+                            <div class="pricing-label"><?= __('admin.price_per_min') ?></div>
+                            <div class="pricing-value"><?= number_format((float) $country['price_per_min'], 2, ',', ' ') ?> <?= $country['currency_symbol'] ?></div>
+                        </div>
+                        <div class="pricing-item">
+                            <div class="pricing-label"><?= __('admin.min_price') ?></div>
+                            <div class="pricing-value"><?= number_format((float) $country['min_price'], 2, ',', ' ') ?> <?= $country['currency_symbol'] ?></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="country-actions">
+                    <button class="btn-action btn-set-default"
+                            data-country="<?= htmlspecialchars($country['country_code']) ?>"
+                            <?= $isDefault ? 'disabled' : '' ?>>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                        <?= $isDefault ? __('admin.is_default') : __('admin.set_default') ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toast = document.getElementById('toast');
+
+    function showToast(message, type = 'success') {
+        toast.textContent = message;
+        toast.className = 'toast ' + type + ' show';
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+
+    async function apiCall(action, data) {
+        const formData = new FormData();
+        formData.append('csrf_token', '<?= csrf_token() ?>');
+        for (const key in data) {
+            formData.append(key, data[key]);
+        }
+
+        const response = await fetch('<?= base_url("api/admin") ?>?action=' + action, {
+            method: 'POST',
+            body: formData
+        });
+
+        return response.json();
+    }
+
+    // Toggle country active
+    document.querySelectorAll('.toggle-country-active').forEach(toggle => {
+        toggle.addEventListener('change', async function() {
+            const countryCode = this.dataset.country;
+            const active = this.checked;
+
+            try {
+                const result = await apiCall('toggle-country', {
+                    country_code: countryCode,
+                    enabled: active ? '1' : '0'
+                });
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    const card = this.closest('.country-card');
+                    card.classList.toggle('inactive', !active);
+                } else {
+                    this.checked = !active; // Revert
+                    showToast(result.message, 'error');
+                }
+            } catch (e) {
+                this.checked = !active;
+                showToast('<?= __("error.network") ?>', 'error');
+            }
+        });
+    });
+
+    // Toggle prayer times
+    document.querySelectorAll('.toggle-prayer').forEach(toggle => {
+        toggle.addEventListener('change', async function() {
+            const countryCode = this.dataset.country;
+            const enabled = this.checked;
+
+            try {
+                const result = await apiCall('toggle-prayer-times', {
+                    country_code: countryCode,
+                    enabled: enabled ? '1' : '0'
+                });
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                } else {
+                    this.checked = !enabled;
+                    showToast(result.message, 'error');
+                }
+            } catch (e) {
+                this.checked = !enabled;
+                showToast('<?= __("error.network") ?>', 'error');
+            }
+        });
+    });
+
+    // Toggle arabic
+    document.querySelectorAll('.toggle-arabic').forEach(toggle => {
+        toggle.addEventListener('change', async function() {
+            const countryCode = this.dataset.country;
+            const enabled = this.checked;
+
+            try {
+                const result = await apiCall('toggle-arabic', {
+                    country_code: countryCode,
+                    enabled: enabled ? '1' : '0'
+                });
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                } else {
+                    this.checked = !enabled;
+                    showToast(result.message, 'error');
+                }
+            } catch (e) {
+                this.checked = !enabled;
+                showToast('<?= __("error.network") ?>', 'error');
+            }
+        });
+    });
+
+    // Set default country
+    document.querySelectorAll('.btn-set-default').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            if (this.disabled) return;
+
+            const countryCode = this.dataset.country;
+
+            try {
+                const result = await apiCall('set-default-country', {
+                    country_code: countryCode
+                });
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    // Reload page to update UI
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (e) {
+                showToast('<?= __("error.network") ?>', 'error');
+            }
+        });
+    });
+});
+</script>

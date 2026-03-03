@@ -6,6 +6,7 @@ namespace TripSalama\Controllers;
 
 use PDO;
 use TripSalama\Helpers\PathHelper;
+use TripSalama\Services\CountrySettingsService;
 
 /**
  * Controller pour l'administration
@@ -260,5 +261,22 @@ class AdminController
         $content = ob_get_clean();
 
         require PathHelper::getViewsPath() . '/layouts/main.phtml';
+    }
+
+    /**
+     * Page de gestion des pays
+     */
+    public function countries(): void
+    {
+        $service = new CountrySettingsService($this->db);
+        $countries = $service->getAllCountries();
+        $stats = $service->getStats();
+
+        $this->render('admin/countries', [
+            'pageTitle' => __('admin.countries'),
+            'currentPage' => 'admin-countries',
+            'countries' => $countries,
+            'stats' => $stats,
+        ]);
     }
 }

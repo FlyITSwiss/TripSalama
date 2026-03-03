@@ -346,6 +346,170 @@ try {
             ]);
             break;
 
+        /**
+         * Liste des pays
+         * GET /api/admin.php?action=countries
+         */
+        case 'countries':
+            require_once BACKEND_PATH . '/Services/CountrySettingsService.php';
+            $countryService = new \TripSalama\Services\CountrySettingsService($db);
+
+            $countries = $countryService->getAllCountries();
+            $stats = $countryService->getStats();
+
+            successResponse([
+                'countries' => $countries,
+                'stats' => $stats,
+            ]);
+            break;
+
+        /**
+         * Activer/Désactiver un pays
+         * POST /api/admin.php?action=toggle-country
+         */
+        case 'toggle-country':
+            if ($method !== 'POST') {
+                errorResponse('Method not allowed', 405);
+            }
+            requireCsrf();
+
+            require_once BACKEND_PATH . '/Services/CountrySettingsService.php';
+            $countryService = new \TripSalama\Services\CountrySettingsService($db);
+
+            $data = getRequestData();
+            $countryCode = strtoupper(trim($data['country_code'] ?? ''));
+            $enabled = filter_var($data['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+            if (empty($countryCode) || strlen($countryCode) !== 2) {
+                errorResponse(__('error.invalid_country'), 400);
+            }
+
+            $country = $countryService->getCountry($countryCode);
+            if (!$country) {
+                errorResponse(__('error.country_not_found'), 404);
+            }
+
+            if ($enabled) {
+                $result = $countryService->activateCountry($countryCode);
+                $message = __('msg.country_activated');
+            } else {
+                $result = $countryService->deactivateCountry($countryCode);
+                $message = __('msg.country_deactivated');
+            }
+
+            if (!$result) {
+                errorResponse(__('error.cannot_deactivate_default'), 400);
+            }
+
+            successResponse(['country_code' => $countryCode, 'is_active' => $enabled], $message);
+            break;
+
+        /**
+         * Définir un pays par défaut
+         * POST /api/admin.php?action=set-default-country
+         */
+        case 'set-default-country':
+            if ($method !== 'POST') {
+                errorResponse('Method not allowed', 405);
+            }
+            requireCsrf();
+
+            require_once BACKEND_PATH . '/Services/CountrySettingsService.php';
+            $countryService = new \TripSalama\Services\CountrySettingsService($db);
+
+            $data = getRequestData();
+            $countryCode = strtoupper(trim($data['country_code'] ?? ''));
+
+            if (empty($countryCode) || strlen($countryCode) !== 2) {
+                errorResponse(__('error.invalid_country'), 400);
+            }
+
+            $country = $countryService->getCountry($countryCode);
+            if (!$country) {
+                errorResponse(__('error.country_not_found'), 404);
+            }
+
+            $result = $countryService->setDefaultCountry($countryCode);
+
+            if (!$result) {
+                errorResponse(__('error.country_update_failed'), 500);
+            }
+
+            successResponse(['country_code' => $countryCode], __('msg.default_country_set'));
+            break;
+
+        /**
+         * Activer/Désactiver les horaires de prière
+         * POST /api/admin.php?action=toggle-prayer-times
+         */
+        case 'toggle-prayer-times':
+            if ($method !== 'POST') {
+                errorResponse('Method not allowed', 405);
+            }
+            requireCsrf();
+
+            require_once BACKEND_PATH . '/Services/CountrySettingsService.php';
+            $countryService = new \TripSalama\Services\CountrySettingsService($db);
+
+            $data = getRequestData();
+            $countryCode = strtoupper(trim($data['country_code'] ?? ''));
+            $enabled = filter_var($data['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+            if (empty($countryCode) || strlen($countryCode) !== 2) {
+                errorResponse(__('error.invalid_country'), 400);
+            }
+
+            $country = $countryService->getCountry($countryCode);
+            if (!$country) {
+                errorResponse(__('error.country_not_found'), 404);
+            }
+
+            $result = $countryService->togglePrayerTimes($countryCode, $enabled);
+
+            if (!$result) {
+                errorResponse(__('error.country_update_failed'), 500);
+            }
+
+            $message = $enabled ? __('msg.prayer_times_enabled') : __('msg.prayer_times_disabled');
+            successResponse(['country_code' => $countryCode, 'prayer_times_enabled' => $enabled], $message);
+            break;
+
+        /**
+         * Activer/Désactiver la langue arabe
+         * POST /api/admin.php?action=toggle-arabic
+         */
+        case 'toggle-arabic':
+            if ($method !== 'POST') {
+                errorResponse('Method not allowed', 405);
+            }
+            requireCsrf();
+
+            require_once BACKEND_PATH . '/Services/CountrySettingsService.php';
+            $countryService = new \TripSalama\Services\CountrySettingsService($db);
+
+            $data = getRequestData();
+            $countryCode = strtoupper(trim($data['country_code'] ?? ''));
+            $enabled = filter_var($data['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+            if (empty($countryCode) || strlen($countryCode) !== 2) {
+                errorResponse(__('error.invalid_country'), 400);
+            }
+
+            $country = $countryService->getCountry($countryCode);
+            if (!$country) {
+                errorResponse(__('error.country_not_found'), 404);
+            }
+
+            $result = $countryService->toggleArabic($countryCode, $enabled);
+
+            if (!$result) {
+                errorResponse(__('error.country_update_failed'), 500);
+            }
+
+            $message = $enabled ? __('msg.arabic_enabled') : __('msg.arabic_disabled');
+            successResponse(['country_code' => $countryCode, 'arabic_enabled' => $enabled], $message);
+            break;
+
         default:
             errorResponse('Action not found', 404);
     }
