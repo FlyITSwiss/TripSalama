@@ -247,19 +247,22 @@
 
 .demo-ride-page {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 100;
     background: var(--stone-900);
 }
 
-/* Desktop: Contraindre à format mobile */
+/* Desktop: Contraindre à format mobile centré */
 @media (min-width: 519px) {
     .demo-ride-page {
+        width: 420px;
         max-width: 420px;
         left: 50%;
         right: auto;
-        transform: translateX(-50%);
-        border-radius: 0;
+        margin-left: -210px; /* -width/2 pour centrer */
         box-shadow: 0 0 60px rgba(0, 0, 0, 0.5);
     }
 
@@ -267,7 +270,10 @@
     body:has(.demo-ride-page)::before {
         content: '';
         position: fixed;
-        inset: 0;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
         background: #0a0a0a;
         z-index: 99;
     }
