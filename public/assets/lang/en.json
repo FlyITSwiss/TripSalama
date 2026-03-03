@@ -211,5 +211,22 @@
         "morocco": "Morocco",
         "currency_eur": "Euro (€)",
         "currency_mad": "Moroccan Dirham (DH)"
+    },
+    "sos": {
+        "button_label": "SOS",
+        "button_aria": "SOS Emergency",
+        "modal_title": "Emergency Alert",
+        "modal_description": "Hold the button to confirm the SOS alert. Your emergency contacts will be notified.",
+        "confirm_button": "Hold to confirm (5s)",
+        "holding": "Hold...",
+        "cancel_button": "Cancel",
+        "alert_sent": "Alert sent!",
+        "recording": "Recording...",
+        "alert_success": "SOS alert sent to emergency contacts",
+        "alert_offline": "Alert sent (offline mode)",
+        "position_updated": "Position updated",
+        "location_denied": "Location access denied",
+        "location_unavailable": "Position unavailable",
+        "location_error": "Location error"
     }
 }

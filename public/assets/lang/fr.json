@@ -215,5 +215,22 @@
         "morocco": "Maroc",
         "currency_eur": "Euro (€)",
         "currency_mad": "Dirham marocain (DH)"
+    },
+    "sos": {
+        "button_label": "SOS",
+        "button_aria": "Urgence SOS",
+        "modal_title": "Alerte d'urgence",
+        "modal_description": "Maintenez le bouton pour confirmer l'alerte SOS. Vos contacts d'urgence seront prévenus.",
+        "confirm_button": "Maintenir pour confirmer (5s)",
+        "holding": "Maintenez...",
+        "cancel_button": "Annuler",
+        "alert_sent": "Alerte envoyée !",
+        "recording": "Enregistrement en cours...",
+        "alert_success": "Alerte SOS envoyée aux contacts d'urgence",
+        "alert_offline": "Alerte envoyée (mode hors ligne)",
+        "position_updated": "Position mise à jour",
+        "location_denied": "Accès à la localisation refusé",
+        "location_unavailable": "Position indisponible",
+        "location_error": "Erreur de localisation"
     }
 }

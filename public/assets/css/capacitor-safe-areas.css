@@ -1,0 +1,372 @@
+/**
+ * TripSalama - Capacitor Safe Areas CSS
+ * Gestion des zones sécurisées pour Android/iOS (notch, navigation bar, etc.)
+ *
+ * v2.0 - Support complet:
+ * - iOS notch (iPhone X+)
+ * - Android cutouts (punch-hole, waterdrop)
+ * - Navigation bar (gesture/buttons)
+ * - Barre de statut
+ * - Clavier virtuel
+ */
+
+/* ============================================
+   SAFE AREA VARIABLES
+   ============================================ */
+
+:root {
+    /* Safe area insets avec fallbacks */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+
+    /* Valeurs par défaut pour les environnements non-supportés */
+    --status-bar-height: 24px;           /* Android default */
+    --nav-bar-height: 48px;              /* Android 3-button nav */
+    --ios-home-indicator: 34px;          /* iPhone home indicator */
+
+    /* Combinaisons utiles */
+    --header-safe-padding: max(var(--safe-top), var(--status-bar-height));
+    --footer-safe-padding: max(var(--safe-bottom), 0px);
+    --content-safe-padding: var(--space-13, 13px);
+}
+
+/* ============================================
+   iOS SPECIFIC OVERRIDES
+   ============================================ */
+
+/* iOS avec notch détecté via @supports */
+@supports (padding-top: env(safe-area-inset-top)) {
+    :root {
+        --header-safe-padding: env(safe-area-inset-top, 20px);
+        --footer-safe-padding: env(safe-area-inset-bottom, 0px);
+    }
+}
+
+/* ============================================
+   ANDROID SPECIFIC (Capacitor)
+   ============================================ */
+
+/* Classe ajoutée par Capacitor pour Android */
+html.android {
+    --status-bar-height: 24px;
+}
+
+/* Android avec navigation gestuelle */
+html.android.gesture-navigation {
+    --nav-bar-height: 16px;
+}
+
+/* Android avec navigation 3 boutons */
+html.android.button-navigation {
+    --nav-bar-height: 48px;
+}
+
+/* ============================================
+   UTILITY CLASSES - SAFE PADDING
+   ============================================ */
+
+/* Padding top safe (pour headers) */
+.safe-top {
+    padding-top: var(--header-safe-padding) !important;
+}
+
+.safe-top-content {
+    padding-top: calc(var(--header-safe-padding) + var(--content-safe-padding)) !important;
+}
+
+/* Padding bottom safe (pour footers, FAB) */
+.safe-bottom {
+    padding-bottom: var(--footer-safe-padding) !important;
+}
+
+.safe-bottom-content {
+    padding-bottom: calc(var(--footer-safe-padding) + var(--content-safe-padding)) !important;
+}
+
+/* Padding horizontal safe (pour landscape/foldables) */
+.safe-horizontal {
+    padding-left: var(--safe-left) !important;
+    padding-right: var(--safe-right) !important;
+}
+
+/* Toutes les directions */
+.safe-all {
+    padding-top: var(--header-safe-padding) !important;
+    padding-bottom: var(--footer-safe-padding) !important;
+    padding-left: var(--safe-left) !important;
+    padding-right: var(--safe-right) !important;
+}
+
+/* ============================================
+   COMPONENT SAFE AREAS
+   ============================================ */
+
+/* Header / App Bar */
+.app-header,
+.header,
+.navbar-top,
+[data-safe="header"] {
+    padding-top: var(--header-safe-padding);
+}
+
+/* Header fixe en haut */
+.fixed-header,
+.sticky-header {
+    top: 0;
+    padding-top: var(--header-safe-padding);
+}
+
+/* Footer / Bottom Navigation */
+.app-footer,
+.footer,
+.navbar-bottom,
+.bottom-nav,
+[data-safe="footer"] {
+    padding-bottom: var(--footer-safe-padding);
+}
+
+/* Footer fixe en bas */
+.fixed-footer,
+.sticky-footer {
+    bottom: 0;
+    padding-bottom: var(--footer-safe-padding);
+}
+
+/* ============================================
+   MAP CONTROLS SAFE POSITIONING
+   ============================================ */
+
+/* Boutons de carte (zoom, location, etc.) */
+.map-controls-top,
+.map-controls-top-left,
+.map-controls-top-right {
+    top: calc(var(--header-safe-padding) + var(--space-13, 13px));
+}
+
+.map-controls-bottom,
+.map-controls-bottom-left,
+.map-controls-bottom-right {
+    bottom: calc(var(--footer-safe-padding) + var(--space-13, 13px));
+}
+
+/* Contrôles carte spécifiques */
+.map-zoom-controls {
+    top: calc(var(--header-safe-padding) + 60px);
+}
+
+.map-locate-btn {
+    bottom: calc(var(--footer-safe-padding) + 120px);
+}
+
+/* ============================================
+   FLOATING ACTION BUTTON (FAB)
+   ============================================ */
+
+.fab,
+.floating-action-btn,
+[data-safe="fab"] {
+    bottom: calc(var(--footer-safe-padding) + var(--space-21, 21px));
+    right: var(--space-21, 21px);
+}
+
+/* FAB avec bottom navigation */
+.fab-above-nav,
+.floating-action-btn.above-nav {
+    bottom: calc(var(--footer-safe-padding) + 80px + var(--space-13, 13px));
+}
+
+/* ============================================
+   BOTTOM SHEETS & MODALS
+   ============================================ */
+
+/* Bottom sheet */
+.bottom-sheet,
+.slide-up-panel,
+[data-safe="bottom-sheet"] {
+    padding-bottom: var(--footer-safe-padding);
+}
+
+/* Bottom sheet avec handle */
+.bottom-sheet-content {
+    padding-bottom: calc(var(--footer-safe-padding) + var(--space-21, 21px));
+}
+
+/* Modal fullscreen */
+.modal-fullscreen,
+.fullscreen-dialog {
+    padding-top: var(--header-safe-padding);
+    padding-bottom: var(--footer-safe-padding);
+}
+
+/* ============================================
+   TOAST & SNACKBAR POSITIONING
+   ============================================ */
+
+/* Toast en haut */
+.toast-container-top,
+.snackbar-top {
+    top: calc(var(--header-safe-padding) + var(--space-13, 13px));
+}
+
+/* Toast en bas (par défaut) */
+.toast-container,
+.toast-container-bottom,
+.snackbar-bottom {
+    bottom: calc(var(--footer-safe-padding) + var(--space-13, 13px));
+}
+
+/* Toast avec bottom nav */
+.toast-above-nav {
+    bottom: calc(var(--footer-safe-padding) + 70px);
+}
+
+/* ============================================
+   FORM INPUT ADJUSTMENTS (KEYBOARD)
+   ============================================ */
+
+/* Quand le clavier est visible (classe ajoutée par JS) */
+body.keyboard-open .fixed-footer,
+body.keyboard-open .bottom-nav,
+body.keyboard-open .fab {
+    display: none !important;
+}
+
+body.keyboard-open .main-content {
+    padding-bottom: 0 !important;
+}
+
+/* Input focus scroll into view fix */
+body.keyboard-open input:focus,
+body.keyboard-open textarea:focus {
+    scroll-margin-bottom: 100px;
+}
+
+/* ============================================
+   LANDSCAPE MODE ADJUSTMENTS
+   ============================================ */
+
+@media (orientation: landscape) {
+    /* En landscape, les safe areas sont souvent sur les côtés */
+    .app-container {
+        padding-left: max(var(--safe-left), var(--space-13, 13px));
+        padding-right: max(var(--safe-right), var(--space-13, 13px));
+    }
+
+    /* Header plus compact en landscape */
+    .app-header {
+        padding-top: max(var(--safe-top), var(--space-8, 8px));
+    }
+
+    /* Réduire le footer en landscape */
+    .bottom-nav {
+        padding-bottom: max(var(--safe-bottom), var(--space-4, 4px));
+    }
+}
+
+/* ============================================
+   SPECIFIC DEVICE FIXES
+   ============================================ */
+
+/* iPhone X/XS/11 Pro - Notch */
+@media only screen
+    and (device-width: 375px)
+    and (device-height: 812px)
+    and (-webkit-device-pixel-ratio: 3) {
+    :root {
+        --status-bar-height: 44px;
+        --ios-home-indicator: 34px;
+    }
+}
+
+/* iPhone XR/11 */
+@media only screen
+    and (device-width: 414px)
+    and (device-height: 896px)
+    and (-webkit-device-pixel-ratio: 2) {
+    :root {
+        --status-bar-height: 48px;
+        --ios-home-indicator: 34px;
+    }
+}
+
+/* iPhone 12/13/14 Pro */
+@media only screen
+    and (device-width: 390px)
+    and (device-height: 844px)
+    and (-webkit-device-pixel-ratio: 3) {
+    :root {
+        --status-bar-height: 47px;
+        --ios-home-indicator: 34px;
+    }
+}
+
+/* iPhone 14 Pro Max (Dynamic Island) */
+@media only screen
+    and (device-width: 430px)
+    and (device-height: 932px)
+    and (-webkit-device-pixel-ratio: 3) {
+    :root {
+        --status-bar-height: 59px; /* Dynamic Island */
+        --ios-home-indicator: 34px;
+    }
+}
+
+/* ============================================
+   ANDROID CUTOUT SPECIFIC
+   ============================================ */
+
+/* Support pour display-cutout Android */
+@supports (padding-top: constant(safe-area-inset-top)) {
+    :root {
+        --safe-top: constant(safe-area-inset-top);
+        --safe-bottom: constant(safe-area-inset-bottom);
+        --safe-left: constant(safe-area-inset-left);
+        --safe-right: constant(safe-area-inset-right);
+    }
+}
+
+/* ============================================
+   DEBUG MODE (activer via classe .debug-safe-areas)
+   ============================================ */
+
+.debug-safe-areas::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--header-safe-padding);
+    background: rgba(255, 0, 0, 0.3);
+    pointer-events: none;
+    z-index: 99999;
+}
+
+.debug-safe-areas::after {
+    content: '';
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--footer-safe-padding);
+    background: rgba(0, 0, 255, 0.3);
+    pointer-events: none;
+    z-index: 99999;
+}
+
+/* Info debug */
+.debug-safe-areas .safe-area-info {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 16px;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 12px;
+    z-index: 99999;
+    white-space: pre;
+}

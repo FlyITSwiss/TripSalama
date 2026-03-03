@@ -1,0 +1,253 @@
+/**
+ * TripSalama - Permission Dialogs CSS
+ * Styles pour les dialogues de demande de permission
+ */
+
+/* ============================================
+   PERMISSION RATIONALE MODAL
+   ============================================ */
+
+.permission-rationale-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-21, 21px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.permission-rationale-modal.visible {
+    opacity: 1;
+}
+
+/* Backdrop */
+.permission-rationale-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+/* Content */
+.permission-rationale-content {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    background: var(--surface, #FFFFFF);
+    border-radius: var(--radius-xl, 21px);
+    padding: var(--space-34, 34px) var(--space-21, 21px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    transform: translateY(20px) scale(0.95);
+    transition: transform 0.3s ease;
+    text-align: center;
+}
+
+.permission-rationale-modal.visible .permission-rationale-content {
+    transform: translateY(0) scale(1);
+}
+
+/* Icon */
+.permission-rationale-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto var(--space-21, 21px);
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary, #2D5A4A), var(--primary-light, #3D7A6A));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 32px;
+}
+
+.permission-rationale-icon.blocked {
+    background: linear-gradient(135deg, var(--warning, #F59E0B), #F97316);
+}
+
+/* SVG Icons inline */
+.permission-rationale-icon::before {
+    content: '';
+    width: 40px;
+    height: 40px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    filter: brightness(0) invert(1);
+}
+
+.permission-rationale-icon:has(.icon-location)::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z'/%3E%3Ccircle cx='12' cy='10' r='3'/%3E%3C/svg%3E");
+}
+
+.permission-rationale-icon:has(.icon-camera)::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z'/%3E%3Ccircle cx='12' cy='13' r='4'/%3E%3C/svg%3E");
+}
+
+.permission-rationale-icon:has(.icon-notifications)::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9'/%3E%3Cpath d='M13.73 21a2 2 0 0 1-3.46 0'/%3E%3C/svg%3E");
+}
+
+.permission-rationale-icon:has(.icon-settings)::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z'/%3E%3C/svg%3E");
+}
+
+/* Title */
+.permission-rationale-title {
+    font-family: var(--font-display, 'Poppins', sans-serif);
+    font-size: var(--text-xl, 1.25rem);
+    font-weight: var(--font-semibold, 600);
+    color: var(--text, #1A1A1A);
+    margin: 0 0 var(--space-13, 13px);
+}
+
+/* Message */
+.permission-rationale-message {
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--text-secondary, #4A4A4A);
+    line-height: 1.6;
+    margin: 0 0 var(--space-21, 21px);
+}
+
+/* Benefits list */
+.permission-rationale-benefits {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--space-21, 21px);
+    text-align: left;
+}
+
+.permission-rationale-benefits li {
+    position: relative;
+    padding-left: var(--space-21, 21px);
+    margin-bottom: var(--space-8, 8px);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--text-secondary, #4A4A4A);
+}
+
+.permission-rationale-benefits li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--primary, #2D5A4A);
+}
+
+/* Actions */
+.permission-rationale-actions {
+    display: flex;
+    gap: var(--space-13, 13px);
+    margin-top: var(--space-21, 21px);
+}
+
+.permission-rationale-actions button {
+    flex: 1;
+    padding: var(--space-13, 13px) var(--space-21, 21px);
+    border-radius: var(--radius-lg, 13px);
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: var(--text-sm, 0.875rem);
+    font-weight: var(--font-semibold, 600);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.permission-rationale-actions .btn-secondary {
+    background: var(--background-alt, #F0EDE8);
+    color: var(--text, #1A1A1A);
+}
+
+.permission-rationale-actions .btn-secondary:hover {
+    background: var(--background, #F8F6F3);
+}
+
+.permission-rationale-actions .btn-primary {
+    background: var(--primary, #2D5A4A);
+    color: white;
+}
+
+.permission-rationale-actions .btn-primary:hover {
+    background: var(--primary-dark, #1D4A3A);
+}
+
+/* ============================================
+   BLOCKED STATE
+   ============================================ */
+
+.permission-rationale-content.permission-blocked .permission-rationale-message {
+    background: var(--warning-light, #FEF3C7);
+    padding: var(--space-13, 13px);
+    border-radius: var(--radius-md, 8px);
+    border-left: 4px solid var(--warning, #F59E0B);
+}
+
+/* ============================================
+   DARK THEME
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+    .permission-rationale-content {
+        background: var(--surface-dark, #1F1F1F);
+    }
+
+    .permission-rationale-title {
+        color: var(--text-inverse, #FFFFFF);
+    }
+
+    .permission-rationale-message {
+        color: var(--text-light, #9CA3AF);
+    }
+
+    .permission-rationale-benefits li {
+        color: var(--text-light, #9CA3AF);
+    }
+
+    .permission-rationale-actions .btn-secondary {
+        background: var(--surface-elevated-dark, #333333);
+        color: var(--text-inverse, #FFFFFF);
+    }
+
+    .permission-rationale-content.permission-blocked .permission-rationale-message {
+        background: rgba(245, 158, 11, 0.2);
+    }
+}
+
+/* ============================================
+   MOBILE RESPONSIVE
+   ============================================ */
+
+@media (max-width: 380px) {
+    .permission-rationale-modal {
+        padding: var(--space-13, 13px);
+    }
+
+    .permission-rationale-content {
+        padding: var(--space-21, 21px) var(--space-13, 13px);
+    }
+
+    .permission-rationale-icon {
+        width: 64px;
+        height: 64px;
+    }
+
+    .permission-rationale-actions {
+        flex-direction: column;
+    }
+}
+
+/* ============================================
+   SAFE AREAS SUPPORT
+   ============================================ */
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .permission-rationale-modal {
+        padding-bottom: calc(var(--space-21, 21px) + env(safe-area-inset-bottom, 0px));
+    }
+}

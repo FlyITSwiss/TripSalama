@@ -25,6 +25,12 @@
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
+    <!-- Capacitor Safe Areas (Android/iOS notch, nav bar, etc.) -->
+    <link href="assets/css/capacitor-safe-areas.css" rel="stylesheet" />
+
+    <!-- Permission Dialogs -->
+    <link href="assets/css/permission-dialogs.css" rel="stylesheet" />
+
     <style>
         /* ============================================
            UBER DESIGN SYSTEM - COMPLETE
@@ -578,6 +584,53 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
+        }
+
+        /* My Location Button */
+        .my-location-btn {
+            position: absolute;
+            top: calc(var(--safe-area-inset-top, 0px) + 16px);
+            right: 16px;
+            z-index: 100;
+            width: 44px;
+            height: 44px;
+            background: var(--uber-white);
+            border: none;
+            border-radius: var(--radius-full);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .my-location-btn:hover {
+            background: var(--uber-gray-100);
+        }
+
+        .my-location-btn:active {
+            transform: scale(0.95);
+        }
+
+        .my-location-btn.locating {
+            background: var(--uber-green-soft);
+        }
+
+        .my-location-btn.locating svg {
+            color: var(--uber-green);
+            animation: pulse-location 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse-location {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .my-location-btn svg {
+            width: 24px;
+            height: 24px;
+            color: var(--uber-black);
         }
 
         .booking-sheet {
@@ -1672,12 +1725,244 @@
             animation: spin 0.8s linear infinite;
             margin: 0 auto var(--space-4);
         }
+
+        /* ============================================
+           SOS EMERGENCY BUTTON - CRITICAL SAFETY
+           ============================================ */
+        .sos-fab {
+            position: fixed;
+            bottom: calc(var(--nav-height) + var(--safe-area-bottom) + 80px);
+            right: var(--space-4);
+            width: 64px;
+            height: 64px;
+            background: var(--uber-red);
+            border: none;
+            border-radius: var(--radius-full);
+            box-shadow: 0 4px 20px rgba(225, 25, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 200;
+            transition: all 0.3s ease;
+            animation: sos-pulse 2s ease-in-out infinite;
+        }
+
+        .sos-fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 24px rgba(225, 25, 0, 0.5);
+        }
+
+        .sos-fab:active {
+            transform: scale(0.95);
+        }
+
+        .sos-fab svg {
+            width: 28px;
+            height: 28px;
+            color: var(--uber-white);
+        }
+
+        .sos-fab-label {
+            position: absolute;
+            bottom: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            font-weight: var(--font-bold);
+            color: var(--uber-red);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+
+        @keyframes sos-pulse {
+            0%, 100% { box-shadow: 0 4px 20px rgba(225, 25, 0, 0.4); }
+            50% { box-shadow: 0 4px 30px rgba(225, 25, 0, 0.6); }
+        }
+
+        /* SOS Modal */
+        .sos-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-6);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .sos-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .sos-modal-content {
+            text-align: center;
+            color: var(--uber-white);
+            max-width: 320px;
+        }
+
+        .sos-modal-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--uber-red);
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto var(--space-6);
+            animation: sos-emergency-pulse 1s ease-in-out infinite;
+        }
+
+        .sos-modal-icon svg {
+            width: 40px;
+            height: 40px;
+            color: var(--uber-white);
+        }
+
+        @keyframes sos-emergency-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .sos-modal-title {
+            font-size: var(--text-2xl);
+            font-weight: var(--font-bold);
+            margin-bottom: var(--space-2);
+        }
+
+        .sos-modal-text {
+            font-size: var(--text-base);
+            color: var(--uber-gray-400);
+            margin-bottom: var(--space-6);
+        }
+
+        .sos-modal-timer {
+            font-size: var(--text-4xl);
+            font-weight: var(--font-bold);
+            color: var(--uber-red);
+            margin-bottom: var(--space-6);
+        }
+
+        .sos-modal-recording {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            font-size: var(--text-sm);
+            color: var(--uber-red);
+            margin-bottom: var(--space-4);
+        }
+
+        .sos-recording-dot {
+            width: 12px;
+            height: 12px;
+            background: var(--uber-red);
+            border-radius: var(--radius-full);
+            animation: recording-blink 1s ease-in-out infinite;
+        }
+
+        @keyframes recording-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .sos-modal-actions {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+        }
+
+        .sos-btn-emergency {
+            width: 100%;
+            padding: var(--space-4);
+            background: var(--uber-red);
+            color: var(--uber-white);
+            border: none;
+            border-radius: var(--radius-xl);
+            font-size: var(--text-lg);
+            font-weight: var(--font-bold);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sos-btn-emergency:hover {
+            background: #C41400;
+        }
+
+        .sos-btn-cancel {
+            width: 100%;
+            padding: var(--space-4);
+            background: transparent;
+            color: var(--uber-gray-400);
+            border: 1px solid var(--uber-gray-600);
+            border-radius: var(--radius-xl);
+            font-size: var(--text-base);
+            font-weight: var(--font-medium);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sos-btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--uber-white);
+        }
     </style>
 </head>
 <body>
     <div class="app-container">
         <!-- Toast Notification -->
         <div id="toast" class="toast"></div>
+
+        <!-- ============================================
+             SOS EMERGENCY BUTTON (floating, visible during rides)
+             ============================================ -->
+        <button id="sosButton" class="sos-fab hidden" aria-label="Urgence SOS">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+            <span class="sos-fab-label">SOS</span>
+        </button>
+
+        <!-- SOS Emergency Modal -->
+        <div id="sosModal" class="sos-modal">
+            <div class="sos-modal-content">
+                <div class="sos-modal-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </div>
+                <h2 class="sos-modal-title">Alerte d'urgence</h2>
+                <p class="sos-modal-text">Maintenez le bouton pour confirmer l'alerte SOS. Vos contacts d'urgence seront prévenus.</p>
+
+                <div id="sosTimer" class="sos-modal-timer hidden">5</div>
+
+                <div id="sosRecording" class="sos-modal-recording hidden">
+                    <span class="sos-recording-dot"></span>
+                    <span>Enregistrement en cours...</span>
+                </div>
+
+                <div class="sos-modal-actions">
+                    <button id="sosConfirmBtn" class="sos-btn-emergency">
+                        Maintenir pour confirmer (5s)
+                    </button>
+                    <button id="sosCancelBtn" class="sos-btn-cancel">
+                        Annuler
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- ============================================
              LOGIN PAGE
@@ -2069,6 +2354,18 @@
             <button id="bookingBackBtn" class="booking-back-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
                     <polyline points="15 18 9 12 15 6"/>
+                </svg>
+            </button>
+
+            <!-- My Location Button -->
+            <button id="myLocationBtn" class="my-location-btn" aria-label="Ma position">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="3"/>
+                    <line x1="12" y1="2" x2="12" y2="4"/>
+                    <line x1="12" y1="20" x2="12" y2="22"/>
+                    <line x1="2" y1="12" x2="4" y2="12"/>
+                    <line x1="20" y1="12" x2="22" y2="12"/>
                 </svg>
             </button>
 
@@ -2622,7 +2919,7 @@
                 // Save session if "Remember Me" is checked (or auto login)
                 const rememberMe = document.getElementById('rememberMe');
                 if (isAutoLogin || (rememberMe && rememberMe.checked)) {
-                    saveSession(email, password);
+                    await saveSession(email, password);
                 }
 
                 showDashboard();
@@ -2639,7 +2936,7 @@
                 console.error('Logout error:', e);
             }
             currentUser = null;
-            clearSession(); // Clear saved credentials
+            await clearSession(); // Clear saved credentials
             showPage('loginPage');
             showToast('Déconnexion réussie', 'success');
         }
@@ -2911,17 +3208,37 @@
             const lng = -7.9811;
             const mapContainer = document.getElementById('bookingMap');
 
+            if (!mapContainer) {
+                console.error('Map container not found');
+                return;
+            }
+
             // Clear previous map
             mapContainer.innerHTML = '';
 
+            // Ensure container has dimensions (critical for Android WebView)
+            const containerRect = mapContainer.getBoundingClientRect();
+            if (containerRect.width === 0 || containerRect.height === 0) {
+                console.warn('Map container has no dimensions, forcing layout');
+                mapContainer.style.width = '100vw';
+                mapContainer.style.height = '100vh';
+            }
+
             // Create MapLibre GL map with Stadia Alidade Smooth style (free, detailed roads)
-            bookingMap = new maplibregl.Map({
-                container: mapContainer,
-                style: 'https://tiles.stadiamaps.com/styles/alidade_smooth.json',
-                center: [lng, lat],
-                zoom: 15,
-                attributionControl: false
-            });
+            try {
+                bookingMap = new maplibregl.Map({
+                    container: mapContainer,
+                    style: 'https://tiles.stadiamaps.com/styles/alidade_smooth.json',
+                    center: [lng, lat],
+                    zoom: 15,
+                    attributionControl: false,
+                    failIfMajorPerformanceCaveat: false // Allow software rendering on Android
+                });
+            } catch (e) {
+                console.error('Failed to create map:', e);
+                showToast('Erreur de chargement de la carte', 'error');
+                return;
+            }
 
             // Debug: log any map errors
             bookingMap.on('error', (e) => {
@@ -3359,6 +3676,62 @@
         // Booking page event listeners
         document.getElementById('bookingBackBtn').addEventListener('click', hideBookingPage);
 
+        // My Location button - center map on user's position
+        document.getElementById('myLocationBtn').addEventListener('click', async function() {
+            const btn = this;
+            btn.classList.add('locating');
+
+            try {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    });
+                });
+
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                if (bookingMap) {
+                    bookingMap.flyTo({
+                        center: [lng, lat],
+                        zoom: 16,
+                        speed: 1.5
+                    });
+
+                    // Update pickup coordinates and marker
+                    pickupCoords = { lat, lng };
+                    if (pickupMarker) {
+                        pickupMarker.setLngLat([lng, lat]);
+                    }
+
+                    // Reverse geocode to get address
+                    try {
+                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+                        const data = await response.json();
+                        const address = data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+                        document.getElementById('bookingPickup').value = address.split(',').slice(0, 2).join(',');
+                    } catch (e) {
+                        document.getElementById('bookingPickup').value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+                    }
+                }
+
+                showToast('Position mise à jour', 'success');
+            } catch (error) {
+                console.error('Geolocation error:', error);
+                if (error.code === 1) {
+                    showToast('Accès à la localisation refusé', 'error');
+                } else if (error.code === 2) {
+                    showToast('Position indisponible', 'error');
+                } else {
+                    showToast('Erreur de localisation', 'error');
+                }
+            } finally {
+                btn.classList.remove('locating');
+            }
+        });
+
         document.getElementById('bookingLocateBtn').addEventListener('click', geolocateUser);
 
         document.getElementById('bookingDropoff').addEventListener('input', function(e) {
@@ -3400,22 +3773,55 @@
         // INITIALIZATION
         // ============================================
         // ============================================
-        // REMEMBER ME / SESSION PERSISTENCE
+        // REMEMBER ME / SESSION PERSISTENCE (Capacitor + localStorage fallback)
         // ============================================
         const STORAGE_KEY = 'tripsalama_session';
 
-        function saveSession(email, password) {
+        // Check if Capacitor Preferences is available
+        function isCapacitorAvailable() {
+            return typeof window.Capacitor !== 'undefined' &&
+                   window.Capacitor.Plugins &&
+                   window.Capacitor.Plugins.Preferences;
+        }
+
+        async function saveSession(email, password) {
             try {
                 const session = { email, password, timestamp: Date.now() };
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+                const value = JSON.stringify(session);
+
+                if (isCapacitorAvailable()) {
+                    await window.Capacitor.Plugins.Preferences.set({
+                        key: STORAGE_KEY,
+                        value: value
+                    });
+                    console.log('Session saved with Capacitor Preferences');
+                } else {
+                    localStorage.setItem(STORAGE_KEY, value);
+                    console.log('Session saved with localStorage');
+                }
             } catch (e) {
                 console.error('Save session error:', e);
+                // Fallback to localStorage
+                try {
+                    const session = { email, password, timestamp: Date.now() };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+                } catch (e2) {
+                    console.error('Fallback save also failed:', e2);
+                }
             }
         }
 
-        function loadSession() {
+        async function loadSession() {
             try {
-                const data = localStorage.getItem(STORAGE_KEY);
+                let data = null;
+
+                if (isCapacitorAvailable()) {
+                    const result = await window.Capacitor.Plugins.Preferences.get({ key: STORAGE_KEY });
+                    data = result.value;
+                } else {
+                    data = localStorage.getItem(STORAGE_KEY);
+                }
+
                 if (data) {
                     const session = JSON.parse(data);
                     // Session valid for 30 days
@@ -3429,16 +3835,26 @@
             return null;
         }
 
-        function clearSession() {
+        async function clearSession() {
             try {
-                localStorage.removeItem(STORAGE_KEY);
+                if (isCapacitorAvailable()) {
+                    await window.Capacitor.Plugins.Preferences.remove({ key: STORAGE_KEY });
+                } else {
+                    localStorage.removeItem(STORAGE_KEY);
+                }
             } catch (e) {
                 console.error('Clear session error:', e);
+                // Fallback
+                try {
+                    localStorage.removeItem(STORAGE_KEY);
+                } catch (e2) {
+                    console.error('Fallback clear also failed:', e2);
+                }
             }
         }
 
         async function autoLogin() {
-            const session = loadSession();
+            const session = await loadSession();
             if (session && session.email && session.password) {
                 try {
                     await getCsrfToken();
@@ -3446,7 +3862,7 @@
                     return true;
                 } catch (e) {
                     console.log('Auto login failed:', e.message);
-                    clearSession();
+                    await clearSession();
                 }
             }
             return false;
@@ -3466,6 +3882,260 @@
             }
         }
 
+        // ============================================
+        // SOS EMERGENCY SYSTEM
+        // ============================================
+        const SOSSystem = {
+            isActive: false,
+            holdTimer: null,
+            countdownTimer: null,
+            countdown: 5,
+            isRecording: false,
+            mediaRecorder: null,
+            audioChunks: [],
+
+            init() {
+                const sosBtn = document.getElementById('sosButton');
+                const sosModal = document.getElementById('sosModal');
+                const sosConfirm = document.getElementById('sosConfirmBtn');
+                const sosCancel = document.getElementById('sosCancelBtn');
+
+                if (!sosBtn) return;
+
+                // Click to open modal
+                sosBtn.addEventListener('click', () => this.openModal());
+
+                // Hold to confirm
+                sosConfirm.addEventListener('mousedown', () => this.startHold());
+                sosConfirm.addEventListener('mouseup', () => this.cancelHold());
+                sosConfirm.addEventListener('mouseleave', () => this.cancelHold());
+                sosConfirm.addEventListener('touchstart', (e) => { e.preventDefault(); this.startHold(); });
+                sosConfirm.addEventListener('touchend', () => this.cancelHold());
+                sosConfirm.addEventListener('touchcancel', () => this.cancelHold());
+
+                // Cancel button
+                sosCancel.addEventListener('click', () => this.closeModal());
+
+                // Close on escape
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && this.isActive) {
+                        this.closeModal();
+                    }
+                });
+            },
+
+            show() {
+                const sosBtn = document.getElementById('sosButton');
+                if (sosBtn) sosBtn.classList.remove('hidden');
+            },
+
+            hide() {
+                const sosBtn = document.getElementById('sosButton');
+                if (sosBtn) sosBtn.classList.add('hidden');
+            },
+
+            openModal() {
+                const modal = document.getElementById('sosModal');
+                modal.classList.add('active');
+                this.isActive = true;
+                this.resetCountdown();
+            },
+
+            closeModal() {
+                const modal = document.getElementById('sosModal');
+                modal.classList.remove('active');
+                this.isActive = false;
+                this.cancelHold();
+                this.stopRecording();
+            },
+
+            resetCountdown() {
+                this.countdown = 5;
+                document.getElementById('sosTimer').classList.add('hidden');
+                document.getElementById('sosTimer').textContent = '5';
+                document.getElementById('sosConfirmBtn').textContent = 'Maintenir pour confirmer (5s)';
+            },
+
+            startHold() {
+                this.countdown = 5;
+                document.getElementById('sosTimer').classList.remove('hidden');
+                document.getElementById('sosTimer').textContent = this.countdown;
+                document.getElementById('sosConfirmBtn').textContent = 'Maintenez...';
+
+                this.countdownTimer = setInterval(() => {
+                    this.countdown--;
+                    document.getElementById('sosTimer').textContent = this.countdown;
+
+                    if (this.countdown <= 0) {
+                        this.triggerSOS();
+                    }
+                }, 1000);
+            },
+
+            cancelHold() {
+                if (this.countdownTimer) {
+                    clearInterval(this.countdownTimer);
+                    this.countdownTimer = null;
+                }
+                this.resetCountdown();
+            },
+
+            async triggerSOS() {
+                this.cancelHold();
+
+                document.getElementById('sosConfirmBtn').textContent = 'Alerte envoyée !';
+                document.getElementById('sosConfirmBtn').disabled = true;
+                document.getElementById('sosRecording').classList.remove('hidden');
+
+                // Start recording
+                await this.startRecording();
+
+                // Get current position
+                let position = null;
+                try {
+                    position = await this.getCurrentPosition();
+                } catch (e) {
+                    console.error('Failed to get position:', e);
+                }
+
+                // Send SOS alert to API
+                try {
+                    await this.sendSOSAlert(position);
+                    showToast('Alerte SOS envoyée aux contacts d\'urgence', 'success');
+                } catch (e) {
+                    console.error('SOS alert failed:', e);
+                    showToast('Alerte envoyée (mode hors ligne)', 'success');
+                }
+
+                // Keep recording for 30 seconds then auto-stop
+                setTimeout(() => {
+                    this.stopRecording();
+                    this.closeModal();
+                    document.getElementById('sosConfirmBtn').disabled = false;
+                }, 30000);
+            },
+
+            getCurrentPosition() {
+                return new Promise((resolve, reject) => {
+                    if (!navigator.geolocation) {
+                        reject(new Error('Geolocation not supported'));
+                        return;
+                    }
+
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => resolve({
+                            latitude: pos.coords.latitude,
+                            longitude: pos.coords.longitude,
+                            accuracy: pos.coords.accuracy
+                        }),
+                        (err) => reject(err),
+                        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                    );
+                });
+            },
+
+            async startRecording() {
+                if (this.isRecording) return;
+
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    this.mediaRecorder = new MediaRecorder(stream);
+                    this.audioChunks = [];
+
+                    this.mediaRecorder.ondataavailable = (e) => {
+                        if (e.data.size > 0) {
+                            this.audioChunks.push(e.data);
+                        }
+                    };
+
+                    this.mediaRecorder.onstop = () => {
+                        const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                        this.uploadRecording(blob);
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+
+                    this.mediaRecorder.start(1000);
+                    this.isRecording = true;
+                    console.log('SOS recording started');
+                } catch (e) {
+                    console.error('Recording failed:', e);
+                }
+            },
+
+            stopRecording() {
+                if (this.mediaRecorder && this.isRecording) {
+                    this.mediaRecorder.stop();
+                    this.isRecording = false;
+                    document.getElementById('sosRecording').classList.add('hidden');
+                }
+            },
+
+            async uploadRecording(blob) {
+                if (!blob || blob.size === 0) return;
+
+                try {
+                    const formData = new FormData();
+                    formData.append('recording', blob, `sos_${Date.now()}.webm`);
+                    formData.append('recording_type', 'audio');
+
+                    await fetch(`${API_BASE}/sos.php?action=upload-recording`, {
+                        method: 'POST',
+                        headers: { 'X-CSRF-Token': csrfToken },
+                        credentials: 'include',
+                        body: formData
+                    });
+                    console.log('SOS recording uploaded');
+                } catch (e) {
+                    console.error('Upload failed:', e);
+                }
+            },
+
+            async sendSOSAlert(position) {
+                const payload = {
+                    type: 'emergency',
+                    timestamp: new Date().toISOString()
+                };
+
+                if (position) {
+                    payload.latitude = position.latitude;
+                    payload.longitude = position.longitude;
+                    payload.accuracy = position.accuracy;
+                }
+
+                return apiRequest('sos.php?action=trigger', {
+                    method: 'POST',
+                    body: payload
+                });
+            }
+        };
+
+        // Initialize SOS system
+        SOSSystem.init();
+
+        // Show SOS button when user is on booking page or driver is online
+        function updateSOSVisibility() {
+            const bookingPage = document.getElementById('bookingPage');
+            const driverDashboard = document.getElementById('driverDashboard');
+            const availabilityToggle = document.getElementById('availabilityToggle');
+
+            const bookingVisible = bookingPage && !bookingPage.classList.contains('hidden');
+            const driverOnline = driverDashboard && !driverDashboard.classList.contains('hidden') &&
+                                availabilityToggle && availabilityToggle.checked;
+
+            if (bookingVisible || driverOnline) {
+                SOSSystem.show();
+            } else {
+                SOSSystem.hide();
+            }
+        }
+
+        // Override showPage to update SOS visibility
+        const originalShowPage = showPage;
+        window.showPage = function(pageId) {
+            originalShowPage(pageId);
+            setTimeout(updateSOSVisibility, 100);
+        };
+
         // Expose functions and state globally for testing and debugging
         window.showToast = showToast;
         window.showPage = showPage;
@@ -3474,6 +4144,7 @@
         window.updateDriverStatus = updateDriverStatus;
         window.setCurrentUser = (user) => { currentUser = user; };
         window.getCurrentUser = () => currentUser;
+        window.SOSSystem = SOSSystem;
 
         // Start app
         init();
