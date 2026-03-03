@@ -40,15 +40,15 @@ module.exports = {
     users: {
         passenger: {
             email: 'passenger@tripsalama.ch',
-            password: 'password'
+            password: 'TripSalama2025!'
         },
         driver: {
             email: 'driver@tripsalama.ch',
-            password: 'password'
+            password: 'TripSalama2025!'
         },
         admin: {
             email: 'admin@tripsalama.ch',
-            password: 'password'
+            password: 'TripSalama2025!'
         }
     },
 
