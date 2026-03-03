@@ -74,11 +74,7 @@ try {
     }
 } catch (Throwable $e) {
     error_log('API User error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
-    // DEBUG: Show full error for troubleshooting - REMOVE IN PRODUCTION
-    errorResponse(
-        __('error.generic') . ' [DEBUG: ' . $e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine() . ']',
-        500
-    );
+    errorResponse(__('error.generic'), 500);
 }
 
 /**
@@ -147,7 +143,7 @@ function handleAvatarUpload(): never
     $avatarPath = '/uploads/avatars/' . $filename;
 
     // Supprimer l'ancienne photo si elle existe
-    $db = app()->get('db');
+    $db = getDbConnection();
     $stmt = $db->prepare('SELECT avatar_path FROM users WHERE id = ?');
     $stmt->execute([$userId]);
     $oldAvatar = $stmt->fetchColumn();
@@ -180,7 +176,7 @@ function handleGetProfile(): never
     $user = current_user();
     $userId = (int) $user['id'];
 
-    $db = app()->get('db');
+    $db = getDbConnection();
     $stmt = $db->prepare('
         SELECT id, email, first_name, last_name, phone, role, avatar_path,
                is_verified, created_at
