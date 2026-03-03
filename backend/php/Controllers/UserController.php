@@ -137,6 +137,82 @@ class UserController
     }
 
     /**
+     * Afficher le formulaire de changement de mot de passe
+     */
+    public function changePassword(): void
+    {
+        $user = current_user();
+
+        if (!$user) {
+            redirect_to('login');
+            return;
+        }
+
+        $this->render('user/password', [
+            'pageTitle' => __('profile.change_password'),
+            'currentPage' => 'profile',
+        ]);
+    }
+
+    /**
+     * Traiter le changement de mot de passe
+     */
+    public function processChangePassword(): void
+    {
+        $user = current_user();
+
+        if (!$user) {
+            redirect_to('login');
+            return;
+        }
+
+        $currentPassword = $_POST['current_password'] ?? '';
+        $newPassword = $_POST['new_password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        // Valider les champs requis
+        if (empty($currentPassword) || empty($newPassword) || empty($confirmPassword)) {
+            flash('error', __('validation.required_field'));
+            redirect_to('profile/password');
+            return;
+        }
+
+        // Vérifier que les nouveaux mots de passe correspondent
+        if ($newPassword !== $confirmPassword) {
+            flash('error', __('validation.password_mismatch'));
+            redirect_to('profile/password');
+            return;
+        }
+
+        // Valider la longueur du mot de passe
+        if (strlen($newPassword) < 8) {
+            flash('error', __('validation.password_min_length'));
+            redirect_to('profile/password');
+            return;
+        }
+
+        // Récupérer le mot de passe actuel de l'utilisateur
+        $stmt = $this->db->prepare('SELECT password FROM users WHERE id = ?');
+        $stmt->execute([$user['id']]);
+        $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Vérifier le mot de passe actuel
+        if (!$userData || !password_verify($currentPassword, $userData['password'])) {
+            flash('error', __('validation.password_incorrect'));
+            redirect_to('profile/password');
+            return;
+        }
+
+        // Mettre à jour le mot de passe
+        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+        $stmt = $this->db->prepare('UPDATE users SET password = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([$hashedPassword, $user['id']]);
+
+        flash('success', __('profile.password_updated'));
+        redirect_to('profile');
+    }
+
+    /**
      * Rendre une vue avec le layout principal
      */
     private function render(string $view, array $data = []): void

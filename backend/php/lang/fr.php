@@ -68,6 +68,7 @@ return [
         'back' => 'Retour',
         'next' => 'Suivant',
         'required' => 'Ce champ est obligatoire',
+        'current_password' => 'Mot de passe actuel',
     ],
 
     // Véhicule
@@ -205,6 +206,9 @@ return [
         'settings' => 'Paramètres',
         'security' => 'Sécurité',
         'change_password' => 'Changer le mot de passe',
+        'change_password_desc' => 'Modifiez votre mot de passe pour sécuriser votre compte',
+        'update_password' => 'Mettre à jour le mot de passe',
+        'password_updated' => 'Mot de passe mis à jour avec succès',
         'email_readonly' => 'L\'adresse email ne peut pas être modifiée',
         'avatar' => 'Photo de profil',
         'change_avatar' => 'Changer ma photo',
@@ -299,6 +303,7 @@ return [
         'password_uppercase' => 'Le mot de passe doit contenir au moins une majuscule',
         'password_number' => 'Le mot de passe doit contenir au moins un chiffre',
         'password_mismatch' => 'Les mots de passe ne correspondent pas',
+        'password_incorrect' => 'Le mot de passe actuel est incorrect',
         'phone_invalid' => 'Numéro de téléphone invalide',
         'required_field' => 'Ce champ est obligatoire',
         'invalid_file_type' => 'Type de fichier non autorisé',

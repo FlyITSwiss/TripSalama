@@ -67,6 +67,7 @@ return [
         'back' => 'Back',
         'next' => 'Next',
         'required' => 'This field is required',
+        'current_password' => 'Current password',
     ],
 
     // Vehicle
@@ -200,6 +201,9 @@ return [
         'settings' => 'Settings',
         'security' => 'Security',
         'change_password' => 'Change password',
+        'change_password_desc' => 'Change your password to secure your account',
+        'update_password' => 'Update password',
+        'password_updated' => 'Password updated successfully',
         'email_readonly' => 'Email address cannot be changed',
         'avatar' => 'Profile picture',
         'change_avatar' => 'Change photo',
@@ -294,6 +298,7 @@ return [
         'password_uppercase' => 'Password must contain at least one uppercase letter',
         'password_number' => 'Password must contain at least one number',
         'password_mismatch' => 'Passwords do not match',
+        'password_incorrect' => 'Current password is incorrect',
         'phone_invalid' => 'Invalid phone number',
         'required_field' => 'This field is required',
         'invalid_file_type' => 'File type not allowed',
