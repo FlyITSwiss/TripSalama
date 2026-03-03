@@ -257,4 +257,81 @@ npm run validate:playstore     # Validation Play Store
 
 ---
 
-**Dernière mise à jour** : 2024-03-01
+---
+
+## 9. SMOKE TESTS POST-DEPLOY (OBLIGATOIRE)
+
+**Après chaque déploiement sur le VPS, exécuter les smoke tests pour valider les fonctionnalités critiques.**
+
+### Commandes
+
+```bash
+# Local (Docker port 8080)
+node tests/puppeteer/smoke-tests.js --visual
+
+# Production (stabilis-it.ch)
+node tests/puppeteer/smoke-tests.js --prod --visual
+```
+
+### Tests couverts (11 tests)
+
+| # | Test | Criticité |
+|---|------|-----------|
+| 1 | Page login accessible | CRITIQUE |
+| 2 | CSS/JS assets chargent (pas 404) | CRITIQUE |
+| 3 | CSRF token présent | CRITIQUE |
+| 4 | Login passager fonctionnel | CRITIQUE |
+| 5 | Dashboard passager charge | HAUTE |
+| 6 | Page profil accessible | HAUTE |
+| 7 | Page mot de passe accessible | MOYENNE |
+| 8 | Login conductrice fonctionnel | CRITIQUE |
+| 9 | Dashboard conductrice charge | HAUTE |
+| 10 | Pas d'erreurs JS critiques | HAUTE |
+| 11 | Logout fonctionne | MOYENNE |
+
+### Utilisateurs de test
+
+| Rôle | Email | Password (local) | Password (prod) |
+|------|-------|------------------|-----------------|
+| Passager | `passenger@tripsalama.ch` | `TripSalama2025!` | `password` |
+| Conductrice | `driver@tripsalama.ch` | `TripSalama2025!` | `password` |
+| Admin | `admin@tripsalama.ch` | `TripSalama2025!` | `password` |
+
+### Checklist post-deploy OBLIGATOIRE
+
+| # | Action | Commande |
+|---|--------|----------|
+| 1 | Attendre GitHub Actions | `gh run list --limit 3` |
+| 2 | Vérifier HTTP 200 | `curl -sI https://stabilis-it.ch/internal/tripsalama/login` |
+| 3 | Exécuter smoke tests | `node tests/puppeteer/smoke-tests.js --prod --visual` |
+| 4 | Vérifier les logs | Inspecter la console navigateur |
+
+### Si un test échoue
+
+1. **Ne pas ignorer** - Identifier la cause
+2. **Vérifier les logs** nginx et PHP sur le VPS
+3. **Tester manuellement** la fonctionnalité
+4. **Corriger et redéployer** si nécessaire
+5. **Relancer les smoke tests** jusqu'à 100% pass
+
+---
+
+## 10. ROUTES CRITIQUES
+
+| Route | Rôle requis | Description |
+|-------|-------------|-------------|
+| `/login` | Public | Page de connexion |
+| `/register/passenger` | Public | Inscription passagère |
+| `/register/driver` | Public | Inscription conductrice |
+| `/forgot-password` | Public | Réinitialisation mot de passe |
+| `/passenger/dashboard` | Passager | Dashboard passagère |
+| `/driver/dashboard` | Conducteur | Dashboard conductrice |
+| `/profile` | Authentifié | Page profil |
+| `/profile/edit` | Authentifié | Modification profil |
+| `/profile/password` | Authentifié | Changement mot de passe |
+| `/admin/dashboard` | Admin | Dashboard admin |
+| `/logout` | Authentifié | Déconnexion |
+
+---
+
+**Dernière mise à jour** : 2026-03-03
