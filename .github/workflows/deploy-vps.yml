@@ -104,7 +104,9 @@ jobs:
         run: |
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
             sudo mkdir -p ${{ env.REMOTE_PATH }}
-            sudo mkdir -p ${{ env.REMOTE_PATH }}/public/uploads
+            sudo mkdir -p ${{ env.REMOTE_PATH }}/public/uploads/avatars
+            sudo mkdir -p ${{ env.REMOTE_PATH }}/public/uploads/documents
+            sudo mkdir -p ${{ env.REMOTE_PATH }}/public/uploads/identity
             sudo chown -R debian:debian ${{ env.REMOTE_PATH }}
           "
 
