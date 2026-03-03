@@ -242,6 +242,7 @@
 
 /* ============================================
    DEMO RIDE PAGE - MOBILE FIRST, FULL SCREEN
+   Desktop: Centré avec format mobile (max 420px)
    ============================================ */
 
 .demo-ride-page {
@@ -249,6 +250,27 @@
     inset: 0;
     z-index: 100;
     background: var(--stone-900);
+}
+
+/* Desktop: Contraindre à format mobile */
+@media (min-width: 519px) {
+    .demo-ride-page {
+        max-width: 420px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        border-radius: 0;
+        box-shadow: 0 0 60px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Fond sombre derrière le conteneur mobile */
+    body:has(.demo-ride-page)::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: #0a0a0a;
+        z-index: 99;
+    }
 }
 
 .demo-map {
