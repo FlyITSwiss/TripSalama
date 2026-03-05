@@ -1,0 +1,526 @@
+name: "🚀 Déploiement Complet TripSalama"
+
+# Workflow unifié : Webapp + APK + Email avec credentials
+# Déclenché par push main OU workflow_dispatch manuel
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip_apk:
+        description: 'Skip APK build'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  VPS_HOST: '83.228.205.222'
+  VPS_USER: 'debian'
+  REMOTE_PATH: '/var/www/tripsalama'
+  BASE_PATH: '/internal/tripsalama'
+  PHP_VERSION: '8.4'
+  NODE_VERSION: '22'
+  JAVA_VERSION: '21'
+  ANDROID_COMPILE_SDK: '35'
+  ANDROID_BUILD_TOOLS: '35.0.0'
+
+jobs:
+  # ========================================
+  # PHASE 1: VALIDATION PHP
+  # ========================================
+  validate:
+    runs-on: ubuntu-latest
+    name: "1️⃣ Validation PHP"
+    outputs:
+      valid: ${{ steps.lint.outputs.valid }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+
+      - name: Validate PHP syntax
+        id: lint
+        run: |
+          ERRORS=0
+          CHECKED=0
+          for dir in backend/php public; do
+            if [ -d "$dir" ]; then
+              while IFS= read -r -d '' file; do
+                ((CHECKED++)) || true
+                if ! php -l "$file" > /dev/null 2>&1; then
+                  echo "::error file=$file::PHP syntax error"
+                  ((ERRORS++)) || true
+                fi
+              done < <(find "$dir" -name "*.php" -o -name "*.phtml" -print0 2>/dev/null)
+            fi
+          done
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          echo "valid=true" >> $GITHUB_OUTPUT
+          echo "::notice::$CHECKED PHP files validated"
+
+  # ========================================
+  # PHASE 2: DEPLOY WEBAPP
+  # ========================================
+  deploy-webapp:
+    runs-on: ubuntu-latest
+    name: "2️⃣ Deploy Webapp"
+    needs: validate
+    if: needs.validate.outputs.valid == 'true'
+    outputs:
+      webapp_success: ${{ steps.verify.outputs.success }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          cat > ~/.ssh/config << 'SSHCONFIG'
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            ConnectTimeout 30
+            ServerAliveInterval 10
+            BatchMode yes
+            LogLevel ERROR
+          SSHCONFIG
+          chmod 600 ~/.ssh/config
+
+      - name: Test SSH connection
+        run: |
+          for attempt in 1 2 3; do
+            if ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "echo 'SSH OK'"; then
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
+
+      - name: Create directories on VPS
+        run: |
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            sudo mkdir -p ${{ env.REMOTE_PATH }}
+            sudo mkdir -p ${{ env.REMOTE_PATH }}/public/uploads
+            sudo mkdir -p ${{ env.REMOTE_PATH }}/public/downloads
+            sudo chown -R debian:debian ${{ env.REMOTE_PATH }}
+          "
+
+      - name: Deploy backend files
+        run: |
+          rsync -avz --delete \
+            -e "ssh" \
+            "backend/php/" \
+            "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:${{ env.REMOTE_PATH }}/backend/php/"
+
+      - name: Deploy public files
+        run: |
+          rsync -avz --delete \
+            --exclude='uploads/' \
+            --exclude='downloads/' \
+            -e "ssh" \
+            "public/" \
+            "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:${{ env.REMOTE_PATH }}/public/"
+
+      - name: Deploy database migrations
+        run: |
+          if [ -d "database" ]; then
+            rsync -avz \
+              -e "ssh" \
+              "database/" \
+              "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:${{ env.REMOTE_PATH }}/database/"
+          fi
+
+      - name: Setup MySQL
+        run: |
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} '
+            sudo mysql -e "CREATE DATABASE IF NOT EXISTS tripsalama CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+            sudo mysql -e "DROP USER IF EXISTS '"'"'tripsalama'"'"'@'"'"'localhost'"'"';"
+            sudo mysql -e "CREATE USER '"'"'tripsalama'"'"'@'"'"'localhost'"'"' IDENTIFIED BY '"'"'TripSalama2025!'"'"';"
+            sudo mysql -e "GRANT ALL PRIVILEGES ON tripsalama.* TO '"'"'tripsalama'"'"'@'"'"'localhost'"'"';"
+            sudo mysql -e "FLUSH PRIVILEGES;"
+          '
+
+      - name: Create production config
+        run: |
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            cat > ${{ env.REMOTE_PATH }}/.env << 'EOF'
+          APP_ENV=production
+          APP_DEBUG=false
+          BASE_PATH=/internal/tripsalama
+
+          DB_HOST=localhost
+          DB_PORT=3306
+          DB_DATABASE=tripsalama
+          DB_USERNAME=tripsalama
+          DB_PASSWORD=TripSalama2025!
+          EOF
+            touch ${{ env.REMOTE_PATH }}/.production
+          "
+
+      - name: Fix permissions
+        run: |
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            sudo chown -R www-data:www-data ${{ env.REMOTE_PATH }}
+            sudo chmod -R 755 ${{ env.REMOTE_PATH }}
+            sudo chmod -R 777 ${{ env.REMOTE_PATH }}/public/uploads
+            sudo chmod -R 755 ${{ env.REMOTE_PATH }}/public/downloads
+          "
+
+      - name: Deploy nginx snippet
+        run: |
+          scp -o StrictHostKeyChecking=no \
+            "docker/nginx-tripsalama.conf" \
+            "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/tripsalama.conf"
+
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} 'bash -s' << 'ENDSSH'
+            sudo mkdir -p /etc/nginx/snippets
+            sudo cp /tmp/tripsalama.conf /etc/nginx/snippets/tripsalama.conf
+            sudo chown root:root /etc/nginx/snippets/tripsalama.conf
+            sudo chmod 644 /etc/nginx/snippets/tripsalama.conf
+            if sudo nginx -t 2>&1; then
+              sudo systemctl reload nginx
+            fi
+          ENDSSH
+
+      - name: Verify webapp deployment
+        id: verify
+        run: |
+          sleep 3
+          HTTP=$(ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "curl -skL -o /dev/null -w '%{http_code}' http://127.0.0.1${{ env.BASE_PATH }}/login")
+          HTTP_EXT=$(curl -skL -o /dev/null -w '%{http_code}' "https://stabilis-it.ch${{ env.BASE_PATH }}/login")
+
+          echo "Internal: $HTTP, External: $HTTP_EXT"
+
+          if [[ "$HTTP" =~ ^(200|301|302)$ ]] && [[ "$HTTP_EXT" =~ ^(200|301|302)$ ]]; then
+            echo "success=true" >> $GITHUB_OUTPUT
+            echo "::notice::Webapp deployed OK"
+          else
+            echo "success=false" >> $GITHUB_OUTPUT
+            echo "::error::Webapp deployment failed"
+            exit 1
+          fi
+
+  # ========================================
+  # PHASE 3: BUILD APK
+  # ========================================
+  build-apk:
+    runs-on: ubuntu-latest
+    name: "3️⃣ Build APK"
+    needs: deploy-webapp
+    if: needs.deploy-webapp.outputs.webapp_success == 'true' && github.event.inputs.skip_apk != 'true'
+    outputs:
+      apk_success: ${{ steps.build.outputs.success }}
+      apk_size: ${{ steps.size.outputs.size_mb }}
+      apk_version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '11076708'
+
+      - name: Install Android SDK components
+        run: |
+          sdkmanager --install "platforms;android-${{ env.ANDROID_COMPILE_SDK }}"
+          sdkmanager --install "build-tools;${{ env.ANDROID_BUILD_TOOLS }}"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build APK
+        id: build
+        working-directory: android
+        run: |
+          ./gradlew assembleDebug
+          echo "success=true" >> $GITHUB_OUTPUT
+
+      - name: Get APK size
+        id: size
+        run: |
+          APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
+          APK_SIZE=$(stat -c%s "$APK_PATH")
+          APK_SIZE_MB=$(echo "scale=2; $APK_SIZE / 1048576" | bc)
+          echo "size_mb=$APK_SIZE_MB" >> $GITHUB_OUTPUT
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION="v${{ github.run_number }}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TripSalama-${{ steps.version.outputs.version }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+      - name: Upload APK to artifact for next job
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-for-vps
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 1
+
+  # ========================================
+  # PHASE 4: UPLOAD APK TO VPS
+  # ========================================
+  upload-apk:
+    runs-on: ubuntu-latest
+    name: "4️⃣ Upload APK to VPS"
+    needs: build-apk
+    if: needs.build-apk.outputs.apk_success == 'true'
+    outputs:
+      upload_success: ${{ steps.verify.outputs.success }}
+      apk_url: ${{ steps.urls.outputs.apk_url }}
+
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: apk-for-vps
+          path: ./apk
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          cat > ~/.ssh/config << 'SSHCONFIG'
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            ConnectTimeout 30
+            BatchMode yes
+            LogLevel ERROR
+          SSHCONFIG
+          chmod 600 ~/.ssh/config
+
+      - name: Upload APK to VPS
+        run: |
+          VERSION="v${{ github.run_number }}"
+
+          # Create downloads directory if not exists
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            sudo mkdir -p ${{ env.REMOTE_PATH }}/public/downloads
+            sudo chown -R www-data:www-data ${{ env.REMOTE_PATH }}/public/downloads
+            sudo chmod 755 ${{ env.REMOTE_PATH }}/public/downloads
+          "
+
+          # Upload versioned APK
+          scp ./apk/app-debug.apk ${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/TripSalama-${VERSION}.apk
+
+          # Move to downloads and create latest symlink
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            sudo mv /tmp/TripSalama-${VERSION}.apk ${{ env.REMOTE_PATH }}/public/downloads/
+            sudo ln -sf TripSalama-${VERSION}.apk ${{ env.REMOTE_PATH }}/public/downloads/TripSalama-latest.apk
+            sudo chown www-data:www-data ${{ env.REMOTE_PATH }}/public/downloads/TripSalama-*.apk
+            sudo chmod 644 ${{ env.REMOTE_PATH }}/public/downloads/TripSalama-*.apk
+          "
+
+      - name: Generate APK URLs
+        id: urls
+        run: |
+          VERSION="v${{ github.run_number }}"
+          APK_URL="https://stabilis-it.ch${{ env.BASE_PATH }}/downloads/TripSalama-${VERSION}.apk"
+          LATEST_URL="https://stabilis-it.ch${{ env.BASE_PATH }}/downloads/TripSalama-latest.apk"
+          echo "apk_url=$APK_URL" >> $GITHUB_OUTPUT
+          echo "latest_url=$LATEST_URL" >> $GITHUB_OUTPUT
+
+      - name: Verify APK accessible (NO 404)
+        id: verify
+        run: |
+          VERSION="v${{ github.run_number }}"
+          APK_URL="https://stabilis-it.ch${{ env.BASE_PATH }}/downloads/TripSalama-${VERSION}.apk"
+          LATEST_URL="https://stabilis-it.ch${{ env.BASE_PATH }}/downloads/TripSalama-latest.apk"
+
+          echo "Checking versioned APK: $APK_URL"
+          HTTP_V=$(curl -sI "$APK_URL" | head -1 | awk '{print $2}')
+          echo "HTTP Status versioned: $HTTP_V"
+
+          echo "Checking latest APK: $LATEST_URL"
+          HTTP_L=$(curl -sI "$LATEST_URL" | head -1 | awk '{print $2}')
+          echo "HTTP Status latest: $HTTP_L"
+
+          if [ "$HTTP_V" = "200" ] && [ "$HTTP_L" = "200" ]; then
+            echo "::notice::✅ APK accessible - NO 404"
+            echo "success=true" >> $GITHUB_OUTPUT
+          else
+            echo "::error::❌ APK NOT accessible! HTTP versioned=$HTTP_V, latest=$HTTP_L"
+            echo "success=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+  # ========================================
+  # PHASE 5: SEND EMAIL
+  # ========================================
+  send-email:
+    runs-on: ubuntu-latest
+    name: "5️⃣ Send Email"
+    needs: [deploy-webapp, build-apk, upload-apk]
+    if: always() && needs.deploy-webapp.outputs.webapp_success == 'true'
+
+    steps:
+      - name: Send deployment email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: mail.infomaniak.com
+          server_port: 587
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "🚀 TripSalama Déployé - Build #${{ github.run_number }}"
+          to: tarik.gilani@stabilis-it.ch
+          from: TripSalama <noreply@stabilis-it.ch>
+          html_body: |
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
+                .container { max-width: 600px; margin: 20px auto; }
+                .header { background: linear-gradient(135deg, #1B4D3E 0%, #2D5A4A 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center; }
+                .header h1 { margin: 0; font-size: 28px; }
+                .header p { margin: 10px 0 0 0; opacity: 0.9; }
+                .content { background: white; padding: 30px; border-radius: 0 0 12px 12px; }
+                .status-box { padding: 20px; border-radius: 8px; margin: 20px 0; }
+                .status-success { background: #d4edda; border-left: 4px solid #28a745; }
+                .status-fail { background: #f8d7da; border-left: 4px solid #dc3545; }
+                .btn { display: inline-block; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; margin: 10px 5px; }
+                .btn-primary { background: #1B4D3E; color: white !important; }
+                .btn-download { background: #C9A962; color: #1B4D3E !important; font-size: 18px; }
+                .credentials { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border: 2px dashed #1B4D3E; }
+                .credentials h3 { margin-top: 0; color: #1B4D3E; }
+                .credentials code { background: #e9ecef; padding: 2px 6px; border-radius: 4px; }
+                table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+                td { padding: 8px; border-bottom: 1px solid #eee; }
+                td:first-child { font-weight: bold; color: #666; width: 40%; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>🚗 TripSalama</h1>
+                  <p>Déploiement Complet - Build #${{ github.run_number }}</p>
+                </div>
+
+                <div class="content">
+                  <div class="status-box status-success">
+                    <strong>✅ Webapp déployée avec succès</strong><br>
+                    <a href="https://stabilis-it.ch${{ env.BASE_PATH }}/login">https://stabilis-it.ch${{ env.BASE_PATH }}</a>
+                  </div>
+
+                  ${{ needs.upload-apk.outputs.upload_success == 'true' && '
+                  <div style="text-align: center; margin: 30px 0;">
+                    <p style="font-size: 16px; color: #666;">📱 Nouvelle APK disponible</p>
+                    <a href="https://stabilis-it.ch/internal/tripsalama/downloads/TripSalama-latest.apk" class="btn btn-download">
+                      📥 TÉLÉCHARGER L''APK
+                    </a>
+                  </div>
+                  ' || '
+                  <div class="status-box status-fail">
+                    <strong>⚠️ APK non disponible</strong><br>
+                    Le build APK a échoué ou a été ignoré.
+                  </div>
+                  ' }}
+
+                  <div class="credentials">
+                    <h3>🔐 Identifiants de test</h3>
+                    <table>
+                      <tr>
+                        <td>👩 Passagère</td>
+                        <td><code>passenger@tripsalama.ch</code> / <code>TripSalama2025!</code></td>
+                      </tr>
+                      <tr>
+                        <td>🚗 Conductrice</td>
+                        <td><code>driver@tripsalama.ch</code> / <code>TripSalama2025!</code></td>
+                      </tr>
+                    </table>
+                  </div>
+
+                  <table>
+                    <tr><td>Build</td><td>#${{ github.run_number }}</td></tr>
+                    <tr><td>Commit</td><td><code>${{ github.sha }}</code></td></tr>
+                    <tr><td>Branche</td><td>main</td></tr>
+                    <tr><td>Date</td><td>${{ github.event.head_commit.timestamp }}</td></tr>
+                    ${{ needs.build-apk.outputs.apk_size && '<tr><td>Taille APK</td><td>' }}${{ needs.build-apk.outputs.apk_size }}${{ needs.build-apk.outputs.apk_size && ' MB</td></tr>' || '' }}
+                  </table>
+
+                  <div style="text-align: center; margin-top: 30px;">
+                    <a href="https://stabilis-it.ch${{ env.BASE_PATH }}/login" class="btn btn-primary">
+                      🌐 Ouvrir la Webapp
+                    </a>
+                    <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" class="btn btn-primary">
+                      📋 Voir les logs
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </body>
+            </html>
+
+  # ========================================
+  # SUMMARY
+  # ========================================
+  summary:
+    runs-on: ubuntu-latest
+    name: "📊 Summary"
+    needs: [validate, deploy-webapp, build-apk, upload-apk, send-email]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## 🚀 TripSalama - Déploiement Complet" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Phase | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 1️⃣ Validation PHP | ${{ needs.validate.outputs.valid == 'true' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 2️⃣ Deploy Webapp | ${{ needs.deploy-webapp.outputs.webapp_success == 'true' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 3️⃣ Build APK | ${{ needs.build-apk.outputs.apk_success == 'true' && '✅' || '⏭️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 4️⃣ Upload APK | ${{ needs.upload-apk.outputs.upload_success == 'true' && '✅' || '⏭️ Skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 5️⃣ Email | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
+          echo "- **Webapp:** https://stabilis-it.ch${{ env.BASE_PATH }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **APK:** https://stabilis-it.ch${{ env.BASE_PATH }}/downloads/TripSalama-latest.apk" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔐 Credentials" >> $GITHUB_STEP_SUMMARY
+          echo "| Role | Email | Password |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Passagère | passenger@tripsalama.ch | TripSalama2025! |" >> $GITHUB_STEP_SUMMARY
+          echo "| Conductrice | driver@tripsalama.ch | TripSalama2025! |" >> $GITHUB_STEP_SUMMARY
