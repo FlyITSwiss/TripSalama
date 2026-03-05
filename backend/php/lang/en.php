@@ -877,6 +877,43 @@ return [
         'brakes' => 'Brakes functional',
     ],
 
+    // Passenger dashboard
+    'dashboard' => [
+        'home' => 'Home',
+        'work' => 'Work',
+        'add_address' => 'Add',
+        'recent' => 'Recent destinations',
+        'see_all' => 'See all',
+        'rides' => 'Rides',
+        'this_month' => 'This month',
+        'rating' => 'Rating',
+        'community_text' => 'users trust us',
+        'safety_title' => 'Travel safely',
+        'safety_text' => 'All our drivers are verified',
+        'promo_title' => 'First ride free',
+        'promo_text' => 'Up to 10€ off',
+    ],
+
+    // Saved addresses management
+    'address' => [
+        'add_home' => 'Add my home',
+        'add_work' => 'Add my work',
+        'edit_home' => 'Edit my home',
+        'edit_work' => 'Edit my work',
+        'home' => 'Home',
+        'work' => 'Work',
+        'search_placeholder' => 'Search for an address...',
+        'use_current_location' => 'Use my current location',
+        'save' => 'Save',
+        'cancel' => 'Cancel',
+        'saved_success' => 'Address saved',
+        'save_error' => 'Error saving address',
+        'no_results' => 'No address found',
+        'detecting_location' => 'Detecting your location...',
+        'confirm_address' => 'Confirm this address',
+        'drag_marker' => 'Drag the marker to adjust',
+    ],
+
     // SOS recording
     'recording' => [
         'title' => 'Emergency recording',

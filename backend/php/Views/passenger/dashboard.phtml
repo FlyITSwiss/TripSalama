@@ -112,10 +112,319 @@ $recentDestinations = $recentRides ?? [];
         text-decoration: none;
         color: inherit;
         transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+        text-align: left;
     }
 
     .saved-place:hover {
         background: var(--uber-gray-100);
+    }
+
+    /* Address Modal */
+    .address-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .address-modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .address-modal {
+        width: 100%;
+        max-width: 420px;
+        background: var(--uber-white);
+        border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+    }
+
+    .address-modal-overlay.active .address-modal {
+        transform: translateY(0);
+    }
+
+    .address-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-4);
+        border-bottom: 1px solid var(--uber-gray-100);
+    }
+
+    .address-modal-title {
+        font-size: var(--text-lg);
+        font-weight: var(--font-semibold);
+        color: var(--uber-black);
+    }
+
+    .address-modal-close {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: var(--uber-gray-100);
+        border-radius: var(--radius-full);
+        cursor: pointer;
+        color: var(--uber-black);
+        transition: all 0.2s ease;
+    }
+
+    .address-modal-close:hover {
+        background: var(--uber-gray-200);
+    }
+
+    .address-modal-close svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .address-modal-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: var(--space-4);
+    }
+
+    .address-search-wrapper {
+        position: relative;
+        margin-bottom: var(--space-4);
+    }
+
+    .address-search-input {
+        width: 100%;
+        padding: var(--space-4);
+        padding-left: var(--space-5);
+        background: var(--uber-gray-100);
+        border: 2px solid transparent;
+        border-radius: var(--radius-xl);
+        font-size: var(--text-base);
+        color: var(--uber-black);
+        transition: all 0.2s ease;
+    }
+
+    .address-search-input:focus {
+        outline: none;
+        border-color: var(--uber-black);
+        background: var(--uber-white);
+    }
+
+    .address-search-input::placeholder {
+        color: var(--uber-gray-500);
+    }
+
+    .address-search-icon {
+        position: absolute;
+        left: var(--space-4);
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 20px;
+        color: var(--uber-gray-500);
+        pointer-events: none;
+    }
+
+    .address-suggestions {
+        background: var(--uber-white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        margin-top: var(--space-2);
+        max-height: 200px;
+        overflow-y: auto;
+        display: none;
+    }
+
+    .address-suggestions.active {
+        display: block;
+    }
+
+    .address-suggestion {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+        cursor: pointer;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        transition: background 0.2s ease;
+    }
+
+    .address-suggestion:hover {
+        background: var(--uber-gray-50);
+    }
+
+    .address-suggestion-icon {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--uber-gray-100);
+        border-radius: var(--radius-full);
+        flex-shrink: 0;
+    }
+
+    .address-suggestion-icon svg {
+        width: 18px;
+        height: 18px;
+        color: var(--uber-gray-600);
+    }
+
+    .address-suggestion-text {
+        flex: 1;
+        font-size: var(--text-sm);
+        color: var(--uber-black);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .address-map-container {
+        height: 200px;
+        border-radius: var(--radius-xl);
+        overflow: hidden;
+        margin-bottom: var(--space-4);
+        position: relative;
+    }
+
+    .address-map {
+        width: 100%;
+        height: 100%;
+    }
+
+    .address-map .leaflet-control-attribution {
+        display: none !important;
+    }
+
+    .address-current-location {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-4);
+        background: var(--uber-gray-50);
+        border-radius: var(--radius-lg);
+        border: none;
+        width: 100%;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-bottom: var(--space-4);
+    }
+
+    .address-current-location:hover {
+        background: var(--uber-gray-100);
+    }
+
+    .address-current-location svg {
+        width: 24px;
+        height: 24px;
+        color: var(--uber-green);
+    }
+
+    .address-current-location span {
+        font-size: var(--text-sm);
+        font-weight: var(--font-medium);
+        color: var(--uber-black);
+    }
+
+    .address-selected {
+        padding: var(--space-4);
+        background: var(--uber-green-soft);
+        border-radius: var(--radius-lg);
+        margin-bottom: var(--space-4);
+        display: none;
+    }
+
+    .address-selected.active {
+        display: block;
+    }
+
+    .address-selected-label {
+        font-size: var(--text-xs);
+        color: var(--uber-gray-500);
+        text-transform: uppercase;
+        margin-bottom: var(--space-1);
+    }
+
+    .address-selected-text {
+        font-size: var(--text-sm);
+        font-weight: var(--font-medium);
+        color: var(--uber-black);
+    }
+
+    .address-modal-footer {
+        padding: var(--space-4);
+        border-top: 1px solid var(--uber-gray-100);
+    }
+
+    .address-save-btn {
+        width: 100%;
+        padding: var(--space-4);
+        background: var(--uber-black);
+        color: var(--uber-white);
+        border: none;
+        border-radius: var(--radius-lg);
+        font-size: var(--text-base);
+        font-weight: var(--font-semibold);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+    }
+
+    .address-save-btn:hover:not(:disabled) {
+        background: var(--uber-gray-800);
+    }
+
+    .address-save-btn:disabled {
+        background: var(--uber-gray-300);
+        cursor: not-allowed;
+    }
+
+    .address-save-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .address-loading {
+        display: none;
+    }
+
+    .address-save-btn.loading .address-loading {
+        display: block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-top-color: var(--uber-white);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    .address-save-btn.loading .address-btn-text {
+        display: none;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
     }
 
     .saved-place-icon {
@@ -430,6 +739,7 @@ $recentDestinations = $recentRides ?? [];
     .active-ride-status {
         padding: var(--space-1) var(--space-3);
         background: var(--uber-green);
+        color: #ffffff; /* WCAG contrast fix - white on green */
         border-radius: var(--radius-full);
         font-size: var(--text-xs);
         font-weight: var(--font-semibold);
@@ -572,7 +882,10 @@ $recentDestinations = $recentRides ?? [];
 
         <!-- Saved Places -->
         <div class="saved-places">
-            <a href="<?= base_url('passenger/book') ?>?dest=home" class="saved-place">
+            <button type="button" class="saved-place" data-type="home" data-action="<?= !empty($user['home_address']) ? 'use' : 'add' ?>"
+                    data-address="<?= htmlspecialchars($user['home_address'] ?? '') ?>"
+                    data-lat="<?= $user['home_lat'] ?? '' ?>"
+                    data-lng="<?= $user['home_lng'] ?? '' ?>">
                 <div class="saved-place-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -587,8 +900,11 @@ $recentDestinations = $recentRides ?? [];
                     <div class="saved-place-add"><?= __('dashboard.add_address') ?></div>
                     <?php endif; ?>
                 </div>
-            </a>
-            <a href="<?= base_url('passenger/book') ?>?dest=work" class="saved-place">
+            </button>
+            <button type="button" class="saved-place" data-type="work" data-action="<?= !empty($user['work_address']) ? 'use' : 'add' ?>"
+                    data-address="<?= htmlspecialchars($user['work_address'] ?? '') ?>"
+                    data-lat="<?= $user['work_lat'] ?? '' ?>"
+                    data-lng="<?= $user['work_lng'] ?? '' ?>">
                 <div class="saved-place-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
@@ -603,7 +919,7 @@ $recentDestinations = $recentRides ?? [];
                     <div class="saved-place-add"><?= __('dashboard.add_address') ?></div>
                     <?php endif; ?>
                 </div>
-            </a>
+            </button>
         </div>
     </section>
 
@@ -689,3 +1005,422 @@ $recentDestinations = $recentRides ?? [];
         <div class="community-text"><?= __('dashboard.community_text') ?></div>
     </section>
 </div>
+
+<!-- Address Modal -->
+<div id="addressModal" class="address-modal-overlay">
+    <div class="address-modal">
+        <div class="address-modal-header">
+            <h2 class="address-modal-title" id="addressModalTitle"><?= __('address.add_home') ?></h2>
+            <button type="button" class="address-modal-close" id="addressModalClose">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="address-modal-body">
+            <!-- Current Location Button -->
+            <button type="button" class="address-current-location" id="addressUseLocation">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="3"/>
+                    <line x1="12" y1="2" x2="12" y2="6"/>
+                    <line x1="12" y1="18" x2="12" y2="22"/>
+                    <line x1="2" y1="12" x2="6" y2="12"/>
+                    <line x1="18" y1="12" x2="22" y2="12"/>
+                </svg>
+                <span><?= __('address.use_current_location') ?></span>
+            </button>
+
+            <!-- Search Input -->
+            <div class="address-search-wrapper">
+                <svg class="address-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="addressSearchInput" class="address-search-input"
+                       placeholder="<?= __('address.search_placeholder') ?>" autocomplete="off">
+                <div id="addressSuggestions" class="address-suggestions"></div>
+            </div>
+
+            <!-- Map -->
+            <div class="address-map-container">
+                <div id="addressMap" class="address-map"></div>
+            </div>
+
+            <!-- Selected Address Display -->
+            <div id="addressSelected" class="address-selected">
+                <div class="address-selected-label"><?= __('address.confirm_address') ?></div>
+                <div class="address-selected-text" id="addressSelectedText"></div>
+            </div>
+        </div>
+        <div class="address-modal-footer">
+            <button type="button" class="address-save-btn" id="addressSaveBtn" disabled>
+                <span class="address-loading"></span>
+                <span class="address-btn-text"><?= __('address.save') ?></span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Leaflet CSS/JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+(function() {
+    'use strict';
+
+    // Configuration
+    const config = {
+        defaultCenter: [33.5731, -7.5898], // Casablanca
+        defaultZoom: 15,
+        nominatimUrl: 'https://nominatim.openstreetmap.org',
+        apiUrl: typeof AppConfig !== 'undefined' ? AppConfig.apiPath : '/api',
+        csrfToken: typeof AppConfig !== 'undefined' ? AppConfig.csrfToken : ''
+    };
+
+    // i18n
+    const i18n = {
+        addHome: <?= json_encode(__('address.add_home')) ?>,
+        addWork: <?= json_encode(__('address.add_work')) ?>,
+        editHome: <?= json_encode(__('address.edit_home')) ?>,
+        editWork: <?= json_encode(__('address.edit_work')) ?>,
+        savedSuccess: <?= json_encode(__('address.saved_success')) ?>,
+        saveError: <?= json_encode(__('address.save_error')) ?>,
+        noResults: <?= json_encode(__('address.no_results')) ?>,
+        detecting: <?= json_encode(__('address.detecting_location')) ?>
+    };
+
+    // State
+    let addressMap = null;
+    let addressMarker = null;
+    let currentType = null;
+    let selectedAddress = null;
+    let selectedLat = null;
+    let selectedLng = null;
+    let searchTimeout = null;
+
+    // DOM Elements
+    const modal = document.getElementById('addressModal');
+    const modalTitle = document.getElementById('addressModalTitle');
+    const closeBtn = document.getElementById('addressModalClose');
+    const searchInput = document.getElementById('addressSearchInput');
+    const suggestions = document.getElementById('addressSuggestions');
+    const useLocationBtn = document.getElementById('addressUseLocation');
+    const selectedDiv = document.getElementById('addressSelected');
+    const selectedText = document.getElementById('addressSelectedText');
+    const saveBtn = document.getElementById('addressSaveBtn');
+    const savedPlaces = document.querySelectorAll('.saved-place');
+
+    // Open modal
+    function openModal(type, existingAddress, existingLat, existingLng) {
+        currentType = type;
+        const hasAddress = existingAddress && existingAddress.trim() !== '';
+
+        // Set title
+        if (type === 'home') {
+            modalTitle.textContent = hasAddress ? i18n.editHome : i18n.addHome;
+        } else {
+            modalTitle.textContent = hasAddress ? i18n.editWork : i18n.addWork;
+        }
+
+        // Reset state
+        searchInput.value = '';
+        suggestions.classList.remove('active');
+        suggestions.innerHTML = '';
+        selectedDiv.classList.remove('active');
+        saveBtn.disabled = true;
+        selectedAddress = null;
+        selectedLat = null;
+        selectedLng = null;
+
+        // Show modal
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        // Initialize map after modal is visible
+        setTimeout(() => {
+            initMap(existingLat, existingLng, existingAddress);
+        }, 100);
+    }
+
+    // Close modal
+    function closeModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+
+        // Clean up map
+        if (addressMap) {
+            addressMap.remove();
+            addressMap = null;
+        }
+    }
+
+    // Initialize map
+    function initMap(lat, lng, address) {
+        const mapContainer = document.getElementById('addressMap');
+        if (!mapContainer) return;
+
+        // Clear existing map
+        if (addressMap) {
+            addressMap.remove();
+        }
+
+        const centerLat = lat && !isNaN(lat) ? parseFloat(lat) : config.defaultCenter[0];
+        const centerLng = lng && !isNaN(lng) ? parseFloat(lng) : config.defaultCenter[1];
+
+        addressMap = L.map('addressMap', {
+            zoomControl: false
+        }).setView([centerLat, centerLng], config.defaultZoom);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(addressMap);
+
+        // Add zoom control to top right
+        L.control.zoom({ position: 'topright' }).addTo(addressMap);
+
+        // If there's an existing address, add marker
+        if (lat && lng && address) {
+            setMarker(centerLat, centerLng, address);
+        }
+
+        // Click on map to place marker
+        addressMap.on('click', function(e) {
+            reverseGeocode(e.latlng.lat, e.latlng.lng);
+        });
+    }
+
+    // Set marker on map
+    function setMarker(lat, lng, address) {
+        if (!addressMap) return;
+
+        if (addressMarker) {
+            addressMarker.remove();
+        }
+
+        addressMarker = L.marker([lat, lng], {
+            draggable: true
+        }).addTo(addressMap);
+
+        // Update on drag
+        addressMarker.on('dragend', function(e) {
+            const pos = e.target.getLatLng();
+            reverseGeocode(pos.lat, pos.lng);
+        });
+
+        // Update state
+        selectedLat = lat;
+        selectedLng = lng;
+        selectedAddress = address;
+
+        // Update UI
+        selectedText.textContent = address;
+        selectedDiv.classList.add('active');
+        saveBtn.disabled = false;
+
+        // Center map
+        addressMap.setView([lat, lng], config.defaultZoom);
+    }
+
+    // Search addresses
+    async function searchAddresses(query) {
+        if (!query || query.length < 3) {
+            suggestions.classList.remove('active');
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `${config.nominatimUrl}/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`
+            );
+            const results = await response.json();
+
+            if (results.length === 0) {
+                suggestions.innerHTML = `<div class="address-suggestion"><span class="address-suggestion-text">${i18n.noResults}</span></div>`;
+            } else {
+                suggestions.innerHTML = results.map(r => `
+                    <button type="button" class="address-suggestion" data-lat="${r.lat}" data-lng="${r.lon}" data-address="${r.display_name}">
+                        <div class="address-suggestion-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="10" r="3"/>
+                                <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/>
+                            </svg>
+                        </div>
+                        <span class="address-suggestion-text">${r.display_name}</span>
+                    </button>
+                `).join('');
+            }
+
+            suggestions.classList.add('active');
+        } catch (error) {
+            console.error('Search error:', error);
+        }
+    }
+
+    // Reverse geocode
+    async function reverseGeocode(lat, lng) {
+        try {
+            const response = await fetch(
+                `${config.nominatimUrl}/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`
+            );
+            const result = await response.json();
+
+            if (result && result.display_name) {
+                setMarker(lat, lng, result.display_name);
+            }
+        } catch (error) {
+            console.error('Reverse geocode error:', error);
+        }
+    }
+
+    // Get current location
+    function getCurrentLocation() {
+        if (!navigator.geolocation) {
+            console.error('Geolocation not supported');
+            return;
+        }
+
+        useLocationBtn.querySelector('span').textContent = i18n.detecting;
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                reverseGeocode(position.coords.latitude, position.coords.longitude);
+                useLocationBtn.querySelector('span').textContent = <?= json_encode(__('address.use_current_location')) ?>;
+            },
+            (error) => {
+                console.error('Geolocation error:', error);
+                useLocationBtn.querySelector('span').textContent = <?= json_encode(__('address.use_current_location')) ?>;
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    }
+
+    // Save address
+    async function saveAddress() {
+        if (!selectedAddress || !selectedLat || !selectedLng || !currentType) {
+            return;
+        }
+
+        saveBtn.classList.add('loading');
+        saveBtn.disabled = true;
+
+        try {
+            const formData = new FormData();
+            formData.append('type', currentType);
+            formData.append('address', selectedAddress);
+            formData.append('lat', selectedLat);
+            formData.append('lng', selectedLng);
+
+            const response = await fetch(`${config.apiUrl}/user.php?action=save-address`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-Token': config.csrfToken
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Update the saved place button
+                const savedPlace = document.querySelector(`.saved-place[data-type="${currentType}"]`);
+                if (savedPlace) {
+                    savedPlace.dataset.action = 'use';
+                    savedPlace.dataset.address = selectedAddress;
+                    savedPlace.dataset.lat = selectedLat;
+                    savedPlace.dataset.lng = selectedLng;
+
+                    const addressEl = savedPlace.querySelector('.saved-place-address');
+                    const addEl = savedPlace.querySelector('.saved-place-add');
+
+                    if (addEl) {
+                        addEl.classList.add('saved-place-address');
+                        addEl.classList.remove('saved-place-add');
+                        addEl.textContent = selectedAddress;
+                    } else if (addressEl) {
+                        addressEl.textContent = selectedAddress;
+                    }
+                }
+
+                // Show success notification
+                if (typeof showToast === 'function') {
+                    showToast('success', i18n.savedSuccess);
+                }
+
+                closeModal();
+            } else {
+                throw new Error(result.message || i18n.saveError);
+            }
+        } catch (error) {
+            console.error('Save error:', error);
+            if (typeof showToast === 'function') {
+                showToast('error', i18n.saveError);
+            }
+        } finally {
+            saveBtn.classList.remove('loading');
+            saveBtn.disabled = false;
+        }
+    }
+
+    // Event listeners
+    savedPlaces.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const type = this.dataset.type;
+            const action = this.dataset.action;
+            const address = this.dataset.address;
+            const lat = this.dataset.lat;
+            const lng = this.dataset.lng;
+
+            if (action === 'use' && address) {
+                // Redirect to booking with destination
+                window.location.href = `${typeof base_url === 'function' ? base_url('passenger/book') : '/passenger/book'}?dest=${type}`;
+            } else {
+                // Open modal to add/edit address
+                openModal(type, address, lat, lng);
+            }
+        });
+    });
+
+    closeBtn.addEventListener('click', closeModal);
+
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            searchAddresses(this.value);
+        }, 300);
+    });
+
+    suggestions.addEventListener('click', function(e) {
+        const suggestion = e.target.closest('.address-suggestion');
+        if (suggestion && suggestion.dataset.lat) {
+            const lat = parseFloat(suggestion.dataset.lat);
+            const lng = parseFloat(suggestion.dataset.lng);
+            const address = suggestion.dataset.address;
+
+            setMarker(lat, lng, address);
+            searchInput.value = address;
+            suggestions.classList.remove('active');
+        }
+    });
+
+    useLocationBtn.addEventListener('click', getCurrentLocation);
+
+    saveBtn.addEventListener('click', saveAddress);
+
+    // Close on escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+})();
+</script>

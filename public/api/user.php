@@ -69,6 +69,24 @@ try {
             handleDeleteAccount();
             break;
 
+        case 'save-address':
+            // Sauvegarder une adresse (home ou work)
+            if ($method !== 'POST') {
+                errorResponse(__('error.generic'), 405);
+            }
+            requireCsrf();
+            handleSaveAddress();
+            break;
+
+        case 'delete-address':
+            // Supprimer une adresse (home ou work)
+            if ($method !== 'POST') {
+                errorResponse(__('error.generic'), 405);
+            }
+            requireCsrf();
+            handleDeleteAddress();
+            break;
+
         default:
             errorResponse(__('error.not_found'), 404);
     }
@@ -369,4 +387,95 @@ function handleDeleteAccount(): never
     session_destroy();
 
     successResponse($summary, __('msg.account_deleted'));
+}
+
+/**
+ * Sauvegarder une adresse (home ou work)
+ */
+function handleSaveAddress(): never
+{
+    require_once BACKEND_PATH . '/Models/User.php';
+
+    $user = current_user();
+    $userId = (int) $user['id'];
+
+    $input = getRequestData();
+
+    // Valider les champs requis
+    $type = trim($input['type'] ?? '');
+    $address = trim($input['address'] ?? '');
+    $lat = isset($input['lat']) ? (float) $input['lat'] : null;
+    $lng = isset($input['lng']) ? (float) $input['lng'] : null;
+
+    if (!in_array($type, ['home', 'work'], true)) {
+        errorResponse(__('validation.required'), 400);
+    }
+
+    if (empty($address)) {
+        errorResponse(__('validation.required'), 400);
+    }
+
+    if ($lat === null || $lng === null) {
+        errorResponse(__('validation.required'), 400);
+    }
+
+    // Valider les coordonnées
+    if ($lat < -90 || $lat > 90 || $lng < -180 || $lng > 180) {
+        errorResponse(__('error.generic'), 400);
+    }
+
+    $db = getDbConnection();
+    $userModel = new \TripSalama\Models\User($db);
+
+    $success = $userModel->updateAddress($userId, $type, $address, $lat, $lng);
+
+    if (!$success) {
+        errorResponse(__('address.save_error'), 500);
+    }
+
+    // Mettre à jour la session
+    $_SESSION['user'][$type . '_address'] = $address;
+    $_SESSION['user'][$type . '_lat'] = $lat;
+    $_SESSION['user'][$type . '_lng'] = $lng;
+
+    successResponse([
+        'type' => $type,
+        'address' => $address,
+        'lat' => $lat,
+        'lng' => $lng,
+    ], __('address.saved_success'));
+}
+
+/**
+ * Supprimer une adresse (home ou work)
+ */
+function handleDeleteAddress(): never
+{
+    require_once BACKEND_PATH . '/Models/User.php';
+
+    $user = current_user();
+    $userId = (int) $user['id'];
+
+    $input = getRequestData();
+    $type = trim($input['type'] ?? '');
+
+    if (!in_array($type, ['home', 'work'], true)) {
+        errorResponse(__('validation.required'), 400);
+    }
+
+    $db = getDbConnection();
+    $userModel = new \TripSalama\Models\User($db);
+
+    $success = $userModel->deleteAddress($userId, $type);
+
+    if (!$success) {
+        errorResponse(__('error.generic'), 500);
+    }
+
+    // Mettre à jour la session
+    unset($_SESSION['user'][$type . '_address']);
+    unset($_SESSION['user'][$type . '_lat']);
+    unset($_SESSION['user'][$type . '_lng']);
+
+    successResponse(['type' => $type], __('msg.success'));
 }

@@ -159,6 +159,61 @@ class User
     }
 
     /**
+     * Mettre à jour une adresse sauvegardée (home ou work)
+     */
+    public function updateAddress(int $id, string $type, string $address, float $lat, float $lng): bool
+    {
+        if (!in_array($type, ['home', 'work'], true)) {
+            return false;
+        }
+
+        $addressField = $type . '_address';
+        $latField = $type . '_lat';
+        $lngField = $type . '_lng';
+
+        $stmt = $this->db->prepare("
+            UPDATE users
+            SET {$addressField} = :address,
+                {$latField} = :lat,
+                {$lngField} = :lng,
+                updated_at = NOW()
+            WHERE id = :id
+        ");
+
+        return $stmt->execute([
+            'address' => $address,
+            'lat' => $lat,
+            'lng' => $lng,
+            'id' => $id,
+        ]);
+    }
+
+    /**
+     * Supprimer une adresse sauvegardée (home ou work)
+     */
+    public function deleteAddress(int $id, string $type): bool
+    {
+        if (!in_array($type, ['home', 'work'], true)) {
+            return false;
+        }
+
+        $addressField = $type . '_address';
+        $latField = $type . '_lat';
+        $lngField = $type . '_lng';
+
+        $stmt = $this->db->prepare("
+            UPDATE users
+            SET {$addressField} = NULL,
+                {$latField} = NULL,
+                {$lngField} = NULL,
+                updated_at = NOW()
+            WHERE id = :id
+        ");
+
+        return $stmt->execute(['id' => $id]);
+    }
+
+    /**
      * Obtenir les statistiques d'un utilisateur
      */
     public function getStats(int $id): array

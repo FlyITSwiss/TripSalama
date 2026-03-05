@@ -882,6 +882,43 @@ return [
         'brakes' => 'Freins fonctionnels',
     ],
 
+    // Dashboard passager
+    'dashboard' => [
+        'home' => 'Domicile',
+        'work' => 'Travail',
+        'add_address' => 'Ajouter',
+        'recent' => 'Destinations récentes',
+        'see_all' => 'Voir tout',
+        'rides' => 'Courses',
+        'this_month' => 'Ce mois',
+        'rating' => 'Note',
+        'community_text' => 'utilisateurs nous font confiance',
+        'safety_title' => 'Voyagez en sécurité',
+        'safety_text' => 'Toutes nos conductrices sont vérifiées',
+        'promo_title' => 'Première course offerte',
+        'promo_text' => 'Jusqu\'à 10€ de réduction',
+    ],
+
+    // Gestion des adresses sauvegardées
+    'address' => [
+        'add_home' => 'Ajouter mon domicile',
+        'add_work' => 'Ajouter mon travail',
+        'edit_home' => 'Modifier mon domicile',
+        'edit_work' => 'Modifier mon travail',
+        'home' => 'Domicile',
+        'work' => 'Travail',
+        'search_placeholder' => 'Rechercher une adresse...',
+        'use_current_location' => 'Utiliser ma position actuelle',
+        'save' => 'Enregistrer',
+        'cancel' => 'Annuler',
+        'saved_success' => 'Adresse enregistrée',
+        'save_error' => 'Erreur lors de l\'enregistrement',
+        'no_results' => 'Aucune adresse trouvée',
+        'detecting_location' => 'Détection de votre position...',
+        'confirm_address' => 'Confirmer cette adresse',
+        'drag_marker' => 'Déplacez le marqueur pour ajuster',
+    ],
+
     // Enregistrement SOS
     'recording' => [
         'title' => "Enregistrement d'urgence",
