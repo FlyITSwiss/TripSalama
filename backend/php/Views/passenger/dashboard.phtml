@@ -1076,7 +1076,8 @@ $recentDestinations = $recentRides ?? [];
         defaultCenter: [33.5731, -7.5898], // Casablanca
         defaultZoom: 15,
         nominatimUrl: 'https://nominatim.openstreetmap.org',
-        apiUrl: typeof AppConfig !== 'undefined' ? AppConfig.apiPath : '/api',
+        basePath: typeof AppConfig !== 'undefined' ? AppConfig.basePath : '',
+        apiPath: typeof AppConfig !== 'undefined' ? AppConfig.apiPath : '/api',
         csrfToken: typeof AppConfig !== 'undefined' ? AppConfig.csrfToken : ''
     };
 
@@ -1313,7 +1314,7 @@ $recentDestinations = $recentRides ?? [];
             formData.append('lat', selectedLat);
             formData.append('lng', selectedLng);
 
-            const response = await fetch(`${config.apiUrl}/user.php?action=save-address`, {
+            const response = await fetch(`${config.basePath}${config.apiPath}/user.php?action=save-address`, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-Token': config.csrfToken
