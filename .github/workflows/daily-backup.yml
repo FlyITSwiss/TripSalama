@@ -1,0 +1,200 @@
+name: Daily Backup
+
+on:
+  schedule:
+    # Run every day at 2:00 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      backup_type:
+        description: 'Backup type'
+        required: false
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - db-only
+          - files-only
+
+env:
+  VPS_HOST: '83.228.205.222'
+  VPS_USER: 'debian'
+  REMOTE_PATH: '/var/www/tripsalama'
+  BACKUP_DIR: '/var/backups/tripsalama'
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    name: "Execute Backup"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          cat > ~/.ssh/config << 'SSHCONFIG'
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            ConnectTimeout 30
+            ServerAliveInterval 10
+            BatchMode yes
+            LogLevel ERROR
+          SSHCONFIG
+          chmod 600 ~/.ssh/config
+
+      - name: Test SSH connection
+        run: |
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "echo 'SSH OK'"
+
+      - name: Deploy backup script
+        run: |
+          scp -o StrictHostKeyChecking=no \
+            scripts/backup.sh \
+            ${{ env.VPS_USER }}@${{ env.VPS_HOST }}:${{ env.REMOTE_PATH }}/scripts/backup.sh
+
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            chmod +x ${{ env.REMOTE_PATH }}/scripts/backup.sh
+          "
+
+      - name: Execute backup
+        env:
+          BACKUP_TYPE: ${{ github.event.inputs.backup_type || 'full' }}
+        run: |
+          echo "=== Starting $BACKUP_TYPE backup ==="
+
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            # Create backup directory
+            sudo mkdir -p ${{ env.BACKUP_DIR }}
+            sudo chown -R debian:debian ${{ env.BACKUP_DIR }}
+
+            # Run backup script
+            cd ${{ env.REMOTE_PATH }}
+            ./scripts/backup.sh --$BACKUP_TYPE
+          "
+
+      - name: Verify backup
+        id: verify
+        run: |
+          echo "=== Verifying backup ==="
+
+          BACKUP_STATUS=$(ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            # Check for recent backup files (less than 1 hour old)
+            RECENT_DB=\$(find ${{ env.BACKUP_DIR }} -name 'db_*.sql.gz' -mmin -60 | head -1)
+            RECENT_UPLOADS=\$(find ${{ env.BACKUP_DIR }} -name 'uploads_*.tar.gz' -mmin -60 | head -1)
+
+            if [ -n \"\$RECENT_DB\" ]; then
+              echo 'DB_BACKUP=OK'
+              ls -lh \"\$RECENT_DB\"
+            else
+              echo 'DB_BACKUP=MISSING'
+            fi
+
+            if [ -n \"\$RECENT_UPLOADS\" ]; then
+              echo 'UPLOADS_BACKUP=OK'
+              ls -lh \"\$RECENT_UPLOADS\"
+            else
+              echo 'UPLOADS_BACKUP=MISSING'
+            fi
+
+            # Show backup directory stats
+            echo ''
+            echo 'Backup directory contents:'
+            ls -lhtr ${{ env.BACKUP_DIR }}/ | tail -10
+
+            echo ''
+            echo 'Total backup size:'
+            du -sh ${{ env.BACKUP_DIR }}/
+          ")
+
+          echo "$BACKUP_STATUS"
+
+          if echo "$BACKUP_STATUS" | grep -q "DB_BACKUP=OK"; then
+            echo "success=true" >> $GITHUB_OUTPUT
+            echo "::notice::Backup completed successfully"
+          else
+            echo "success=false" >> $GITHUB_OUTPUT
+            echo "::error::Backup verification failed"
+            exit 1
+          fi
+
+      - name: Generate backup report
+        if: always()
+        run: |
+          echo "## Daily Backup Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Date | $(date -u +%Y-%m-%d\ %H:%M\ UTC) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Type | ${{ github.event.inputs.backup_type || 'full' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Result | ${{ steps.verify.outputs.success == 'true' && 'SUCCESS' || 'FAILED' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Get latest backup info
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            echo '### Latest Backups'
+            echo ''
+            echo '\`\`\`'
+            ls -lhtr ${{ env.BACKUP_DIR }}/*.gz 2>/dev/null | tail -5 || echo 'No backup files found'
+            echo '\`\`\`'
+            echo ''
+            echo '### Disk Usage'
+            echo ''
+            echo '\`\`\`'
+            du -sh ${{ env.BACKUP_DIR }}/ 2>/dev/null || echo 'N/A'
+            df -h | grep -E '^/dev' | head -1
+            echo '\`\`\`'
+          " >> $GITHUB_STEP_SUMMARY 2>/dev/null || true
+
+      - name: Alert on failure
+        if: failure()
+        run: |
+          echo "::error::Daily backup failed! Manual intervention required."
+          echo "Check the VPS backup directory: ${{ env.BACKUP_DIR }}"
+          echo "Check the logs: /var/log/tripsalama/backup.log"
+
+  cleanup:
+    runs-on: ubuntu-latest
+    name: "Cleanup Old Backups"
+    needs: backup
+    if: success()
+
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          cat > ~/.ssh/config << 'SSHCONFIG'
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            ConnectTimeout 30
+            BatchMode yes
+            LogLevel ERROR
+          SSHCONFIG
+          chmod 600 ~/.ssh/config
+
+      - name: Cleanup old backups (keep 7 days)
+        run: |
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            echo 'Cleaning up backups older than 7 days...'
+
+            # Remove old database backups
+            find ${{ env.BACKUP_DIR }} -name 'db_*.sql.gz' -mtime +7 -delete 2>/dev/null || true
+
+            # Remove old uploads backups
+            find ${{ env.BACKUP_DIR }} -name 'uploads_*.tar.gz' -mtime +7 -delete 2>/dev/null || true
+
+            # Remove old reports
+            find ${{ env.BACKUP_DIR }} -name 'backup_report_*.txt' -mtime +7 -delete 2>/dev/null || true
+
+            # Show remaining files
+            echo 'Remaining backup files:'
+            ls -lh ${{ env.BACKUP_DIR }}/ 2>/dev/null | wc -l
+            du -sh ${{ env.BACKUP_DIR }}/
+          "

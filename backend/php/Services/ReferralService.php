@@ -6,6 +6,7 @@ namespace TripSalama\Services;
 
 use PDO;
 use TripSalama\Models\Wallet;
+use TripSalama\Traits\TransactionTrait;
 
 /**
  * Service de Parrainage
@@ -13,6 +14,7 @@ use TripSalama\Models\Wallet;
  */
 class ReferralService
 {
+    use TransactionTrait;
     private PDO $db;
     private Wallet $walletModel;
 
@@ -73,9 +75,7 @@ class ReferralService
             return ['success' => false, 'error' => __('referral.already_referred')];
         }
 
-        $this->db->beginTransaction();
-
-        try {
+        return $this->transaction($this->db, function () use ($newUserId, $code, $referrer) {
             // Mettre à jour le nouvel utilisateur
             $stmt = $this->db->prepare('UPDATE users SET referred_by = :referrer_id WHERE id = :id');
             $stmt->execute(['referrer_id' => $referrer['id'], 'id' => $newUserId]);
@@ -93,17 +93,12 @@ class ReferralService
                 'referred_bonus' => $this->referredBonus,
             ]);
 
-            $this->db->commit();
-
             return [
                 'success' => true,
                 'referrer_name' => $referrer['first_name'],
                 'bonus_pending' => $this->referredBonus,
             ];
-        } catch (\Exception $e) {
-            $this->db->rollBack();
-            throw $e;
-        }
+        });
     }
 
     /**
@@ -123,9 +118,7 @@ class ReferralService
             return ['completed' => false, 'reason' => 'no_pending_referral'];
         }
 
-        $this->db->beginTransaction();
-
-        try {
+        return $this->transaction($this->db, function () use ($referredUserId, $referral) {
             // Créditer le parrain
             $this->walletModel->credit((int) $referral['referrer_id'], (float) $referral['referrer_bonus']);
 
@@ -156,17 +149,12 @@ class ReferralService
                 (int) $referral['referrer_id']
             );
 
-            $this->db->commit();
-
             return [
                 'completed' => true,
                 'referrer_bonus' => (float) $referral['referrer_bonus'],
                 'referred_bonus' => (float) $referral['referred_bonus'],
             ];
-        } catch (\Exception $e) {
-            $this->db->rollBack();
-            throw $e;
-        }
+        });
     }
 
     /**

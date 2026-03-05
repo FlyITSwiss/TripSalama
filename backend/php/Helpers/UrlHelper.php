@@ -87,13 +87,52 @@ namespace TripSalama\Helpers {
 
         /**
          * URL avec versioning pour cache-busting
+         * En production, utilise les fichiers minifies du dossier dist/
          */
         public static function versionedAsset(string $path): string
         {
-            $fullPath = PUBLIC_PATH . '/assets/' . ltrim($path, '/');
+            $path = ltrim($path, '/');
+            $isProduction = \config('env', 'local') === 'production';
+
+            // En production, chercher le fichier minifie
+            if ($isProduction) {
+                $minPath = self::getMinifiedPath($path);
+                if ($minPath !== null) {
+                    $fullPath = PUBLIC_PATH . '/assets/' . $minPath;
+                    $version = file_exists($fullPath) ? filemtime($fullPath) : time();
+                    return self::assetUrl($minPath) . '?v=' . $version;
+                }
+            }
+
+            // Fallback vers le fichier original
+            $fullPath = PUBLIC_PATH . '/assets/' . $path;
             $version = file_exists($fullPath) ? filemtime($fullPath) : time();
 
             return self::assetUrl($path) . '?v=' . $version;
+        }
+
+        /**
+         * Obtenir le chemin du fichier minifie s'il existe
+         */
+        private static function getMinifiedPath(string $path): ?string
+        {
+            // Convertir css/file.css en dist/css/file.min.css
+            if (str_ends_with($path, '.css') && !str_ends_with($path, '.min.css')) {
+                $minPath = 'dist/' . preg_replace('/\.css$/', '.min.css', $path);
+                if (file_exists(PUBLIC_PATH . '/assets/' . $minPath)) {
+                    return $minPath;
+                }
+            }
+
+            // Convertir js/file.js en dist/js/file.min.js
+            if (str_ends_with($path, '.js') && !str_ends_with($path, '.min.js')) {
+                $minPath = 'dist/' . preg_replace('/\.js$/', '.min.js', $path);
+                if (file_exists(PUBLIC_PATH . '/assets/' . $minPath)) {
+                    return $minPath;
+                }
+            }
+
+            return null;
         }
     }
 }

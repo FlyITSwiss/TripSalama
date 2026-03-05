@@ -215,6 +215,7 @@ try {
         /**
          * Export des données
          * GET /api/admin.php?action=export&type=rides&format=csv
+         * Limite à 1000 enregistrements pour éviter les surcharges
          */
         case 'export':
             $exportType = getParam('type', 'rides', 'string');
@@ -222,12 +223,21 @@ try {
             $dateFrom = getParam('date_from', null, 'string');
             $dateTo = getParam('date_to', null, 'string');
 
+            // Validation du type d'export
+            $allowedExportTypes = ['rides', 'drivers', 'passengers', 'transactions'];
+            if (!in_array($exportType, $allowedExportTypes, true)) {
+                errorResponse(__('error.validation'), 400);
+            }
+
+            // Limite à 1000 enregistrements maximum pour éviter les surcharges serveur
+            $exportLimit = 1000;
+
             // Obtenir les données selon le type
             $data = match ($exportType) {
-                'rides' => $adminService->getRides(1, 10000, null, $dateFrom, $dateTo)['rides'],
-                'drivers' => $adminService->getDriversWithStats(1, 10000)['drivers'],
-                'passengers' => $adminService->getPassengersWithStats(1, 10000)['passengers'],
-                'transactions' => $adminService->getTransactions(1, 10000, null, $dateFrom, $dateTo)['transactions'],
+                'rides' => $adminService->getRides(1, $exportLimit, null, $dateFrom, $dateTo)['rides'],
+                'drivers' => $adminService->getDriversWithStats(1, $exportLimit)['drivers'],
+                'passengers' => $adminService->getPassengersWithStats(1, $exportLimit)['passengers'],
+                'transactions' => $adminService->getTransactions(1, $exportLimit, null, $dateFrom, $dateTo)['transactions'],
                 default => [],
             };
 
@@ -284,8 +294,30 @@ try {
 
             $data = getRequestData();
 
-            // Sauvegarder dans la table settings
+            // Whitelist des clés de configuration autorisées avec leurs validateurs
+            $allowedConfigKeys = [
+                'commission_rate' => fn($v) => is_numeric($v) && $v >= 0 && $v <= 1,
+                'min_driver_rating' => fn($v) => is_numeric($v) && $v >= 1 && $v <= 5,
+                'max_search_radius_km' => fn($v) => is_numeric($v) && $v >= 1 && $v <= 100,
+                'referral_bonus_referrer' => fn($v) => is_numeric($v) && $v >= 0 && $v <= 1000,
+                'referral_bonus_referred' => fn($v) => is_numeric($v) && $v >= 0 && $v <= 1000,
+                'currency' => fn($v) => is_string($v) && preg_match('/^[A-Z]{3}$/', $v),
+            ];
+
+            $updatedKeys = [];
+
+            // Sauvegarder dans la table settings (uniquement les clés autorisées)
             foreach ($data as $key => $value) {
+                // Vérifier que la clé est dans la whitelist
+                if (!array_key_exists($key, $allowedConfigKeys)) {
+                    continue; // Ignorer les clés non autorisées
+                }
+
+                // Valider la valeur selon le type attendu
+                if (!$allowedConfigKeys[$key]($value)) {
+                    errorResponse(__('error.validation') . ': ' . $key, 400);
+                }
+
                 $stmt = $db->prepare('
                     INSERT INTO settings (setting_key, setting_value, updated_at)
                     VALUES (:key, :value, NOW())
@@ -293,12 +325,18 @@ try {
                 ');
                 $stmt->execute([
                     'key' => $key,
-                    'value' => is_array($value) ? json_encode($value) : $value,
-                    'value2' => is_array($value) ? json_encode($value) : $value,
+                    'value' => is_array($value) ? json_encode($value) : (string)$value,
+                    'value2' => is_array($value) ? json_encode($value) : (string)$value,
                 ]);
+
+                $updatedKeys[] = $key;
             }
 
-            successResponse(null, __('admin.config_updated'));
+            if (empty($updatedKeys)) {
+                errorResponse(__('error.no_valid_keys'), 400);
+            }
+
+            successResponse(['updated_keys' => $updatedKeys], __('admin.config_updated'));
             break;
 
         /**

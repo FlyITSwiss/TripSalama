@@ -157,60 +157,64 @@ jobs:
           fi
 
       - name: Setup MySQL user and database
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
-          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} '
-            echo "=== Setting up MySQL for TripSalama ==="
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            echo '=== Setting up MySQL for TripSalama ==='
 
             # Create database if not exists
-            sudo mysql -e "CREATE DATABASE IF NOT EXISTS tripsalama CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+            sudo mysql -e 'CREATE DATABASE IF NOT EXISTS tripsalama CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
 
-            # Create user with password (drop and recreate to ensure correct password)
-            sudo mysql -e "DROP USER IF EXISTS '"'"'tripsalama'"'"'@'"'"'localhost'"'"';"
-            sudo mysql -e "CREATE USER '"'"'tripsalama'"'"'@'"'"'localhost'"'"' IDENTIFIED BY '"'"'TripSalama2025!'"'"';"
-            sudo mysql -e "GRANT ALL PRIVILEGES ON tripsalama.* TO '"'"'tripsalama'"'"'@'"'"'localhost'"'"';"
-            sudo mysql -e "FLUSH PRIVILEGES;"
+            # Create user with password from GitHub Secrets
+            sudo mysql -e \"DROP USER IF EXISTS 'tripsalama'@'localhost';\"
+            sudo mysql -e \"CREATE USER 'tripsalama'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';\"
+            sudo mysql -e \"GRANT ALL PRIVILEGES ON tripsalama.* TO 'tripsalama'@'localhost';\"
+            sudo mysql -e 'FLUSH PRIVILEGES;'
 
-            echo "MySQL user tripsalama created with privileges"
+            echo 'MySQL user tripsalama created with privileges'
 
             # Run migrations if they exist
             if [ -f /var/www/tripsalama/database/migrations/006_identity_verification.sql ]; then
-              echo "Running identity verification migration..."
-              sudo mysql tripsalama < /var/www/tripsalama/database/migrations/006_identity_verification.sql 2>/dev/null || echo "Migration already applied or skipped"
+              echo 'Running identity verification migration...'
+              sudo mysql tripsalama < /var/www/tripsalama/database/migrations/006_identity_verification.sql 2>/dev/null || echo 'Migration already applied or skipped'
             fi
 
             # Run remember_tokens migration
             if [ -f /var/www/tripsalama/database/migrations/014_remember_tokens.sql ]; then
-              echo "Running remember_tokens migration..."
-              sudo mysql tripsalama < /var/www/tripsalama/database/migrations/014_remember_tokens.sql 2>/dev/null || echo "Migration already applied or skipped"
+              echo 'Running remember_tokens migration...'
+              sudo mysql tripsalama < /var/www/tripsalama/database/migrations/014_remember_tokens.sql 2>/dev/null || echo 'Migration already applied or skipped'
             fi
 
             # Mark all pending/in_progress rides as completed
-            echo "=== Cleaning up rides ==="
-            sudo mysql tripsalama -e "UPDATE rides SET status = '"'"'completed'"'"', completed_at = NOW() WHERE status IN ('"'"'pending'"'"', '"'"'accepted'"'"', '"'"'driver_arriving'"'"', '"'"'in_progress'"'"');"
-            echo "All pending rides marked as completed"
+            echo '=== Cleaning up rides ==='
+            sudo mysql tripsalama -e \"UPDATE rides SET status = 'completed', completed_at = NOW() WHERE status IN ('pending', 'accepted', 'driver_arriving', 'in_progress');\"
+            echo 'All pending rides marked as completed'
 
             # Fix test users passwords
-            echo "=== Fixing test users ==="
+            echo '=== Fixing test users ==='
             if [ -f /var/www/tripsalama/scripts/fix-test-users.php ]; then
               php /var/www/tripsalama/scripts/fix-test-users.php
             fi
-          '
+          "
 
       - name: Create production config
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
-            # Create .env for production
-            cat > ${{ env.REMOTE_PATH }}/.env << 'EOF'
-          APP_ENV=production
-          APP_DEBUG=false
-          BASE_PATH=/internal/tripsalama
+            # Create .env for production with secrets from GitHub
+            cat > ${{ env.REMOTE_PATH }}/.env << EOF
+APP_ENV=production
+APP_DEBUG=false
+BASE_PATH=/internal/tripsalama
 
-          DB_HOST=localhost
-          DB_PORT=3306
-          DB_DATABASE=tripsalama
-          DB_USERNAME=tripsalama
-          DB_PASSWORD=TripSalama2025!
-          EOF
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=tripsalama
+DB_USERNAME=tripsalama
+DB_PASSWORD=${DB_PASSWORD}
+EOF
 
             # Create .production marker
             touch ${{ env.REMOTE_PATH }}/.production

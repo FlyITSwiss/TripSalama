@@ -64,6 +64,15 @@ try {
 
             if (!$ride) errorResponse(__('error.not_found'), 404);
 
+            // Vérification de propriété: seuls le passager, le conducteur ou un admin peuvent voir la course
+            $userId = (int)current_user()['id'];
+            $userRole = current_user()['role'] ?? '';
+            if ((int)$ride['passenger_id'] !== $userId &&
+                (int)$ride['driver_id'] !== $userId &&
+                $userRole !== 'admin') {
+                errorResponse(__('error.forbidden'), 403);
+            }
+
             successResponse($ride);
             break;
 
@@ -312,6 +321,14 @@ try {
             $lat = (float)($data['lat'] ?? 0);
             $lng = (float)($data['lng'] ?? 0);
 
+            // Vérification de propriété: seul le conducteur peut mettre à jour la position
+            $ride = $rideModel->findById($rideId);
+            if (!$ride) errorResponse(__('error.not_found'), 404);
+            $userId = (int)current_user()['id'];
+            if ((int)$ride['driver_id'] !== $userId) {
+                errorResponse(__('error.forbidden'), 403);
+            }
+
             // Validation des coordonnées
             requireValidCoordinates($lat, $lng);
 
@@ -322,6 +339,18 @@ try {
         case 'current-position':
             requireAuth();
             $rideId = (int)getParam('ride_id', 0, 'int');
+
+            // Vérification de propriété: seuls le passager, le conducteur ou un admin peuvent voir la position
+            $ride = $rideModel->findById($rideId);
+            if (!$ride) errorResponse(__('error.not_found'), 404);
+            $userId = (int)current_user()['id'];
+            $userRole = current_user()['role'] ?? '';
+            if ((int)$ride['passenger_id'] !== $userId &&
+                (int)$ride['driver_id'] !== $userId &&
+                $userRole !== 'admin') {
+                errorResponse(__('error.forbidden'), 403);
+            }
+
             $position = $rideModel->getLastPosition($rideId);
 
             successResponse(['position' => $position]);

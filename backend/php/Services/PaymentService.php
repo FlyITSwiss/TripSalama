@@ -7,6 +7,7 @@ namespace TripSalama\Services;
 use PDO;
 use TripSalama\Models\Wallet;
 use TripSalama\Models\Transaction;
+use TripSalama\Traits\TransactionTrait;
 
 /**
  * Service de Paiement
@@ -14,6 +15,7 @@ use TripSalama\Models\Transaction;
  */
 class PaymentService
 {
+    use TransactionTrait;
     private PDO $db;
     private Wallet $walletModel;
     private Transaction $transactionModel;
@@ -117,9 +119,7 @@ class PaymentService
      */
     public function payRideWithWallet(int $userId, int $rideId, float $amount): array
     {
-        $this->db->beginTransaction();
-
-        try {
+        return $this->transaction($this->db, function () use ($userId, $rideId, $amount) {
             // Vérifier le solde
             if (!$this->walletModel->hasSufficientBalance($userId, $amount)) {
                 throw new \Exception(__('error.insufficient_balance'));
@@ -181,7 +181,61 @@ class PaymentService
                 'earnings' => $driverEarnings,
             ]);
 
-            $this->db->commit();
+            return [
+                'success' => true,
+                'transaction_id' => $transactionId,
+                'amount' => $amount,
+                'commission' => $commission,
+                'driver_earnings' => $driverEarnings,
+            ];
+        });
+    }
+
+    /**
+     * Payer une course en cash
+     */
+    public function payRideWithCash(int $rideId, float $amount, int $confirmedBy): array
+    {
+        return $this->transaction($this->db, function () use ($rideId, $amount, $confirmedBy) {
+            $stmt = $this->db->prepare('SELECT * FROM rides WHERE id = :id');
+            $stmt->execute(['id' => $rideId]);
+            $ride = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$ride) {
+                throw new \Exception(__('error.not_found'));
+            }
+
+            // Calculer commission et gains
+            $commission = round($amount * $this->commissionRate, 2);
+            $driverEarnings = $amount - $commission;
+
+            // Créer la transaction
+            $transactionId = $this->transactionModel->create([
+                'user_id' => (int) $ride['passenger_id'],
+                'ride_id' => $rideId,
+                'type' => Transaction::TYPE_PAYMENT,
+                'amount' => $amount,
+                'status' => Transaction::STATUS_COMPLETED,
+                'provider' => 'cash',
+                'description' => 'Paiement cash course #' . $rideId,
+                'metadata' => ['confirmed_by' => $confirmedBy],
+            ]);
+
+            // Mettre à jour la course
+            $stmt = $this->db->prepare('
+                UPDATE rides
+                SET payment_status = "paid",
+                    payment_method = "cash",
+                    commission_amount = :commission,
+                    driver_earnings = :earnings,
+                    updated_at = NOW()
+                WHERE id = :ride_id
+            ');
+            $stmt->execute([
+                'ride_id' => $rideId,
+                'commission' => $commission,
+                'earnings' => $driverEarnings,
+            ]);
 
             return [
                 'success' => true,
@@ -190,64 +244,7 @@ class PaymentService
                 'commission' => $commission,
                 'driver_earnings' => $driverEarnings,
             ];
-        } catch (\Exception $e) {
-            $this->db->rollBack();
-            throw $e;
-        }
-    }
-
-    /**
-     * Payer une course en cash
-     */
-    public function payRideWithCash(int $rideId, float $amount, int $confirmedBy): array
-    {
-        $stmt = $this->db->prepare('SELECT * FROM rides WHERE id = :id');
-        $stmt->execute(['id' => $rideId]);
-        $ride = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$ride) {
-            throw new \Exception(__('error.not_found'));
-        }
-
-        // Calculer commission et gains
-        $commission = round($amount * $this->commissionRate, 2);
-        $driverEarnings = $amount - $commission;
-
-        // Créer la transaction
-        $transactionId = $this->transactionModel->create([
-            'user_id' => (int) $ride['passenger_id'],
-            'ride_id' => $rideId,
-            'type' => Transaction::TYPE_PAYMENT,
-            'amount' => $amount,
-            'status' => Transaction::STATUS_COMPLETED,
-            'provider' => 'cash',
-            'description' => 'Paiement cash course #' . $rideId,
-            'metadata' => ['confirmed_by' => $confirmedBy],
-        ]);
-
-        // Mettre à jour la course
-        $stmt = $this->db->prepare('
-            UPDATE rides
-            SET payment_status = "paid",
-                payment_method = "cash",
-                commission_amount = :commission,
-                driver_earnings = :earnings,
-                updated_at = NOW()
-            WHERE id = :ride_id
-        ');
-        $stmt->execute([
-            'ride_id' => $rideId,
-            'commission' => $commission,
-            'earnings' => $driverEarnings,
-        ]);
-
-        return [
-            'success' => true,
-            'transaction_id' => $transactionId,
-            'amount' => $amount,
-            'commission' => $commission,
-            'driver_earnings' => $driverEarnings,
-        ];
+        });
     }
 
     /**
@@ -285,9 +282,7 @@ class PaymentService
      */
     public function addTip(int $userId, int $rideId, float $amount): array
     {
-        $this->db->beginTransaction();
-
-        try {
+        return $this->transaction($this->db, function () use ($userId, $rideId, $amount) {
             // Vérifier le solde si paiement wallet
             if (!$this->walletModel->hasSufficientBalance($userId, $amount)) {
                 throw new \Exception(__('error.insufficient_balance'));
@@ -319,17 +314,12 @@ class PaymentService
             ');
             $stmt->execute(['ride_id' => $rideId, 'tip' => $amount]);
 
-            $this->db->commit();
-
             return [
                 'success' => true,
                 'transaction_id' => $transactionId,
                 'amount' => $amount,
             ];
-        } catch (\Exception $e) {
-            $this->db->rollBack();
-            throw $e;
-        }
+        });
     }
 
     /**
@@ -337,37 +327,39 @@ class PaymentService
      */
     public function refundRide(int $rideId, float $amount, string $reason = ''): array
     {
-        $stmt = $this->db->prepare('SELECT * FROM rides WHERE id = :id');
-        $stmt->execute(['id' => $rideId]);
-        $ride = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $this->transaction($this->db, function () use ($rideId, $amount, $reason) {
+            $stmt = $this->db->prepare('SELECT * FROM rides WHERE id = :id');
+            $stmt->execute(['id' => $rideId]);
+            $ride = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$ride) {
-            throw new \Exception(__('error.not_found'));
-        }
+            if (!$ride) {
+                throw new \Exception(__('error.not_found'));
+            }
 
-        // Créditer le passager
-        $this->walletModel->credit((int) $ride['passenger_id'], $amount);
+            // Créditer le passager
+            $this->walletModel->credit((int) $ride['passenger_id'], $amount);
 
-        // Créer la transaction de remboursement
-        $transactionId = $this->transactionModel->createRefund(
-            (int) $ride['passenger_id'],
-            $rideId,
-            $amount,
-            $reason
-        );
-        $this->transactionModel->updateStatus($transactionId, Transaction::STATUS_COMPLETED);
+            // Créer la transaction de remboursement
+            $transactionId = $this->transactionModel->createRefund(
+                (int) $ride['passenger_id'],
+                $rideId,
+                $amount,
+                $reason
+            );
+            $this->transactionModel->updateStatus($transactionId, Transaction::STATUS_COMPLETED);
 
-        // Mettre à jour le statut de paiement
-        $stmt = $this->db->prepare('
-            UPDATE rides SET payment_status = "refunded" WHERE id = :id
-        ');
-        $stmt->execute(['id' => $rideId]);
+            // Mettre à jour le statut de paiement
+            $stmt = $this->db->prepare('
+                UPDATE rides SET payment_status = "refunded" WHERE id = :id
+            ');
+            $stmt->execute(['id' => $rideId]);
 
-        return [
-            'success' => true,
-            'transaction_id' => $transactionId,
-            'amount' => $amount,
-        ];
+            return [
+                'success' => true,
+                'transaction_id' => $transactionId,
+                'amount' => $amount,
+            ];
+        });
     }
 
     /**
@@ -448,25 +440,23 @@ class PaymentService
      */
     public function setDefaultPaymentMethod(int $userId, int $methodId): bool
     {
-        $this->db->beginTransaction();
-
         try {
-            // Retirer le défaut de toutes les méthodes
-            $stmt = $this->db->prepare('
-                UPDATE payment_methods SET is_default = 0 WHERE user_id = :user_id
-            ');
-            $stmt->execute(['user_id' => $userId]);
+            return $this->transaction($this->db, function () use ($userId, $methodId) {
+                // Retirer le défaut de toutes les méthodes
+                $stmt = $this->db->prepare('
+                    UPDATE payment_methods SET is_default = 0 WHERE user_id = :user_id
+                ');
+                $stmt->execute(['user_id' => $userId]);
 
-            // Définir la nouvelle par défaut
-            $stmt = $this->db->prepare('
-                UPDATE payment_methods SET is_default = 1 WHERE id = :id AND user_id = :user_id
-            ');
-            $stmt->execute(['id' => $methodId, 'user_id' => $userId]);
+                // Définir la nouvelle par défaut
+                $stmt = $this->db->prepare('
+                    UPDATE payment_methods SET is_default = 1 WHERE id = :id AND user_id = :user_id
+                ');
+                $stmt->execute(['id' => $methodId, 'user_id' => $userId]);
 
-            $this->db->commit();
-            return true;
+                return true;
+            });
         } catch (\Exception $e) {
-            $this->db->rollBack();
             return false;
         }
     }

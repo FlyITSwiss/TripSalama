@@ -29,12 +29,116 @@
     <!-- Uber Design System -->
     <link rel="stylesheet" href="<?= versioned_asset('css/uber-design-system.css') ?>">
 
+    <!-- WCAG AA Accessibility -->
+    <link rel="stylesheet" href="<?= versioned_asset('css/accessibility-wcag.css') ?>">
+
     <!-- Page-specific CSS -->
     <?php if (!empty($pageCss)): ?>
     <?php foreach ((array)$pageCss as $css): ?>
     <link rel="stylesheet" href="<?= versioned_asset('css/' . $css) ?>">
     <?php endforeach; ?>
     <?php endif; ?>
+
+    <!-- SOS Styles - CRITICAL SAFETY FEATURE -->
+    <style>
+        /* SOS Button Floating - Design System φ (Fibonacci: 8, 13, 21, 34, 55) */
+        .sos-fab {
+            position: fixed;
+            bottom: calc(var(--nav-height, 55px) + var(--space-8, 21px) + var(--space-4, 8px));
+            right: var(--space-4, 8px);
+            width: 55px;
+            height: 55px;
+            background: #dc2626;
+            border: none;
+            border-radius: 50%;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            box-shadow: 0 4px 21px rgba(220, 38, 38, 0.4);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            overflow: hidden;
+        }
+        .sos-fab:hover, .sos-fab:active {
+            transform: scale(1.08);
+            box-shadow: 0 8px 34px rgba(220, 38, 38, 0.5);
+        }
+        .sos-fab:focus {
+            outline: 3px solid rgba(220, 38, 38, 0.5);
+            outline-offset: 2px;
+        }
+        /* SOS Modal */
+        .sos-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+        }
+        .sos-modal.active { display: flex; }
+        .sos-modal-content {
+            background: #ffffff;
+            border-radius: 21px;
+            padding: 34px;
+            max-width: 320px;
+            width: 100%;
+            text-align: center;
+        }
+        .sos-modal-icon {
+            width: 55px;
+            height: 55px;
+            background: #dc2626;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 13px;
+        }
+        .sos-modal-icon svg { width: 34px; height: 34px; color: #ffffff; }
+        .sos-modal-title { font-size: 21px; font-weight: 700; color: #000000; margin-bottom: 8px; }
+        .sos-modal-text { font-size: 13px; color: #6b7280; margin-bottom: 21px; }
+        .sos-modal-actions { display: flex; flex-direction: column; gap: 13px; }
+        .sos-btn-emergency {
+            width: 100%;
+            padding: 13px;
+            background: #dc2626;
+            color: #ffffff;
+            border: none;
+            border-radius: 13px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            min-height: 55px;
+            overflow: hidden;
+        }
+        .sos-btn-cancel {
+            width: 100%;
+            padding: 13px;
+            background: #f3f4f6;
+            color: #000000;
+            border: none;
+            border-radius: 13px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            min-height: 55px;
+            overflow: hidden;
+        }
+        @keyframes sosPulse {
+            0%, 100% { box-shadow: 0 4px 21px rgba(220, 38, 38, 0.4); }
+            50% { box-shadow: 0 4px 34px rgba(220, 38, 38, 0.7); }
+        }
+        .sos-fab.pulsing { animation: sosPulse 1.5s ease-in-out infinite; }
+    </style>
 
     <!-- App Config -->
     <script>
@@ -50,6 +154,9 @@
     </script>
 </head>
 <body>
+    <!-- Skip Link for Keyboard Navigation (WCAG AA) -->
+    <a href="#main-content" class="skip-link"><?= __('nav.skip_to_content') ?></a>
+
     <?php if (is_authenticated()): ?>
     <!-- Uber Header -->
     <header class="uber-header" role="banner">
@@ -69,9 +176,9 @@
                 </a>
                 <?php endif; ?>
 
-                <form action="<?= base_url('logout') ?>" method="POST" style="margin:0;">
+                <form action="<?= base_url('logout') ?>" method="POST" style="margin:0;" id="logoutForm">
                     <?= csrf_field() ?>
-                    <button type="submit" class="header-nav-btn" title="<?= __('nav.logout') ?>">
+                    <button type="submit" id="logoutBtn" class="header-nav-btn logout-btn" title="<?= __('nav.logout') ?>" aria-label="<?= __('nav.logout') ?>">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                             <polyline points="16,17 21,12 16,7"/>
@@ -123,6 +230,36 @@
         <main id="main-content" class="main-content page" role="main" aria-label="<?= __('nav.skip_to_content') ?>">
             <?= $content ?? '' ?>
         </main>
+
+        <?php if (is_authenticated() && has_role('passenger')): ?>
+        <!-- SOS Button - CRITICAL SAFETY FEATURE -->
+        <button type="button" class="sos-fab" id="sosButton" aria-label="<?= __('sos.button') ?>" title="<?= __('sos.title') ?>">
+            SOS
+        </button>
+
+        <!-- SOS Modal -->
+        <div class="sos-modal" id="sosModal" role="dialog" aria-modal="true" aria-labelledby="sosModalTitle">
+            <div class="sos-modal-content">
+                <div class="sos-modal-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </div>
+                <h2 class="sos-modal-title" id="sosModalTitle"><?= __('sos.title') ?></h2>
+                <p class="sos-modal-text"><?= __('sos.trigger') ?></p>
+                <div class="sos-modal-actions">
+                    <button type="button" class="sos-btn-emergency" id="sosConfirmBtn">
+                        <?= __('sos.call_emergency') ?>
+                    </button>
+                    <button type="button" class="sos-btn-cancel" id="sosCancelBtn">
+                        <?= __('action.cancel') ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <?php if (is_authenticated()): ?>
         <!-- Uber Mobile Navigation -->
@@ -221,5 +358,104 @@
             });
         }, 5000);
     </script>
+
+    <?php if (is_authenticated() && has_role('passenger')): ?>
+    <!-- SOS Button Handler -->
+    <script>
+    (function() {
+        'use strict';
+        const sosButton = document.getElementById('sosButton');
+        const sosModal = document.getElementById('sosModal');
+        const sosConfirmBtn = document.getElementById('sosConfirmBtn');
+        const sosCancelBtn = document.getElementById('sosCancelBtn');
+        if (!sosButton || !sosModal) return;
+
+        // Ouvrir le modal SOS
+        sosButton.addEventListener('click', function() {
+            sosModal.classList.add('active');
+            sosButton.classList.add('pulsing');
+        });
+
+        // Annuler
+        sosCancelBtn.addEventListener('click', function() {
+            sosModal.classList.remove('active');
+            sosButton.classList.remove('pulsing');
+        });
+
+        // Fermer en cliquant en dehors
+        sosModal.addEventListener('click', function(e) {
+            if (e.target === sosModal) {
+                sosModal.classList.remove('active');
+                sosButton.classList.remove('pulsing');
+            }
+        });
+
+        // Confirmer l'alerte SOS
+        sosConfirmBtn.addEventListener('click', async function() {
+            sosConfirmBtn.disabled = true;
+            sosConfirmBtn.textContent = '...';
+            try {
+                let position = null;
+                try {
+                    position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            enableHighAccuracy: true,
+                            timeout: 5000
+                        });
+                    });
+                } catch (geoError) {
+                    console.warn('Géolocalisation non disponible');
+                }
+
+                const response = await fetch(window.AppConfig ? window.AppConfig.basePath + '/api/sos.php' : '/api/sos.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    },
+                    body: JSON.stringify({
+                        action: 'trigger',
+                        alert_type: 'sos',
+                        latitude: position?.coords?.latitude || null,
+                        longitude: position?.coords?.longitude || null,
+                        message: <?= json_encode(__('sos.alert_sent')) ?>
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    sosModal.classList.remove('active');
+                    sosButton.classList.remove('pulsing');
+                    if (typeof showToast === 'function') {
+                        showToast('success', <?= json_encode(__('sos.alert_sent')) ?>);
+                    } else {
+                        alert(<?= json_encode(__('sos.alert_sent')) ?>);
+                    }
+                } else {
+                    throw new Error(data.message || <?= json_encode(__('error.generic')) ?>);
+                }
+            } catch (error) {
+                console.error('SOS Error:', error);
+                if (typeof showToast === 'function') {
+                    showToast('error', <?= json_encode(__('error.generic')) ?>);
+                } else {
+                    alert(<?= json_encode(__('error.generic')) ?>);
+                }
+            } finally {
+                sosConfirmBtn.disabled = false;
+                sosConfirmBtn.textContent = <?= json_encode(__('sos.call_emergency')) ?>;
+            }
+        });
+
+        // Fermer avec Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && sosModal.classList.contains('active')) {
+                sosModal.classList.remove('active');
+                sosButton.classList.remove('pulsing');
+            }
+        });
+    })();
+    </script>
+    <?php endif; ?>
 </body>
 </html>

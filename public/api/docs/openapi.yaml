@@ -1,0 +1,680 @@
+openapi: 3.0.3
+info:
+  title: TripSalama API
+  description: |
+    API REST pour l'application TripSalama - VTC pour femmes au Maroc.
+
+    ## Authentification
+    Toutes les requêtes authentifiées nécessitent un cookie de session valide.
+    Les requêtes POST/PUT/DELETE nécessitent également un token CSRF.
+
+    ## Rate Limiting
+    - 60 requêtes par minute par IP pour les endpoints publics
+    - 120 requêtes par minute par utilisateur pour les endpoints authentifiés
+  version: 1.0.0
+  contact:
+    name: Stabilis IT
+    email: support@tripsalama.com
+    url: https://tripsalama.stabilis-it.ch
+  license:
+    name: Proprietary
+    url: https://stabilis-it.ch/license
+
+servers:
+  - url: https://stabilis-it.ch/internal/tripsalama/api
+    description: Production
+  - url: http://127.0.0.1:8080/api
+    description: Local Development
+
+tags:
+  - name: Auth
+    description: Authentification et gestion de session
+  - name: Rides
+    description: Gestion des courses
+  - name: Users
+    description: Gestion des utilisateurs
+  - name: Vehicles
+    description: Gestion des véhicules
+  - name: Payments
+    description: Paiements et transactions
+  - name: Admin
+    description: Administration (requires admin role)
+  - name: Verification
+    description: Vérification d'identité
+
+paths:
+  /auth.php:
+    post:
+      tags:
+        - Auth
+      summary: Authentification
+      description: Actions d'authentification (login, register, logout, etc.)
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [login, register, logout, refresh, forgot-password, reset-password, verify-2fa]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/LoginRequest'
+                - $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /rides.php:
+    get:
+      tags:
+        - Rides
+      summary: Obtenir une course ou l'historique
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [get, history, current-position]
+        - name: ride_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Détails de la course
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RideResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Rides
+      summary: Créer une course ou mettre à jour la position
+      security:
+        - sessionAuth: []
+        - csrfToken: []
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [create, rate, verify-pin, position]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRideRequest'
+      responses:
+        '200':
+          description: Course créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateRideResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+    put:
+      tags:
+        - Rides
+      summary: Mettre à jour une course
+      security:
+        - sessionAuth: []
+        - csrfToken: []
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [accept, arrived, start, complete, cancel]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ride_id:
+                  type: integer
+                vehicle_id:
+                  type: integer
+      responses:
+        '200':
+          description: Course mise à jour
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin.php:
+    get:
+      tags:
+        - Admin
+      summary: Endpoints administrateur (GET)
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [dashboard, drivers, passengers, rides, sos-alerts, transactions, geographic, kpis, config, realtime, countries]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Données admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDashboardResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags:
+        - Admin
+      summary: Actions administrateur (POST)
+      security:
+        - sessionAuth: []
+        - csrfToken: []
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [verify-driver, suspend-user, reactivate-user, toggle-country, set-default-country, toggle-prayer-times, toggle-arabic]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Action effectuée
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    put:
+      tags:
+        - Admin
+      summary: Mettre à jour la configuration
+      security:
+        - sessionAuth: []
+        - csrfToken: []
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [update-config]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfigUpdateRequest'
+      responses:
+        '200':
+          description: Configuration mise à jour
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /verification.php:
+    get:
+      tags:
+        - Verification
+      summary: Statut de vérification
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [status, pending, stats]
+      responses:
+        '200':
+          description: Statut de vérification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationStatusResponse'
+
+    post:
+      tags:
+        - Verification
+      summary: Soumettre une vérification
+      security:
+        - sessionAuth: []
+        - csrfToken: []
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [submit, approve, reject]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificationSubmitRequest'
+      responses:
+        '200':
+          description: Vérification soumise
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /payments.php:
+    get:
+      tags:
+        - Payments
+      summary: Informations de paiement
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [wallet, methods, transactions]
+      responses:
+        '200':
+          description: Informations de paiement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletResponse'
+
+    post:
+      tags:
+        - Payments
+      summary: Actions de paiement
+      security:
+        - sessionAuth: []
+        - csrfToken: []
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [topup, pay-ride, add-tip, add-method, remove-method]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Paiement effectué
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: PHPSESSID
+      description: Cookie de session PHP
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: Token CSRF pour les requêtes POST/PUT/DELETE
+
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        remember_me:
+          type: boolean
+          default: false
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - first_name
+        - last_name
+        - phone
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+          enum: [passenger, driver]
+          default: passenger
+        referral_code:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            user:
+              $ref: '#/components/schemas/User'
+            requires_2fa:
+              type: boolean
+        message:
+          type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+          enum: [passenger, driver, admin]
+        avatar_path:
+          type: string
+          nullable: true
+        is_verified:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    CreateRideRequest:
+      type: object
+      required:
+        - pickup_address
+        - pickup_lat
+        - pickup_lng
+        - dropoff_address
+        - dropoff_lat
+        - dropoff_lng
+      properties:
+        pickup_address:
+          type: string
+        pickup_lat:
+          type: number
+          format: float
+          minimum: -90
+          maximum: 90
+        pickup_lng:
+          type: number
+          format: float
+          minimum: -180
+          maximum: 180
+        dropoff_address:
+          type: string
+        dropoff_lat:
+          type: number
+          format: float
+        dropoff_lng:
+          type: number
+          format: float
+        estimated_distance_km:
+          type: number
+        estimated_duration_min:
+          type: integer
+        estimated_price:
+          type: number
+
+    CreateRideResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            ride_id:
+              type: integer
+        message:
+          type: string
+
+    RideResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/Ride'
+
+    Ride:
+      type: object
+      properties:
+        id:
+          type: integer
+        passenger_id:
+          type: integer
+        driver_id:
+          type: integer
+          nullable: true
+        status:
+          type: string
+          enum: [pending, accepted, driver_arriving, in_progress, completed, cancelled]
+        pickup_address:
+          type: string
+        pickup_lat:
+          type: number
+        pickup_lng:
+          type: number
+        dropoff_address:
+          type: string
+        dropoff_lat:
+          type: number
+        dropoff_lng:
+          type: number
+        estimated_price:
+          type: number
+        final_price:
+          type: number
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    AdminDashboardResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            stats:
+              type: object
+            kpis:
+              type: object
+
+    ConfigUpdateRequest:
+      type: object
+      properties:
+        commission_rate:
+          type: number
+          minimum: 0
+          maximum: 1
+        min_driver_rating:
+          type: number
+          minimum: 1
+          maximum: 5
+        max_search_radius_km:
+          type: number
+          minimum: 1
+          maximum: 100
+        referral_bonus_referrer:
+          type: number
+          minimum: 0
+          maximum: 1000
+        referral_bonus_referred:
+          type: number
+          minimum: 0
+          maximum: 1000
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+
+    VerificationStatusResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [pending, manual_review, verified, rejected]
+            verified_at:
+              type: string
+              format: date-time
+              nullable: true
+
+    VerificationSubmitRequest:
+      type: object
+      required:
+        - image
+      properties:
+        image:
+          type: string
+          description: Image base64 encoded
+        ai_confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        ai_result:
+          type: string
+          enum: [female, male, unknown]
+
+    WalletResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            balance:
+              type: number
+            currency:
+              type: string
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: false
+        error:
+          type: string
+        code:
+          type: integer
+
+  responses:
+    Unauthorized:
+      description: Non authentifié
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error: "Authentication required"
+            code: 401
+
+    Forbidden:
+      description: Accès interdit
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error: "Access denied"
+            code: 403
+
+    NotFound:
+      description: Ressource non trouvée
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error: "Resource not found"
+            code: 404
+
+    ValidationError:
+      description: Erreur de validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error: "Validation failed"
+            code: 422

@@ -143,29 +143,33 @@ jobs:
           fi
 
       - name: Setup MySQL
-        run: |
-          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} '
-            sudo mysql -e "CREATE DATABASE IF NOT EXISTS tripsalama CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-            sudo mysql -e "DROP USER IF EXISTS '"'"'tripsalama'"'"'@'"'"'localhost'"'"';"
-            sudo mysql -e "CREATE USER '"'"'tripsalama'"'"'@'"'"'localhost'"'"' IDENTIFIED BY '"'"'TripSalama2025!'"'"';"
-            sudo mysql -e "GRANT ALL PRIVILEGES ON tripsalama.* TO '"'"'tripsalama'"'"'@'"'"'localhost'"'"';"
-            sudo mysql -e "FLUSH PRIVILEGES;"
-          '
-
-      - name: Create production config
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
-            cat > ${{ env.REMOTE_PATH }}/.env << 'EOF'
-          APP_ENV=production
-          APP_DEBUG=false
-          BASE_PATH=/internal/tripsalama
+            sudo mysql -e 'CREATE DATABASE IF NOT EXISTS tripsalama CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
+            sudo mysql -e \"DROP USER IF EXISTS 'tripsalama'@'localhost';\"
+            sudo mysql -e \"CREATE USER 'tripsalama'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';\"
+            sudo mysql -e \"GRANT ALL PRIVILEGES ON tripsalama.* TO 'tripsalama'@'localhost';\"
+            sudo mysql -e 'FLUSH PRIVILEGES;'
+          "
 
-          DB_HOST=localhost
-          DB_PORT=3306
-          DB_DATABASE=tripsalama
-          DB_USERNAME=tripsalama
-          DB_PASSWORD=TripSalama2025!
-          EOF
+      - name: Create production config
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            cat > ${{ env.REMOTE_PATH }}/.env << EOF
+APP_ENV=production
+APP_DEBUG=false
+BASE_PATH=/internal/tripsalama
+
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=tripsalama
+DB_USERNAME=tripsalama
+DB_PASSWORD=${DB_PASSWORD}
+EOF
             touch ${{ env.REMOTE_PATH }}/.production
           "
 

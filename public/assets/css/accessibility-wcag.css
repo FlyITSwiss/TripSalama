@@ -1,0 +1,403 @@
+/**
+ * TripSalama - WCAG AA Accessibility Improvements
+ *
+ * Ce fichier ajoute des améliorations d'accessibilité conformes aux normes WCAG AA:
+ * - Contraste minimum 4.5:1 pour le texte normal
+ * - Contraste minimum 3:1 pour le texte large (>= 18pt)
+ * - Focus visible sur tous les éléments interactifs
+ * - Skip links pour la navigation clavier
+ * - Améliorations pour les lecteurs d'écran
+ */
+
+/* ============================================
+   SKIP LINKS - Navigation clavier
+   ============================================ */
+
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #E91E63;
+    color: #ffffff;
+    padding: 8px 16px;
+    z-index: 10000;
+    text-decoration: none;
+    font-weight: 600;
+    border-radius: 0 0 4px 0;
+    transition: top 0.3s ease;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* ============================================
+   FOCUS STATES - Tous les éléments interactifs
+   ============================================ */
+
+/* Focus visible amélioré */
+*:focus {
+    outline: none;
+}
+
+*:focus-visible {
+    outline: 3px solid #E91E63 !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 4px rgba(233, 30, 99, 0.25) !important;
+}
+
+/* Focus pour les boutons */
+button:focus-visible,
+.btn:focus-visible,
+[role="button"]:focus-visible {
+    outline: 3px solid #E91E63 !important;
+    outline-offset: 2px !important;
+    transform: scale(1.02);
+}
+
+/* Focus pour les liens */
+a:focus-visible {
+    outline: 3px solid #E91E63 !important;
+    outline-offset: 2px !important;
+    background-color: rgba(233, 30, 99, 0.1);
+    border-radius: 4px;
+}
+
+/* Focus pour les inputs */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+    outline: 3px solid #E91E63 !important;
+    outline-offset: 0 !important;
+    border-color: #E91E63 !important;
+    box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.25) !important;
+}
+
+/* ============================================
+   CONTRASTE - Couleurs accessibles
+   ============================================ */
+
+/* Texte principal - ratio 7:1 minimum */
+body,
+.text-body {
+    color: #1a1a1a; /* Noir profond sur fond clair */
+}
+
+/* Texte sur fond sombre */
+.bg-dark,
+.dark-mode,
+[data-theme="dark"] {
+    color: #f5f5f5; /* Blanc cassé sur fond sombre */
+}
+
+/* Texte secondaire - ratio 4.5:1 minimum */
+.text-muted,
+.text-secondary {
+    color: #545454 !important; /* Gris accessible */
+}
+
+/* Liens - ratio 4.5:1 avec distinction visuelle */
+a:not(.btn) {
+    color: #c2185b; /* Rose foncé accessible */
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+}
+
+a:not(.btn):hover {
+    color: #880e4f; /* Plus foncé au survol */
+    text-decoration-color: currentColor;
+}
+
+/* Boutons primaires */
+.btn-primary,
+.btn-pink,
+[class*="btn-"]:not(.btn-outline):not(.btn-link) {
+    background-color: #c2185b !important; /* Rose accessible */
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+.btn-primary:hover,
+.btn-pink:hover {
+    background-color: #ad1457 !important;
+}
+
+/* Erreurs */
+.text-danger,
+.error-message,
+.invalid-feedback {
+    color: #b71c1c !important; /* Rouge accessible */
+    font-weight: 500;
+}
+
+/* Succès */
+.text-success,
+.success-message {
+    color: #1b5e20 !important; /* Vert accessible */
+}
+
+/* Warnings */
+.text-warning,
+.warning-message {
+    color: #e65100 !important; /* Orange accessible */
+}
+
+/* ============================================
+   TAILLE DE TEXTE - Lisibilité
+   ============================================ */
+
+/* Texte minimum 16px pour mobile */
+@media (max-width: 768px) {
+    body {
+        font-size: 16px;
+        line-height: 1.6;
+    }
+
+    input,
+    textarea,
+    select,
+    button {
+        font-size: 16px !important; /* Évite le zoom iOS */
+    }
+}
+
+/* Espacement de ligne suffisant */
+p,
+li,
+.text-content {
+    line-height: 1.6;
+}
+
+/* ============================================
+   ICÔNES - Accessibilité
+   ============================================ */
+
+/* Icônes décoratives */
+[aria-hidden="true"] i,
+.icon-decorative {
+    pointer-events: none;
+}
+
+/* Icônes avec signification */
+[role="img"] {
+    min-width: 24px;
+    min-height: 24px;
+}
+
+/* Boutons avec icônes seules */
+.btn-icon:not([aria-label]):not([title]) {
+    position: relative;
+}
+
+.btn-icon:not([aria-label]):not([title])::after {
+    content: "!";
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 16px;
+    height: 16px;
+    background: #ff5252;
+    color: white;
+    border-radius: 50%;
+    font-size: 10px;
+    line-height: 16px;
+    text-align: center;
+}
+
+/* ============================================
+   FORMULAIRES - Accessibilité
+   ============================================ */
+
+/* Labels visibles */
+label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 500;
+    color: #333;
+}
+
+/* Placeholder non suffisant comme label */
+input::placeholder,
+textarea::placeholder {
+    color: #757575;
+    opacity: 1;
+}
+
+/* Champs obligatoires */
+.required::after,
+label[required]::after,
+[aria-required="true"]::after {
+    content: " *";
+    color: #c62828;
+    font-weight: bold;
+}
+
+/* Messages d'erreur associés */
+.form-group.has-error input,
+.form-group.has-error select,
+.form-group.has-error textarea {
+    border-color: #c62828 !important;
+    border-width: 2px;
+}
+
+.form-group.has-error .error-message {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    padding: 8px;
+    background: #ffebee;
+    border-radius: 4px;
+}
+
+.form-group.has-error .error-message::before {
+    content: "!";
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: #c62828;
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+/* ============================================
+   MOTION - Respect prefers-reduced-motion
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ============================================
+   TOUCH TARGETS - Zones de clic suffisantes
+   ============================================ */
+
+/* Minimum 44x44px pour les zones tactiles */
+button,
+a,
+input[type="checkbox"],
+input[type="radio"],
+.clickable,
+[role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* Checkboxes et radios */
+input[type="checkbox"],
+input[type="radio"] {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+
+input[type="checkbox"] + label,
+input[type="radio"] + label {
+    padding-left: 8px;
+    cursor: pointer;
+}
+
+/* ============================================
+   LECTEUR D'ÉCRAN - Classes utilitaires
+   ============================================ */
+
+/* Visuellement caché mais accessible */
+.sr-only,
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* Montrer au focus (pour skip links) */
+.sr-only-focusable:focus,
+.visually-hidden-focusable:focus {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    padding: inherit !important;
+    margin: inherit !important;
+    overflow: visible !important;
+    clip: auto !important;
+    white-space: normal !important;
+}
+
+/* ============================================
+   HIGH CONTRAST MODE - Support Windows
+   ============================================ */
+
+@media (forced-colors: active) {
+    .btn,
+    button {
+        border: 2px solid currentColor;
+    }
+
+    a {
+        text-decoration: underline;
+    }
+
+    input,
+    textarea,
+    select {
+        border: 2px solid currentColor;
+    }
+}
+
+/* ============================================
+   DARK MODE - Accessibilité
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text-primary: #f5f5f5;
+        --text-secondary: #b0b0b0;
+        --background: #121212;
+        --surface: #1e1e1e;
+        --error: #ff6b6b;
+        --success: #69f0ae;
+    }
+}
+
+/* ============================================
+   PRINT - Accessibilité impression
+   ============================================ */
+
+@media print {
+    a[href]::after {
+        content: " (" attr(href) ")";
+        font-size: 0.8em;
+        color: #666;
+    }
+
+    a[href^="#"]::after,
+    a[href^="javascript:"]::after {
+        content: "";
+    }
+
+    .no-print,
+    nav,
+    .navigation,
+    button:not(.print-button),
+    .modal {
+        display: none !important;
+    }
+}

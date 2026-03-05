@@ -37,7 +37,9 @@ class TwoFactorService
         ');
         $stmt->execute(['user_id' => $userId, 'code' => password_hash($code, PASSWORD_DEFAULT), 'method' => $method, 'destination' => $destination, 'expires_at' => $expiresAt]);
 
-        return ['success' => true, 'method' => $method, 'expires_in' => $this->otpExpiryMinutes * 60, 'debug_code' => $code];
+        // Note: Le code OTP n'est JAMAIS retourné au client pour des raisons de sécurité
+        // Il est envoyé uniquement par email/SMS
+        return ['success' => true, 'method' => $method, 'expires_in' => $this->otpExpiryMinutes * 60];
     }
 
     public function verify(int $userId, string $code): bool

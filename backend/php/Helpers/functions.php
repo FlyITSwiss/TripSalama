@@ -292,3 +292,22 @@ function get_current_currency(): string
 
     return $countryService->getCurrentCurrency();
 }
+
+/**
+ * Acceder au service de cache
+ *
+ * Usage:
+ *   cache()->set('key', $value, 3600);
+ *   $value = cache()->get('key');
+ *   cache()->remember('key', 3600, fn() => expensive_operation());
+ */
+function cache(): \TripSalama\Services\CacheService
+{
+    static $cacheService = null;
+
+    if ($cacheService === null) {
+        $cacheService = new \TripSalama\Services\CacheService();
+    }
+
+    return $cacheService;
+}

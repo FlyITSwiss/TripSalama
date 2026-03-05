@@ -78,4 +78,10 @@ return [
         'default_speed_kmh' => 30,     // Vitesse par défaut
         'update_interval_ms' => 1000,  // Intervalle de mise à jour
     ],
+
+    // Redis Cache
+    'redis_host' => $_ENV['REDIS_HOST'] ?? '127.0.0.1',
+    'redis_port' => (int)($_ENV['REDIS_PORT'] ?? 6379),
+    'redis_password' => $_ENV['REDIS_PASSWORD'] ?? null,
+    'redis_database' => (int)($_ENV['REDIS_DATABASE'] ?? 0),
 ];

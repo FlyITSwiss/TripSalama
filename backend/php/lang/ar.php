@@ -5,7 +5,7 @@ declare(strict_types=1);
  */
 return [
     'app' => ['name' => 'TripSalama', 'tagline' => 'سافري بأمان', 'loading' => 'جاري التحميل...'],
-    'nav' => ['home' => 'الرئيسية', 'book' => 'احجزي', 'history' => 'السجل', 'profile' => 'الملف الشخصي', 'logout' => 'خروج', 'dashboard' => 'لوحة التحكم'],
+    'nav' => ['home' => 'الرئيسية', 'book' => 'احجزي', 'history' => 'السجل', 'profile' => 'الملف الشخصي', 'logout' => 'خروج', 'dashboard' => 'لوحة التحكم', 'skip_to_content' => 'انتقل إلى المحتوى'],
     'auth' => ['login' => 'دخول', 'register' => 'تسجيل', 'email' => 'البريد', 'password' => 'كلمة المرور', 'passenger' => 'راكبة', 'driver' => 'سائقة', 'welcome_back' => 'مرحباً!'],
     'form' => ['first_name' => 'الاسم', 'last_name' => 'اللقب', 'phone' => 'الهاتف', 'save' => 'حفظ', 'cancel' => 'إلغاء', 'submit' => 'إرسال', 'back' => 'رجوع', 'next' => 'التالي'],
     'booking' => ['title' => 'احجزي رحلة', 'pickup' => 'الانطلاق', 'dropoff' => 'الوجهة', 'estimate' => 'تقدير', 'confirm_ride' => 'تأكيد', 'price' => 'السعر', 'distance' => 'المسافة'],
