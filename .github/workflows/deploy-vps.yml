@@ -204,6 +204,9 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
+            # Ensure debian can write to the directory
+            sudo chown -R debian:debian ${{ env.REMOTE_PATH }}
+
             # Create .env for production with secrets from GitHub
             cat > ${{ env.REMOTE_PATH }}/.env << 'ENVEOF'
           APP_ENV=production
