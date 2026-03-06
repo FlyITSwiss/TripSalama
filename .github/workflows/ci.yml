@@ -45,7 +45,7 @@ jobs:
         run: |
           ! grep -rE "'(cree|creee|mise a jour|succes|resultat|termine|echoue)'" --include="*.php" --include="*.phtml" backend/ public/ || true
 
-  # Job 2: E2E Tests with Puppeteer
+  # Job 2: E2E Tests with Playwright (Puppeteer INTERDIT)
   test:
     name: E2E Tests
     runs-on: ubuntu-latest
@@ -76,10 +76,10 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install Puppeteer dependencies
+      - name: Install Playwright
         run: |
-          cd tests/puppeteer
-          npm install
+          npm install @playwright/test
+          npx playwright install --with-deps chromium
 
       - name: Create .env file
         run: |
@@ -101,17 +101,18 @@ jobs:
           php -S 127.0.0.1:8080 -t public &
           sleep 5
 
-      - name: Run Puppeteer tests
+      - name: Run Playwright smoke tests
         run: |
-          cd tests/puppeteer
-          npm run test:smoke
+          npx playwright test tests/playwright/smoke-tests.spec.js --project="Desktop Chrome"
+        env:
+          TEST_URL: http://127.0.0.1:8080
 
       - name: Upload screenshots on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: puppeteer-screenshots
-          path: tests/puppeteer/screenshots/
+          name: playwright-screenshots
+          path: tests/playwright/screenshots/
           retention-days: 7
 
   # Job 3: Deploy to staging
