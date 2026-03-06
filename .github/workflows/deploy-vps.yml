@@ -142,6 +142,7 @@ jobs:
             "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:${{ env.REMOTE_PATH }}/public/"
 
       - name: Deploy database migrations
+        continue-on-error: true
         run: |
           if [ -d "database" ]; then
             rsync -avz \
@@ -151,6 +152,7 @@ jobs:
           fi
 
       - name: Deploy scripts
+        continue-on-error: true
         run: |
           if [ -d "scripts" ]; then
             rsync -avz \
