@@ -29,6 +29,28 @@
         letter-spacing: -0.02em;
     }
 
+    /* Welcome with Avatar */
+    .uber-welcome-header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+    }
+
+    .uber-welcome-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--uber-black);
+        box-shadow: var(--shadow-md);
+        flex-shrink: 0;
+    }
+
+    .uber-welcome-text {
+        flex: 1;
+        min-width: 0;
+    }
+
     /* Where To Card - Main CTA */
     .where-to-card {
         background: var(--uber-white);
@@ -139,6 +161,7 @@
     .active-ride-status {
         padding: var(--space-1) var(--space-3);
         background: var(--uber-green);
+        color: #ffffff; /* WCAG contrast fix - white on green */
         border-radius: var(--radius-full);
         font-size: var(--text-xs);
         font-weight: var(--font-semibold);
@@ -315,8 +338,17 @@
 <div class="uber-dashboard">
     <!-- Welcome -->
     <section class="uber-welcome">
-        <p class="uber-welcome-greeting"><?= __('auth.welcome_back') ?></p>
-        <h1 class="uber-welcome-name"><?= htmlspecialchars($user['first_name']) ?></h1>
+        <div class="uber-welcome-header">
+            <?php if (!empty($user['avatar_path'])): ?>
+            <img src="<?= base_url('uploads/avatars/' . htmlspecialchars($user['avatar_path'])) ?>"
+                 alt="<?= htmlspecialchars($user['first_name']) ?>"
+                 class="uber-welcome-avatar">
+            <?php endif; ?>
+            <div class="uber-welcome-text">
+                <p class="uber-welcome-greeting"><?= __('auth.welcome_back') ?></p>
+                <h1 class="uber-welcome-name"><?= htmlspecialchars($user['first_name']) ?></h1>
+            </div>
+        </div>
     </section>
 
     <!-- Where To Card -->
@@ -430,3 +462,133 @@
         </div>
     </section>
 </div>
+
+<!-- SOS Button - CRITICAL SAFETY FEATURE -->
+<button type="button" class="sos-fab" id="sosButton" aria-label="<?= __('sos.button') ?>" title="<?= __('sos.title') ?>">
+    SOS
+</button>
+
+<!-- SOS Modal -->
+<div class="sos-modal" id="sosModal" role="dialog" aria-modal="true" aria-labelledby="sosModalTitle">
+    <div class="sos-modal-content">
+        <div class="sos-modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+        </div>
+        <h2 class="sos-modal-title" id="sosModalTitle"><?= __('sos.title') ?></h2>
+        <p class="sos-modal-text"><?= __('sos.trigger') ?></p>
+        <div class="sos-modal-actions">
+            <button type="button" class="sos-btn-emergency" id="sosConfirmBtn">
+                <?= __('sos.call_emergency') ?>
+            </button>
+            <button type="button" class="sos-btn-cancel" id="sosCancelBtn">
+                <?= __('action.cancel') ?>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    const sosButton = document.getElementById('sosButton');
+    const sosModal = document.getElementById('sosModal');
+    const sosConfirmBtn = document.getElementById('sosConfirmBtn');
+    const sosCancelBtn = document.getElementById('sosCancelBtn');
+
+    // Ouvrir le modal SOS
+    sosButton.addEventListener('click', function() {
+        sosModal.classList.add('active');
+        sosButton.classList.add('pulsing');
+    });
+
+    // Annuler
+    sosCancelBtn.addEventListener('click', function() {
+        sosModal.classList.remove('active');
+        sosButton.classList.remove('pulsing');
+    });
+
+    // Fermer en cliquant en dehors
+    sosModal.addEventListener('click', function(e) {
+        if (e.target === sosModal) {
+            sosModal.classList.remove('active');
+            sosButton.classList.remove('pulsing');
+        }
+    });
+
+    // Confirmer l'alerte SOS
+    sosConfirmBtn.addEventListener('click', async function() {
+        sosConfirmBtn.disabled = true;
+        sosConfirmBtn.textContent = '...';
+
+        try {
+            // Obtenir la position GPS
+            let position = null;
+            try {
+                position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: true,
+                        timeout: 5000
+                    });
+                });
+            } catch (geoError) {
+                console.warn('Géolocalisation non disponible');
+            }
+
+            // Appeler l'API SOS
+            const response = await fetch(AppConfig ? AppConfig.apiUrl('sos') : '/api/sos.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({
+                    action: 'trigger',
+                    alert_type: 'sos',
+                    latitude: position?.coords?.latitude || null,
+                    longitude: position?.coords?.longitude || null,
+                    message: <?= json_encode(__('sos.alert_sent')) ?>
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Alerte envoyée avec succès
+                sosModal.classList.remove('active');
+                sosButton.classList.remove('pulsing');
+
+                if (typeof showToast === 'function') {
+                    showToast('success', <?= json_encode(__('sos.alert_sent')) ?>);
+                } else {
+                    alert(<?= json_encode(__('sos.alert_sent')) ?>);
+                }
+            } else {
+                throw new Error(data.message || 'Erreur');
+            }
+        } catch (error) {
+            console.error('Erreur SOS:', error);
+            if (typeof showToast === 'function') {
+                showToast('error', <?= json_encode(__('error.generic')) ?>);
+            } else {
+                alert(<?= json_encode(__('error.generic')) ?>);
+            }
+        } finally {
+            sosConfirmBtn.disabled = false;
+            sosConfirmBtn.textContent = <?= json_encode(__('sos.call_emergency')) ?>;
+        }
+    });
+
+    // Fermer avec Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && sosModal.classList.contains('active')) {
+            sosModal.classList.remove('active');
+            sosButton.classList.remove('pulsing');
+        }
+    });
+})();
+</script>
