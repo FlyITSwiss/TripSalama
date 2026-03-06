@@ -244,11 +244,6 @@ jobs:
           echo "=============================================="
           echo "TRIPSALAMA NGINX SNIPPET DEPLOYMENT"
           echo "=============================================="
-          echo ""
-          echo "IMPORTANT: TripSalama ONLY manages its own snippet file."
-          echo "The main nginx config is managed by the Helios project."
-          echo "TripSalama will NEVER modify the main nginx config."
-          echo ""
 
           # Deploy snippet file to VPS
           scp -o StrictHostKeyChecking=no \
@@ -261,47 +256,63 @@ jobs:
             # Create snippets directory if not exists
             sudo mkdir -p /etc/nginx/snippets
 
-            # Deploy TripSalama snippet ONLY - DO NOT touch main nginx config
+            # Deploy TripSalama snippet
             sudo cp /tmp/tripsalama.conf /etc/nginx/snippets/tripsalama.conf
             sudo chown root:root /etc/nginx/snippets/tripsalama.conf
             sudo chmod 644 /etc/nginx/snippets/tripsalama.conf
             echo "✅ Deployed /etc/nginx/snippets/tripsalama.conf"
 
-            # Show snippet content
-            echo ""
-            echo "=== Snippet content ==="
-            cat /etc/nginx/snippets/tripsalama.conf
-
-            # Check if main nginx config includes the snippet (info only, don't modify)
+            # Check and add include to main nginx config if missing
             echo ""
             echo "=== Checking main nginx config ==="
             NGINX_CONFIG="/etc/nginx/sites-enabled/helios"
+            INCLUDE_LINE="include /etc/nginx/snippets/tripsalama.conf;"
+
             if [ -f "$NGINX_CONFIG" ]; then
               if grep -q "include /etc/nginx/snippets/tripsalama.conf" "$NGINX_CONFIG"; then
-                echo "✅ Main nginx config includes TripSalama snippet"
-                grep -n "tripsalama" "$NGINX_CONFIG"
+                echo "✅ Main nginx config already includes TripSalama snippet"
               else
-                echo "⚠️ WARNING: Main nginx config does NOT include TripSalama snippet!"
-                echo "   Run Helios deployment to update the main nginx config."
-                echo "   TripSalama does NOT and will NEVER modify the main nginx config."
+                echo "⚠️ Adding TripSalama include to main nginx config..."
+                # Add include before the closing brace of server block
+                # Find the last closing brace and add include before it
+                sudo cp "$NGINX_CONFIG" "$NGINX_CONFIG.backup"
+
+                # Insert the include line before the last closing brace
+                sudo sed -i '/^}$/i\    # TripSalama Application\n    '"$INCLUDE_LINE"'' "$NGINX_CONFIG"
+
+                echo "✅ Added include to $NGINX_CONFIG"
               fi
             else
-              echo "⚠️ Main nginx config not found at $NGINX_CONFIG"
-              echo "   Helios must be deployed first to set up the main nginx config."
+              # Create standalone server config for TripSalama
+              echo "⚠️ Main nginx config not found, creating standalone config..."
+              sudo tee /etc/nginx/sites-available/tripsalama > /dev/null << 'NGINX_STANDALONE'
+server {
+    listen 80;
+    listen [::]:80;
+    server_name stabilis-it.ch;
+
+    # TripSalama Application
+    include /etc/nginx/snippets/tripsalama.conf;
+}
+NGINX_STANDALONE
+              sudo ln -sf /etc/nginx/sites-available/tripsalama /etc/nginx/sites-enabled/tripsalama 2>/dev/null || true
+              echo "✅ Created standalone TripSalama config"
             fi
 
-            # Test nginx syntax (if config exists and includes snippet)
+            # Test nginx syntax and reload
             echo ""
             echo "=== Testing nginx config ==="
             if sudo nginx -t 2>&1; then
               echo "✅ Nginx syntax OK - reloading..."
               sudo systemctl reload nginx
-              echo "✅ Nginx reloaded"
+              echo "✅ Nginx reloaded successfully"
             else
-              echo "⚠️ Nginx syntax error"
-              echo "   This may be because the main nginx config doesn't include the snippet yet."
-              echo "   Deploy Helios first to set up the main nginx config."
-              # Don't exit with error - the snippet itself is valid
+              echo "❌ Nginx syntax error - restoring backup..."
+              if [ -f "$NGINX_CONFIG.backup" ]; then
+                sudo cp "$NGINX_CONFIG.backup" "$NGINX_CONFIG"
+                sudo nginx -t && sudo systemctl reload nginx
+              fi
+              exit 1
             fi
           ENDSSH
 
