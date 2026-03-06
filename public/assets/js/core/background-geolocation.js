@@ -1,11 +1,42 @@
 /**
  * TripSalama - Background Geolocation Service
  * Tracking en arrière-plan pour Capacitor (iOS/Android) et PWA
+ *
+ * Améliorations v2.0:
+ * - Modes de batterie adaptatifs (performance, balanced, power-saving)
+ * - Filtrage de précision intelligent
+ * - Détection automatique du mouvement (driving/idle)
+ * - Gestion optimisée de la batterie Android
  */
 
 'use strict';
 
 const BackgroundGeolocation = (function() {
+    // Modes de batterie
+    const BATTERY_MODES = {
+        PERFORMANCE: {
+            name: 'performance',
+            distanceFilter: 5,           // 5m - très précis
+            interval: 2000,              // 2s
+            desiredAccuracy: 'high',
+            stationaryRadius: 15,
+        },
+        BALANCED: {
+            name: 'balanced',
+            distanceFilter: 10,          // 10m - équilibré
+            interval: 5000,              // 5s
+            desiredAccuracy: 'high',
+            stationaryRadius: 25,
+        },
+        POWER_SAVING: {
+            name: 'power-saving',
+            distanceFilter: 25,          // 25m - économie
+            interval: 15000,             // 15s
+            desiredAccuracy: 'medium',
+            stationaryRadius: 50,
+        },
+    };
+
     // Configuration
     const config = {
         // Général
@@ -25,6 +56,11 @@ const BackgroundGeolocation = (function() {
         preventSuspend: true,
         heartbeatInterval: 60,           // Heartbeat toutes les 60s
 
+        // Filtrage de précision
+        minAccuracy: 50,                 // Ignorer positions avec précision > 50m
+        maxSpeedKmh: 200,                // Ignorer vitesses > 200 km/h (GPS error)
+        minSpeedKmh: 2,                  // Considérer immobile si < 2 km/h
+
         // Notifications (Android)
         notification: {
             title: 'TripSalama',
@@ -32,6 +68,15 @@ const BackgroundGeolocation = (function() {
             icon: 'notification_icon',
             color: '#2D5A4A',
             channelName: 'Tracking',
+            priority: 'high',            // Éviter le kill par Android
+            sticky: true,                // Notification persistante
+        },
+
+        // Android spécifique
+        android: {
+            foregroundService: true,     // Service foreground obligatoire
+            notificationChannelImportance: 'high',
+            allowIdenticalLocations: false,
         },
 
         // Debug
@@ -47,6 +92,10 @@ const BackgroundGeolocation = (function() {
     let onPositionCallback = null;
     let positionBuffer = [];
     let bufferFlushInterval = null;
+    let currentBatteryMode = BATTERY_MODES.BALANCED;
+    let movementState = 'idle';          // 'idle', 'moving', 'driving'
+    let consecutiveIdleCount = 0;
+    let batteryLevel = 100;
 
     /**
      * Vérifier si Capacitor est disponible
@@ -147,15 +196,31 @@ const BackgroundGeolocation = (function() {
 
             if (permission.state === 'denied') {
                 AppConfig.debug('BackgroundGeolocation: Permission refusée');
+                EventBus.emit('geolocation:permissionDenied');
                 return false;
             }
+
+            // Écouter les changements de permission
+            permission.addEventListener('change', () => {
+                AppConfig.debug(`BackgroundGeolocation: Permission → ${permission.state}`);
+                EventBus.emit('geolocation:permissionChanged', { state: permission.state });
+
+                if (permission.state === 'denied' && isTracking) {
+                    stopTracking();
+                }
+            });
+
+            // Initialiser le monitoring batterie
+            await initBatteryMonitor();
 
             AppConfig.debug('BackgroundGeolocation: Initialisé (PWA)');
             return true;
 
         } catch (error) {
             AppConfig.debug('BackgroundGeolocation: Erreur permissions', error);
-            return true; // Continuer quand même
+            // Continuer quand même, on testera au moment du tracking
+            await initBatteryMonitor();
+            return true;
         }
     }
 
@@ -208,9 +273,9 @@ const BackgroundGeolocation = (function() {
      */
     function startPWATracking() {
         const options = {
-            enableHighAccuracy: config.desiredAccuracy === 'high',
+            enableHighAccuracy: currentBatteryMode.desiredAccuracy === 'high',
             timeout: 15000,
-            maximumAge: 0,
+            maximumAge: currentBatteryMode.interval / 2, // Cache adaptatif
         };
 
         watchId = navigator.geolocation.watchPosition(
@@ -225,11 +290,47 @@ const BackgroundGeolocation = (function() {
                 });
             },
             (error) => {
-                AppConfig.debug('BackgroundGeolocation: Erreur PWA', error);
-                EventBus.emit('geolocation:error', error);
+                handleGeolocationError(error);
             },
             options
         );
+    }
+
+    /**
+     * Gérer les erreurs de géolocalisation
+     * @param {GeolocationPositionError} error Erreur
+     */
+    function handleGeolocationError(error) {
+        let errorMessage = 'Erreur inconnue';
+        let shouldRetry = false;
+
+        switch (error.code) {
+            case error.PERMISSION_DENIED:
+                errorMessage = 'Permission de localisation refusée';
+                EventBus.emit('geolocation:permissionDenied');
+                break;
+            case error.POSITION_UNAVAILABLE:
+                errorMessage = 'Position indisponible (GPS désactivé ?)';
+                shouldRetry = true;
+                break;
+            case error.TIMEOUT:
+                errorMessage = 'Délai de localisation dépassé';
+                shouldRetry = true;
+                break;
+        }
+
+        AppConfig.debug(`BackgroundGeolocation: ${errorMessage}`, error);
+        EventBus.emit('geolocation:error', { code: error.code, message: errorMessage });
+
+        // Retry après 5s si erreur temporaire
+        if (shouldRetry && isTracking) {
+            setTimeout(() => {
+                if (isTracking && watchId === null) {
+                    AppConfig.debug('BackgroundGeolocation: Retry après erreur');
+                    startPWATracking();
+                }
+            }, 5000);
+        }
     }
 
     /**
@@ -276,6 +377,15 @@ const BackgroundGeolocation = (function() {
      * @param {Object} position Données de position
      */
     function handlePosition(position) {
+        // Filtrage de précision - ignorer les positions imprécises
+        if (!isValidPosition(position)) {
+            AppConfig.debug('BackgroundGeolocation: Position ignorée (précision insuffisante)', {
+                accuracy: position.accuracy,
+                speed: position.speed,
+            });
+            return;
+        }
+
         // Vérifier si la position a changé significativement
         if (lastPosition) {
             const distance = calculateDistance(
@@ -283,17 +393,29 @@ const BackgroundGeolocation = (function() {
                 position.lat, position.lng
             );
 
-            // Ignorer si mouvement < distanceFilter
-            if (distance < config.distanceFilter / 1000) {
+            // Ignorer si mouvement < distanceFilter actuel
+            if (distance < currentBatteryMode.distanceFilter / 1000) {
                 return;
             }
+
+            // Calculer la vitesse réelle entre les deux points
+            const timeDiff = (position.timestamp - lastPosition.timestamp) / 1000; // en secondes
+            if (timeDiff > 0) {
+                const calculatedSpeedKmh = (distance / timeDiff) * 3600;
+                position.calculatedSpeed = calculatedSpeedKmh;
+            }
         }
+
+        // Détecter l'état de mouvement et ajuster le mode batterie
+        detectMovementState(position);
 
         lastPosition = position;
 
         // Ajouter au buffer
         positionBuffer.push({
             rideId: currentRideId,
+            batteryMode: currentBatteryMode.name,
+            movementState: movementState,
             ...position,
         });
 
@@ -320,6 +442,139 @@ const BackgroundGeolocation = (function() {
                 position.heading,
                 position.speed
             );
+        }
+    }
+
+    /**
+     * Valider une position GPS
+     * @param {Object} position Position à valider
+     * @returns {boolean} true si valide
+     */
+    function isValidPosition(position) {
+        // Vérifier la précision
+        if (position.accuracy && position.accuracy > config.minAccuracy) {
+            return false;
+        }
+
+        // Vérifier la vitesse (si disponible)
+        if (position.speed !== null && position.speed !== undefined) {
+            const speedKmh = position.speed * 3.6; // m/s → km/h
+
+            // Vitesse impossible (GPS error)
+            if (speedKmh > config.maxSpeedKmh) {
+                return false;
+            }
+        }
+
+        // Vérifier les coordonnées valides
+        if (position.lat < -90 || position.lat > 90 ||
+            position.lng < -180 || position.lng > 180) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Détecter l'état de mouvement et ajuster le mode batterie
+     * @param {Object} position Position actuelle
+     */
+    function detectMovementState(position) {
+        const speedKmh = position.speed ? position.speed * 3.6 : 0;
+
+        // Déterminer l'état de mouvement
+        let newState = movementState;
+
+        if (speedKmh < config.minSpeedKmh) {
+            consecutiveIdleCount++;
+            if (consecutiveIdleCount >= 3) {
+                newState = 'idle';
+            }
+        } else if (speedKmh > 30) {
+            newState = 'driving';
+            consecutiveIdleCount = 0;
+        } else {
+            newState = 'moving';
+            consecutiveIdleCount = 0;
+        }
+
+        // Changement d'état détecté
+        if (newState !== movementState) {
+            movementState = newState;
+            AppConfig.debug(`BackgroundGeolocation: État mouvement → ${movementState}`);
+            EventBus.emit('geolocation:movementStateChanged', { state: movementState });
+
+            // Ajuster le mode batterie automatiquement
+            autoAdjustBatteryMode();
+        }
+    }
+
+    /**
+     * Ajuster automatiquement le mode batterie selon l'état
+     */
+    function autoAdjustBatteryMode() {
+        let newMode;
+
+        // Si batterie faible, forcer power-saving
+        if (batteryLevel < 20) {
+            newMode = BATTERY_MODES.POWER_SAVING;
+        } else if (movementState === 'driving') {
+            // Conduite → performance pour précision
+            newMode = BATTERY_MODES.PERFORMANCE;
+        } else if (movementState === 'idle') {
+            // Immobile → économie
+            newMode = BATTERY_MODES.POWER_SAVING;
+        } else {
+            // Mouvement normal → équilibré
+            newMode = BATTERY_MODES.BALANCED;
+        }
+
+        if (newMode !== currentBatteryMode) {
+            setBatteryMode(newMode.name);
+        }
+    }
+
+    /**
+     * Définir le mode batterie
+     * @param {string} mode 'performance', 'balanced', 'power-saving'
+     */
+    function setBatteryMode(mode) {
+        const modeConfig = BATTERY_MODES[mode.toUpperCase().replace('-', '_')] ||
+                          BATTERY_MODES.BALANCED;
+
+        currentBatteryMode = modeConfig;
+        AppConfig.debug(`BackgroundGeolocation: Mode batterie → ${modeConfig.name}`);
+
+        // Mettre à jour la config PWA si actif
+        if (isTracking && watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+            startPWATracking();
+        }
+
+        EventBus.emit('geolocation:batteryModeChanged', { mode: modeConfig.name });
+    }
+
+    /**
+     * Écouter le niveau de batterie (si disponible)
+     */
+    async function initBatteryMonitor() {
+        if ('getBattery' in navigator) {
+            try {
+                const battery = await navigator.getBattery();
+                batteryLevel = Math.round(battery.level * 100);
+
+                battery.addEventListener('levelchange', () => {
+                    batteryLevel = Math.round(battery.level * 100);
+                    AppConfig.debug(`BackgroundGeolocation: Batterie ${batteryLevel}%`);
+
+                    // Ajuster si nécessaire
+                    if (isTracking) {
+                        autoAdjustBatteryMode();
+                    }
+                });
+            } catch (error) {
+                AppConfig.debug('BackgroundGeolocation: Battery API non disponible');
+            }
         }
     }
 
@@ -421,15 +676,64 @@ const BackgroundGeolocation = (function() {
         return lastPosition;
     }
 
+    /**
+     * Obtenir le mode batterie actuel
+     * @returns {Object} Configuration du mode
+     */
+    function getBatteryMode() {
+        return currentBatteryMode;
+    }
+
+    /**
+     * Obtenir l'état de mouvement
+     * @returns {string} 'idle', 'moving', 'driving'
+     */
+    function getMovementState() {
+        return movementState;
+    }
+
+    /**
+     * Obtenir les statistiques de tracking
+     * @returns {Object} Stats
+     */
+    function getStats() {
+        return {
+            isTracking,
+            rideId: currentRideId,
+            batteryMode: currentBatteryMode.name,
+            movementState,
+            batteryLevel,
+            bufferSize: positionBuffer.length,
+            lastPosition: lastPosition ? {
+                lat: lastPosition.lat,
+                lng: lastPosition.lng,
+                accuracy: lastPosition.accuracy,
+                timestamp: lastPosition.timestamp,
+            } : null,
+        };
+    }
+
     // API publique
     return {
+        // Lifecycle
         init,
         isSupported,
         startTracking,
         stopTracking,
+
+        // Position
         getCurrentPosition,
-        isActive,
         getLastPosition,
+
+        // État
+        isActive,
+        getStats,
+        getMovementState,
+
+        // Configuration batterie
+        setBatteryMode,
+        getBatteryMode,
+        BATTERY_MODES,
     };
 })();
 

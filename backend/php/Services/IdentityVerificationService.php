@@ -12,34 +12,37 @@ use TripSalama\Helpers\PathHelper;
 /**
  * Service de vérification d'identité
  * Gère la soumission et validation des photos d'identité
+ * Utilise l'IA (Anthropic Claude Vision) pour l'analyse automatique
  */
 class IdentityVerificationService
 {
     private PDO $db;
     private IdentityVerification $verificationModel;
     private User $userModel;
+    private AIVerificationService $aiService;
 
     public function __construct(PDO $db)
     {
         $this->db = $db;
         $this->verificationModel = new IdentityVerification($db);
         $this->userModel = new User($db);
+        $this->aiService = new AIVerificationService();
     }
 
     /**
-     * Soumettre une vérification d'identité
+     * Soumettre une vérification d'identité avec analyse IA
      *
      * @param int $userId ID de l'utilisateur
      * @param string $base64Image Image encodée en base64
-     * @param float|null $confidence Niveau de confiance IA (0.0 - 1.0)
-     * @param string|null $aiResult Résultat détection IA (female/male/unknown)
-     * @return array ['success' => bool, 'status' => string, 'message' => string]
+     * @param float|null $localConfidence Niveau de confiance locale face-api.js (0.0 - 1.0)
+     * @param string|null $localResult Résultat détection locale (female/male/unknown)
+     * @return array ['success' => bool, 'status' => string, 'message' => string, 'analysis' => array]
      */
     public function submitVerification(
         int $userId,
         string $base64Image,
-        ?float $confidence,
-        ?string $aiResult
+        ?float $localConfidence = null,
+        ?string $localResult = null
     ): array {
         try {
             // Valider l'image base64
@@ -84,6 +87,11 @@ class IdentityVerificationService
                 ];
             }
 
+            // =============================================
+            // ANALYSE IA AVEC ANTHROPIC CLAUDE VISION
+            // =============================================
+            $aiAnalysis = $this->aiService->analyzeIdentityPhoto($base64Image);
+
             // Créer le dossier de vérifications pour cet utilisateur
             $verificationsPath = PathHelper::getUploadsPath() . '/verifications/' . $userId;
             if (!is_dir($verificationsPath)) {
@@ -104,21 +112,30 @@ class IdentityVerificationService
                 ];
             }
 
-            // Créer l'enregistrement de vérification
+            // Utiliser les résultats de l'IA pour déterminer le statut
+            $aiConfidence = $aiAnalysis['confidence'] ?? 0.0;
+            $isFemale = $aiAnalysis['is_female'] ?? false;
+            $isRealPerson = $aiAnalysis['is_real_person'] ?? false;
+            $recommendation = $aiAnalysis['recommendation'] ?? 'manual_review';
+            $analysisSource = $aiAnalysis['analysis_source'] ?? 'unknown';
+
+            // Créer l'enregistrement de vérification avec les données IA
             $verificationId = $this->verificationModel->create(
                 $userId,
                 $relativePath,
-                $confidence,
-                $aiResult
+                $aiConfidence,
+                $isFemale ? 'female' : ($isRealPerson ? 'male' : 'unknown')
             );
 
-            // Déterminer le statut final
+            // Déterminer le statut final basé sur l'analyse IA
             $finalStatus = 'manual_review';
             $verifiedAt = null;
 
-            if ($confidence !== null && $aiResult === 'female' && $confidence >= 0.85) {
+            if ($recommendation === 'approve' && $isFemale && $isRealPerson && $aiConfidence >= 0.80) {
                 $finalStatus = 'verified';
                 $verifiedAt = date('Y-m-d H:i:s');
+            } elseif ($recommendation === 'reject') {
+                $finalStatus = 'rejected';
             }
 
             // Mettre à jour le statut de l'utilisateur
@@ -141,15 +158,25 @@ class IdentityVerificationService
             }
 
             // Message selon le résultat
-            $message = $finalStatus === 'verified'
-                ? __('verification.success_message')
-                : __('verification.pending_message');
+            $message = match ($finalStatus) {
+                'verified' => __('verification.success_message'),
+                'rejected' => $aiAnalysis['reason'] ?? __('verification.rejected_message'),
+                default => __('verification.pending_message'),
+            };
 
             return [
-                'success' => true,
+                'success' => $finalStatus !== 'rejected',
                 'status' => $finalStatus,
                 'message' => $message,
                 'verification_id' => $verificationId,
+                'analysis' => [
+                    'is_female' => $isFemale,
+                    'is_real_person' => $isRealPerson,
+                    'confidence' => $aiConfidence,
+                    'recommendation' => $recommendation,
+                    'source' => $analysisSource,
+                    'reason' => $aiAnalysis['reason'] ?? null,
+                ],
             ];
 
         } catch (\Exception $e) {

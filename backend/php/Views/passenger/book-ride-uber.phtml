@@ -107,7 +107,7 @@
         justify-content: center;
         color: var(--uber-black);
         cursor: pointer;
-        z-index: 1000;
+        z-index: 1002; /* Above bottom sheet */
         transition: all 0.2s ease;
     }
 
@@ -537,4 +537,53 @@
             rideCreated: <?= json_encode(__('msg.ride_booked')) ?>
         }
     };
+
+    // Simple draggable bottom sheet
+    (function() {
+        const sheet = document.querySelector('.booking-sheet');
+        const handle = document.querySelector('.booking-sheet-handle');
+        if (!sheet || !handle) return;
+
+        let isDragging = false;
+        let startY = 0;
+        let startHeight = 0;
+        const minHeight = 150;
+        const maxHeight = window.innerHeight * 0.8;
+
+        handle.style.cursor = 'grab';
+
+        handle.addEventListener('touchstart', onStart, { passive: true });
+        handle.addEventListener('mousedown', onStart);
+
+        function onStart(e) {
+            isDragging = true;
+            startY = e.touches ? e.touches[0].clientY : e.clientY;
+            startHeight = sheet.offsetHeight;
+            handle.style.cursor = 'grabbing';
+            sheet.style.transition = 'none';
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('touchend', onEnd);
+            document.addEventListener('mouseup', onEnd);
+        }
+
+        function onMove(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            const currentY = e.touches ? e.touches[0].clientY : e.clientY;
+            const diff = startY - currentY;
+            const newHeight = Math.min(maxHeight, Math.max(minHeight, startHeight + diff));
+            sheet.style.maxHeight = newHeight + 'px';
+        }
+
+        function onEnd() {
+            isDragging = false;
+            handle.style.cursor = 'grab';
+            sheet.style.transition = 'max-height 0.3s ease';
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('touchend', onEnd);
+            document.removeEventListener('mouseup', onEnd);
+        }
+    })();
 </script>

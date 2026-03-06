@@ -1,6 +1,12 @@
 /**
  * TripSalama - Offline Sync Service
  * Synchronisation des données hors-ligne avec IndexedDB
+ *
+ * Améliorations v2.0:
+ * - Exponential backoff avec jitter pour les retries
+ * - Gestion de priorité dans la queue de sync
+ * - Limite de taille de queue avec purge automatique
+ * - Retry intelligent basé sur le type d'erreur
  */
 
 'use strict';
@@ -8,7 +14,7 @@
 const OfflineSync = (function() {
     // Configuration
     const DB_NAME = 'tripsalama-offline';
-    const DB_VERSION = 1;
+    const DB_VERSION = 2; // Nouvelle version pour migration
     const STORES = {
         POSITIONS: 'positions',
         RIDES: 'rides',
@@ -16,10 +22,29 @@ const OfflineSync = (function() {
         SYNC_QUEUE: 'syncQueue',
     };
 
+    // Configuration des limites et retry
+    const SYNC_CONFIG = {
+        maxQueueSize: 500,               // Max items dans la queue
+        maxPositions: 1000,              // Max positions stockées
+        maxRetries: 5,                   // Max tentatives par item
+        baseRetryDelay: 1000,            // Délai de base (1s)
+        maxRetryDelay: 60000,            // Délai max (60s)
+        batchSize: 50,                   // Taille des batches
+        syncDebounceMs: 2000,            // Debounce entre syncs
+        priorities: {
+            CRITICAL: 1,                 // Status de course (start, end, SOS)
+            HIGH: 2,                     // Messages
+            NORMAL: 3,                   // Positions
+            LOW: 4,                      // Analytics
+        },
+    };
+
     // État
     let db = null;
     let isOnline = navigator.onLine;
     let syncInProgress = false;
+    let syncDebounceTimer = null;
+    let retryTimers = new Map();         // itemId → timerId
 
     /**
      * Initialiser IndexedDB
@@ -176,9 +201,13 @@ const OfflineSync = (function() {
      * Ajouter un élément à la file de sync
      * @param {string} type Type d'action
      * @param {Object} data Données
+     * @param {number} priority Priorité (1=critical, 4=low)
      */
-    async function addToSyncQueue(type, data) {
+    async function addToSyncQueue(type, data, priority = SYNC_CONFIG.priorities.NORMAL) {
         if (!db) return;
+
+        // Vérifier la taille de la queue avant d'ajouter
+        await enforceQueueLimit();
 
         return new Promise((resolve, reject) => {
             const tx = db.transaction(STORES.SYNC_QUEUE, 'readwrite');
@@ -186,12 +215,124 @@ const OfflineSync = (function() {
             const request = store.add({
                 type,
                 data,
+                priority,
                 createdAt: Date.now(),
                 attempts: 0,
+                lastAttemptAt: null,
+                lastError: null,
             });
 
-            request.onsuccess = () => resolve(request.result);
+            request.onsuccess = () => {
+                AppConfig.debug(`OfflineSync: Ajouté à la queue (${type}, priorité ${priority})`);
+
+                // Déclencher une sync si en ligne
+                if (isOnline) {
+                    debouncedSync();
+                }
+
+                resolve(request.result);
+            };
             request.onerror = () => reject(request.error);
+        });
+    }
+
+    /**
+     * Sync avec debounce pour éviter les appels trop fréquents
+     */
+    function debouncedSync() {
+        if (syncDebounceTimer) {
+            clearTimeout(syncDebounceTimer);
+        }
+
+        syncDebounceTimer = setTimeout(() => {
+            syncPendingData();
+        }, SYNC_CONFIG.syncDebounceMs);
+    }
+
+    /**
+     * Calculer le délai de retry avec exponential backoff + jitter
+     * @param {number} attempt Numéro de tentative (1-based)
+     * @returns {number} Délai en ms
+     */
+    function calculateRetryDelay(attempt) {
+        // Exponential backoff: baseDelay * 2^(attempt-1)
+        const exponentialDelay = SYNC_CONFIG.baseRetryDelay * Math.pow(2, attempt - 1);
+
+        // Cap au max
+        const cappedDelay = Math.min(exponentialDelay, SYNC_CONFIG.maxRetryDelay);
+
+        // Ajouter du jitter (±25%) pour éviter les "thundering herd"
+        const jitter = cappedDelay * 0.25 * (Math.random() * 2 - 1);
+
+        return Math.round(cappedDelay + jitter);
+    }
+
+    /**
+     * Vérifier si une erreur est récupérable
+     * @param {Error} error Erreur
+     * @returns {boolean} true si retry possible
+     */
+    function isRetryableError(error) {
+        // Erreurs réseau → retry
+        if (error.message && (
+            error.message.includes('network') ||
+            error.message.includes('fetch') ||
+            error.message.includes('timeout') ||
+            error.message.includes('ECONNREFUSED')
+        )) {
+            return true;
+        }
+
+        // Erreurs HTTP récupérables
+        if (error.status) {
+            // 408 Request Timeout, 429 Too Many Requests, 5xx Server Errors
+            return error.status === 408 || error.status === 429 || error.status >= 500;
+        }
+
+        // Par défaut, considérer comme récupérable
+        return true;
+    }
+
+    /**
+     * Appliquer la limite de taille de la queue
+     */
+    async function enforceQueueLimit() {
+        if (!db) return;
+
+        return new Promise((resolve) => {
+            const tx = db.transaction(STORES.SYNC_QUEUE, 'readwrite');
+            const store = tx.objectStore(STORES.SYNC_QUEUE);
+            const countRequest = store.count();
+
+            countRequest.onsuccess = () => {
+                const count = countRequest.result;
+
+                if (count >= SYNC_CONFIG.maxQueueSize) {
+                    // Supprimer les plus anciens items de basse priorité
+                    const index = store.index('createdAt');
+                    let deleted = 0;
+                    const toDelete = count - SYNC_CONFIG.maxQueueSize + 50; // Marge de 50
+
+                    index.openCursor().onsuccess = (event) => {
+                        const cursor = event.target.result;
+                        if (cursor && deleted < toDelete) {
+                            // Ne pas supprimer les items critiques
+                            if (cursor.value.priority > SYNC_CONFIG.priorities.CRITICAL) {
+                                cursor.delete();
+                                deleted++;
+                            }
+                            cursor.continue();
+                        } else {
+                            AppConfig.debug(`OfflineSync: ${deleted} anciens items supprimés de la queue`);
+                            resolve();
+                        }
+                    };
+                } else {
+                    resolve();
+                }
+            };
+
+            countRequest.onerror = () => resolve();
         });
     }
 
@@ -294,36 +435,102 @@ const OfflineSync = (function() {
 
         return new Promise((resolve, reject) => {
             request.onsuccess = async () => {
-                const items = request.result;
+                let items = request.result;
+
+                if (items.length === 0) {
+                    resolve();
+                    return;
+                }
+
+                // Trier par priorité (1=critical first) puis par date
+                items.sort((a, b) => {
+                    if (a.priority !== b.priority) {
+                        return (a.priority || 3) - (b.priority || 3);
+                    }
+                    return a.createdAt - b.createdAt;
+                });
+
+                AppConfig.debug(`OfflineSync: ${items.length} items à synchroniser`);
+
+                let successCount = 0;
+                let failCount = 0;
 
                 for (const item of items) {
+                    // Vérifier si on doit attendre (backoff)
+                    if (item.lastAttemptAt && item.attempts > 0) {
+                        const delay = calculateRetryDelay(item.attempts);
+                        const timeSinceLastAttempt = Date.now() - item.lastAttemptAt;
+
+                        if (timeSinceLastAttempt < delay) {
+                            // Pas encore le moment de retry
+                            continue;
+                        }
+                    }
+
                     try {
                         await processQueueItem(item);
 
-                        // Supprimer de la file
+                        // Succès → supprimer de la file
                         const deleteTx = db.transaction(STORES.SYNC_QUEUE, 'readwrite');
                         const deleteStore = deleteTx.objectStore(STORES.SYNC_QUEUE);
                         deleteStore.delete(item.id);
 
+                        // Annuler le timer de retry si existant
+                        if (retryTimers.has(item.id)) {
+                            clearTimeout(retryTimers.get(item.id));
+                            retryTimers.delete(item.id);
+                        }
+
+                        successCount++;
+
                     } catch (error) {
-                        AppConfig.debug('OfflineSync: Erreur item queue', error);
+                        AppConfig.debug(`OfflineSync: Erreur item ${item.id}`, error);
+                        failCount++;
 
-                        // Incrémenter les tentatives
+                        // Mettre à jour l'item avec les infos d'erreur
                         item.attempts++;
+                        item.lastAttemptAt = Date.now();
+                        item.lastError = error.message || 'Unknown error';
 
-                        if (item.attempts < 3) {
+                        if (item.attempts < SYNC_CONFIG.maxRetries && isRetryableError(error)) {
+                            // Planifier un retry
                             const updateTx = db.transaction(STORES.SYNC_QUEUE, 'readwrite');
                             const updateStore = updateTx.objectStore(STORES.SYNC_QUEUE);
                             updateStore.put(item);
+
+                            // Programmer un retry avec backoff
+                            const retryDelay = calculateRetryDelay(item.attempts);
+                            AppConfig.debug(`OfflineSync: Retry item ${item.id} dans ${Math.round(retryDelay/1000)}s`);
+
+                            const timerId = setTimeout(() => {
+                                retryTimers.delete(item.id);
+                                if (isOnline) {
+                                    debouncedSync();
+                                }
+                            }, retryDelay);
+
+                            retryTimers.set(item.id, timerId);
+
                         } else {
-                            // Supprimer après 3 tentatives
+                            // Trop de tentatives ou erreur non récupérable → supprimer
+                            AppConfig.debug(`OfflineSync: Item ${item.id} abandonné après ${item.attempts} tentatives`);
+
                             const deleteTx = db.transaction(STORES.SYNC_QUEUE, 'readwrite');
                             const deleteStore = deleteTx.objectStore(STORES.SYNC_QUEUE);
                             deleteStore.delete(item.id);
+
+                            // Émettre un événement pour logging/analytics
+                            EventBus.emit('offline:itemFailed', {
+                                id: item.id,
+                                type: item.type,
+                                attempts: item.attempts,
+                                error: item.lastError,
+                            });
                         }
                     }
                 }
 
+                AppConfig.debug(`OfflineSync: Queue traitée - ${successCount} succès, ${failCount} échecs`);
                 resolve();
             };
 
@@ -450,16 +657,101 @@ const OfflineSync = (function() {
         return isOnline;
     }
 
+    /**
+     * Obtenir les statistiques de la queue
+     * @returns {Promise<Object>} Stats
+     */
+    async function getQueueStats() {
+        if (!db) return { pending: 0, byPriority: {}, byType: {} };
+
+        return new Promise((resolve) => {
+            const tx = db.transaction(STORES.SYNC_QUEUE, 'readonly');
+            const store = tx.objectStore(STORES.SYNC_QUEUE);
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const items = request.result;
+                const stats = {
+                    pending: items.length,
+                    byPriority: {},
+                    byType: {},
+                    oldestItem: null,
+                    totalRetries: 0,
+                };
+
+                for (const item of items) {
+                    // Par priorité
+                    const priority = item.priority || 3;
+                    stats.byPriority[priority] = (stats.byPriority[priority] || 0) + 1;
+
+                    // Par type
+                    stats.byType[item.type] = (stats.byType[item.type] || 0) + 1;
+
+                    // Plus ancien
+                    if (!stats.oldestItem || item.createdAt < stats.oldestItem.createdAt) {
+                        stats.oldestItem = {
+                            id: item.id,
+                            type: item.type,
+                            createdAt: item.createdAt,
+                            age: Date.now() - item.createdAt,
+                        };
+                    }
+
+                    // Total retries
+                    stats.totalRetries += item.attempts || 0;
+                }
+
+                resolve(stats);
+            };
+
+            request.onerror = () => resolve({ pending: 0, byPriority: {}, byType: {} });
+        });
+    }
+
+    /**
+     * Forcer une synchronisation immédiate
+     */
+    function forceSync() {
+        if (syncDebounceTimer) {
+            clearTimeout(syncDebounceTimer);
+            syncDebounceTimer = null;
+        }
+        return syncPendingData();
+    }
+
+    /**
+     * Annuler tous les timers de retry
+     */
+    function cancelAllRetries() {
+        for (const timerId of retryTimers.values()) {
+            clearTimeout(timerId);
+        }
+        retryTimers.clear();
+    }
+
     // API publique
     return {
+        // Lifecycle
         init,
+        cleanup,
+
+        // Data storage
         savePosition,
         saveRide,
         getRide,
+
+        // Queue
         addToSyncQueue,
         syncPendingData,
-        cleanup,
+        forceSync,
+        getQueueStats,
+        cancelAllRetries,
+
+        // Status
         isOnline: isNetworkOnline,
+
+        // Constantes
+        PRIORITIES: SYNC_CONFIG.priorities,
     };
 })();
 
