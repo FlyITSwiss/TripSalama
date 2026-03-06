@@ -10,6 +10,7 @@
     let translations = {};
     let currentLang = 'fr';
     let isLoaded = false;
+    let initPromise = null;
 
     /**
      * i18n - Gestion des traductions
@@ -20,27 +21,54 @@
          * @param {string} lang - Langue a charger
          * @returns {Promise<void>}
          */
-        init: async function(lang = null) {
-            currentLang = lang || AppConfig.lang || 'fr';
-
-            try {
-                const url = AppConfig.assetUrl('lang/' + currentLang + '.json');
-                const response = await fetch(url);
-
-                if (!response.ok) {
-                    throw new Error('Fichier de langue non trouve');
-                }
-
-                translations = await response.json();
-                isLoaded = true;
-
-                AppConfig.log('i18n charge:', currentLang, Object.keys(translations).length, 'cles');
-
-            } catch (error) {
-                AppConfig.error('i18n loading error:', error.message);
-                translations = {};
-                isLoaded = true;
+        init: function(lang = null) {
+            // Si deja initialise avec la meme langue, retourner immediatement
+            if (isLoaded && (lang === null || lang === currentLang)) {
+                return Promise.resolve();
             }
+
+            // Si init en cours, retourner la promesse existante
+            if (initPromise && (lang === null || lang === currentLang)) {
+                return initPromise;
+            }
+
+            currentLang = lang || (typeof AppConfig !== 'undefined' ? AppConfig.lang : 'fr') || 'fr';
+
+            initPromise = (async () => {
+                try {
+                    const basePath = (typeof AppConfig !== 'undefined' && AppConfig.basePath) || '';
+                    const url = basePath + '/assets/lang/' + currentLang + '.json';
+                    const response = await fetch(url);
+
+                    if (!response.ok) {
+                        throw new Error('Fichier de langue non trouve: ' + url);
+                    }
+
+                    translations = await response.json();
+                    isLoaded = true;
+
+                    if (typeof AppConfig !== 'undefined') {
+                        AppConfig.log('i18n charge:', currentLang, Object.keys(translations).length, 'cles');
+                    }
+
+                } catch (error) {
+                    console.error('[i18n] loading error:', error.message);
+                    translations = {};
+                    isLoaded = true;
+                }
+            })();
+
+            return initPromise;
+        },
+
+        /**
+         * Attendre que i18n soit pret
+         * @returns {Promise<void>}
+         */
+        ready: function() {
+            if (isLoaded) return Promise.resolve();
+            if (initPromise) return initPromise;
+            return this.init();
         },
 
         /**
@@ -238,7 +266,8 @@
      */
     window.I18n = window.i18n;
 
-    // Auto-initialiser si le DOM est pret
+    // Auto-initialiser si le DOM est pret (non-bloquant)
+    // Les modules doivent appeler await i18n.ready() avant d'utiliser __()
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
             i18n.init();

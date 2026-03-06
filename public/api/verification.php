@@ -28,11 +28,24 @@ try {
                 errorResponse(__('error.generic'), 405);
             }
 
-            requireAuth();
             requireCsrf();
 
             $data = getRequestData();
-            $userId = (int)current_user()['id'];
+
+            // Déterminer l'ID utilisateur (session complète ou pending)
+            $userId = null;
+            $isPendingVerification = false;
+
+            if (isset($_SESSION['pending_verification_user_id'])) {
+                // Utilisateur en attente de vérification (après inscription)
+                $userId = (int)$_SESSION['pending_verification_user_id'];
+                $isPendingVerification = true;
+            } elseif (is_authenticated()) {
+                // Utilisateur déjà connecté
+                $userId = (int)current_user()['id'];
+            } else {
+                errorResponse(__('error.unauthorized'), 401);
+            }
 
             $image = $data['image'] ?? '';
             $confidence = isset($data['ai_confidence']) ? (float)$data['ai_confidence'] : null;
@@ -48,9 +61,25 @@ try {
                 errorResponse($result['message'], 400);
             }
 
+            // Si vérification réussie ET utilisateur en pending, créer la session complète
+            if ($isPendingVerification && $result['status'] === 'verified') {
+                require_once BACKEND_PATH . '/Models/User.php';
+                $userModel = new \TripSalama\Models\User($db);
+                $user = $userModel->findById($userId);
+
+                if ($user) {
+                    // Créer la session complète maintenant
+                    $_SESSION['user'] = $user;
+                    // Nettoyer les données de pending
+                    unset($_SESSION['pending_verification_user_id']);
+                    unset($_SESSION['pending_verification_email']);
+                }
+            }
+
             successResponse([
                 'status' => $result['status'],
                 'verification_id' => $result['verification_id'],
+                'session_created' => $isPendingVerification && $result['status'] === 'verified',
             ], $result['message']);
             break;
 

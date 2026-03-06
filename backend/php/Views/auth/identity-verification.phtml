@@ -61,25 +61,31 @@
         window.onVerificationComplete = function(result) {
             AppConfig.log('Vérification terminée:', result);
 
-            if (result && (result.status === 'verified' || result.status === 'pending' || result.status === 'manual_review')) {
-                // Rediriger vers la page suivante
+            // Rediriger UNIQUEMENT si vérification réussie (session créée côté serveur)
+            if (result && result.status === 'verified') {
+                // La session a été créée côté serveur, rediriger vers dashboard
                 if (typeof navigateTo === 'function') {
                     navigateTo('dashboard');
                 } else {
                     window.location.href = AppConfig.basePath + '/dashboard';
                 }
+            } else if (result && (result.status === 'pending' || result.status === 'manual_review')) {
+                // Vérification en attente - afficher message, pas de redirection
+                console.log('Vérification en attente de validation manuelle');
+                // L'utilisateur reste sur la page - pas de session créée
             }
+            // Pour rejected/error, l'utilisateur peut réessayer via le bouton
         };
 
         // Initialiser le module Identity Camera APRÈS que i18n soit chargé
         document.addEventListener('DOMContentLoaded', async function() {
-            // Attendre que i18n soit initialisé
-            if (typeof i18n !== 'undefined' && !i18n.isReady()) {
-                await i18n.init(AppConfig.lang);
+            // CRITIQUE: Attendre que i18n soit VRAIMENT prêt
+            if (typeof i18n !== 'undefined') {
+                await i18n.ready();
+                console.log('[IdentityVerification] i18n prêt, clés verification:', i18n.has('verification.title'));
+            } else {
+                console.error('[IdentityVerification] i18n non disponible!');
             }
-
-            // Petit délai pour s'assurer que tout est prêt
-            await new Promise(resolve => setTimeout(resolve, 100));
 
             if (typeof IdentityCamera !== 'undefined') {
                 IdentityCamera.init('#identity-camera-container', {

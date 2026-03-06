@@ -231,8 +231,8 @@
             <?= $content ?? '' ?>
         </main>
 
-        <?php if (is_authenticated() && has_role('passenger')): ?>
-        <!-- SOS Button - CRITICAL SAFETY FEATURE -->
+        <?php if (is_authenticated() && has_role('passenger') && !empty($activeRide)): ?>
+        <!-- SOS Button - ONLY visible during active ride (safety feature) -->
         <button type="button" class="sos-fab" id="sosButton" aria-label="<?= __('sos.button') ?>" title="<?= __('sos.title') ?>">
             SOS
         </button>

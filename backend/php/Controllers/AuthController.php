@@ -171,17 +171,33 @@ class AuthController
 
         $this->rateLimitService->clear($rateLimitKey, 'register');
 
-        $loginResult = $this->authService->login($data['email'], $data['password']);
-        if ($loginResult['success']) {
-            $_SESSION['user'] = $loginResult['user'];
-        }
+        // NE PAS créer de session complète - stocker uniquement l'ID pour la vérification
+        // La session complète sera créée APRÈS la vérification d'identité
+        $_SESSION['pending_verification_user_id'] = $result['user_id'];
+        $_SESSION['pending_verification_email'] = $data['email'];
 
         flash('success', __('msg.register_success'));
-        $this->redirectToDashboard();
+
+        // Rediriger vers la vérification d'identité (sans session utilisateur complète)
+        redirect_to('identity-verification');
     }
 
     public function showIdentityVerification(): void
     {
+        // Cas 1: Utilisateur en attente de vérification (après inscription)
+        $pendingUserId = $_SESSION['pending_verification_user_id'] ?? null;
+
+        if ($pendingUserId) {
+            // L'utilisateur vient de s'inscrire, pas encore de session complète
+            $this->render('auth/identity-verification', [
+                'pageTitle' => __('verification.title'),
+                'user' => ['id' => $pendingUserId],
+                'pending_verification' => true,
+            ]);
+            return;
+        }
+
+        // Cas 2: Utilisateur déjà connecté qui doit re-vérifier
         if (!is_authenticated()) {
             redirect_to('login');
             return;
