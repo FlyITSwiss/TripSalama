@@ -157,6 +157,7 @@ jobs:
           fi
 
       - name: Setup MySQL user and database
+        continue-on-error: true
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
