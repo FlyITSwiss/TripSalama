@@ -235,6 +235,72 @@
 
         .hidden { display: none !important; }
 
+        /* Remember Me & Forgot Password */
+        .login-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: var(--space-3);
+            margin-bottom: var(--space-2);
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            cursor: pointer;
+            font-size: var(--text-sm);
+            color: var(--uber-gray-600);
+        }
+
+        .remember-me input[type="checkbox"] {
+            display: none;
+        }
+
+        .remember-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--uber-gray-300);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .remember-me input[type="checkbox"]:checked + .remember-checkbox {
+            background: var(--uber-green);
+            border-color: var(--uber-green);
+        }
+
+        .remember-me input[type="checkbox"]:checked + .remember-checkbox::after {
+            content: '';
+            width: 6px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            margin-bottom: 2px;
+        }
+
+        .remember-text {
+            user-select: none;
+        }
+
+        .forgot-password {
+            font-size: var(--text-sm);
+            color: var(--uber-green);
+            text-decoration: none;
+            font-weight: var(--font-medium);
+            transition: color 0.2s;
+        }
+
+        .forgot-password:hover {
+            color: var(--uber-black);
+            text-decoration: underline;
+        }
+
         @media (min-width: 480px) {
             .login-page {
                 justify-content: center;
@@ -326,6 +392,15 @@
                             </svg>
                         </button>
                     </div>
+                </div>
+
+                <div class="login-options">
+                    <label class="remember-me">
+                        <input type="checkbox" name="remember_me" id="remember_me" checked>
+                        <span class="remember-checkbox"></span>
+                        <span class="remember-text"><?= __('auth.remember_me') ?></span>
+                    </label>
+                    <a href="<?= base_url('forgot-password') ?>" class="forgot-password"><?= __('auth.forgot_password') ?></a>
                 </div>
 
                 <button type="submit" class="login-btn">
