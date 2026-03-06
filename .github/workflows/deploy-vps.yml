@@ -283,20 +283,10 @@ jobs:
                 echo "✅ Added include to $NGINX_CONFIG"
               fi
             else
-              # Create standalone server config for TripSalama
-              echo "⚠️ Main nginx config not found, creating standalone config..."
-              sudo tee /etc/nginx/sites-available/tripsalama > /dev/null << 'NGINX_STANDALONE'
-server {
-    listen 80;
-    listen [::]:80;
-    server_name stabilis-it.ch;
-
-    # TripSalama Application
-    include /etc/nginx/snippets/tripsalama.conf;
-}
-NGINX_STANDALONE
-              sudo ln -sf /etc/nginx/sites-available/tripsalama /etc/nginx/sites-enabled/tripsalama 2>/dev/null || true
-              echo "✅ Created standalone TripSalama config"
+              # Main nginx config not found - this should not happen on production
+              echo "❌ Main nginx config not found at $NGINX_CONFIG"
+              echo "Please ensure Helios nginx config exists with TripSalama include"
+              exit 1
             fi
 
             # Test nginx syntax and reload
