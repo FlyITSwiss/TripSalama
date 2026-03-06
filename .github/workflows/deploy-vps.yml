@@ -204,17 +204,19 @@ jobs:
         run: |
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
             # Create .env for production with secrets from GitHub
-            cat > ${{ env.REMOTE_PATH }}/.env << EOF
-APP_ENV=production
-APP_DEBUG=false
-BASE_PATH=/internal/tripsalama
+            cat > ${{ env.REMOTE_PATH }}/.env << 'ENVEOF'
+          APP_ENV=production
+          APP_DEBUG=false
+          BASE_PATH=/internal/tripsalama
+          DB_HOST=localhost
+          DB_PORT=3306
+          DB_DATABASE=tripsalama
+          DB_USERNAME=tripsalama
+          DB_PASSWORD=${DB_PASSWORD}
+          ENVEOF
 
-DB_HOST=localhost
-DB_PORT=3306
-DB_DATABASE=tripsalama
-DB_USERNAME=tripsalama
-DB_PASSWORD=${DB_PASSWORD}
-EOF
+            # Fix indentation in .env
+            sed -i 's/^          //' ${{ env.REMOTE_PATH }}/.env
 
             # Create .production marker
             touch ${{ env.REMOTE_PATH }}/.production

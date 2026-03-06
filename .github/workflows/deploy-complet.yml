@@ -159,17 +159,17 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
-            cat > ${{ env.REMOTE_PATH }}/.env << EOF
-APP_ENV=production
-APP_DEBUG=false
-BASE_PATH=/internal/tripsalama
-
-DB_HOST=localhost
-DB_PORT=3306
-DB_DATABASE=tripsalama
-DB_USERNAME=tripsalama
-DB_PASSWORD=${DB_PASSWORD}
-EOF
+            cat > ${{ env.REMOTE_PATH }}/.env << 'ENVEOF'
+          APP_ENV=production
+          APP_DEBUG=false
+          BASE_PATH=/internal/tripsalama
+          DB_HOST=localhost
+          DB_PORT=3306
+          DB_DATABASE=tripsalama
+          DB_USERNAME=tripsalama
+          DB_PASSWORD=${DB_PASSWORD}
+          ENVEOF
+            sed -i 's/^          //' ${{ env.REMOTE_PATH }}/.env
             touch ${{ env.REMOTE_PATH }}/.production
           "
 
