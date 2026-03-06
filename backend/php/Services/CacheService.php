@@ -157,7 +157,8 @@ class CacheService
 
         switch ($this->driver) {
             case 'redis':
-                return $this->redis->del($prefixedKey) > 0;
+                $result = $this->redis->del($prefixedKey);
+                return is_int($result) && $result > 0;
 
             case 'apcu':
                 return apcu_delete($prefixedKey);
@@ -179,7 +180,8 @@ class CacheService
 
         switch ($this->driver) {
             case 'redis':
-                return $this->redis->exists($prefixedKey) > 0;
+                $result = $this->redis->exists($prefixedKey);
+                return is_int($result) && $result > 0;
 
             case 'apcu':
                 return apcu_exists($prefixedKey);
