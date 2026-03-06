@@ -325,6 +325,79 @@ TripSalama/
 >
 > Les anciens tests Puppeteer dans `tests/puppeteer/` sont **ARCHIVÉS et ne doivent plus être utilisés.**
 
+---
+
+## 🚨 TESTS EXHAUSTIFS - 54 TESTS OBLIGATOIRES AVANT DEPLOY
+
+> **RÈGLE INSTITUTIONNALISÉE (Mars 2026) :** AUCUNE feature ne peut être déployée sans que les 54 tests exhaustifs passent.
+
+### Fichier de tests principal
+
+```
+tests/playwright/exhaustive-feature-tests.spec.js
+```
+
+### Les 10 sections OBLIGATOIRES (54 tests)
+
+| Section | Tests | Description |
+|---------|-------|-------------|
+| **1. AUTHENTIFICATION** | 7 | Login, register, forgot password, remember me, logout |
+| **2. ESPACE PASSAGÈRE** | 10 | Dashboard, booking, addresses, history, tracking, profile |
+| **3. ESPACE CONDUCTRICE** | 7 | Dashboard, statut, navigation, courses, gains |
+| **4. ESPACE ADMIN** | 6 | Users, vehicles, countries, stats, settings |
+| **5. DESIGN SYSTEM** | 5 | Dark mode, Fibonacci spacing, palette, typographie |
+| **6. RESPONSIVE** | 4 | Mobile 375px, Desktop 1920px, pas de scroll horizontal |
+| **7. ACCESSIBILITÉ** | 4 | Contraste, clavier, focus visible, aria-labels |
+| **8. SÉCURITÉ** | 5 | CSRF, XSS, injection, session, HTTPS |
+| **9. i18n** | 3 | Français par défaut, switch EN, accents corrects |
+| **10. PERFORMANCE** | 3 | Temps chargement < 5s, CSS/JS sans erreur |
+| **TOTAL** | **54 tests** | |
+
+### Commandes de test OBLIGATOIRES
+
+```bash
+# Tests exhaustifs LOCAUX (AVANT chaque push)
+npx playwright test tests/playwright/exhaustive-feature-tests.spec.js --headed
+
+# Tests exhaustifs PROD (APRÈS chaque deploy)
+TEST_URL=https://stabilis-it.ch/internal/tripsalama npx playwright test tests/playwright/exhaustive-feature-tests.spec.js --headed
+```
+
+### Checklist BLOQUANTE avant push sur main
+
+| # | Vérification | Commande | OBLIGATOIRE |
+|---|--------------|----------|-------------|
+| 1 | **54 tests exhaustifs passent** | `npx playwright test exhaustive-feature-tests.spec.js` | ✅ |
+| 2 | **Smoke tests passent** | `npx playwright test smoke-tests.spec.js` | ✅ |
+| 3 | **Pre-commit hook OK** | Automatique au commit | ✅ |
+| 4 | **Aucun test skipé/commenté** | Grep `test.skip`, `xtest`, `xit` | ✅ |
+
+### INTERDICTIONS ABSOLUES
+
+| ❌ STRICTEMENT INTERDIT | Sanction |
+|-------------------------|----------|
+| Pusher sans avoir lancé les 54 tests | **REVOKE immédiat** |
+| Commenter/skipper un test pour bypasser | **REVOKE immédiat** |
+| Modifier un test pour qu'il passe artificiellement | **REVOKE immédiat** |
+| Dire "je n'ai pas le temps de tester" | **NON ACCEPTABLE** |
+| Deploy en PROD avec tests en échec | **ROLLBACK obligatoire** |
+
+### Pour chaque NOUVELLE FEATURE
+
+1. **AVANT de coder :** Vérifier que les 54 tests passent (baseline)
+2. **PENDANT le dev :** Ajouter des tests pour la nouvelle feature
+3. **AVANT de pusher :** Relancer les 54+ tests
+4. **APRÈS deploy :** Relancer en PROD avec `TEST_URL=...`
+
+### Screenshots de validation
+
+Tous les tests génèrent des screenshots dans :
+```
+tests/playwright/screenshots/exhaustive/
+```
+
+Ces screenshots servent de **preuve de validation** et doivent être analysés en cas d'échec.
+
 ### Configuration Playwright
 
 ```typescript
