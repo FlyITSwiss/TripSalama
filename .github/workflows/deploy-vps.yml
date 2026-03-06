@@ -107,6 +107,9 @@ jobs:
             sudo mkdir -p ${{ env.REMOTE_PATH }}/public/uploads/avatars
             sudo mkdir -p ${{ env.REMOTE_PATH }}/public/uploads/documents
             sudo mkdir -p ${{ env.REMOTE_PATH }}/public/uploads/identity
+            sudo mkdir -p ${{ env.REMOTE_PATH }}/scripts
+            sudo mkdir -p ${{ env.REMOTE_PATH }}/database
+            # CRITICAL: Set ownership to debian for rsync to work
             sudo chown -R debian:debian ${{ env.REMOTE_PATH }}
           "
 
