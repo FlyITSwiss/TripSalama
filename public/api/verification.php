@@ -80,6 +80,7 @@ try {
                 'status' => $result['status'],
                 'verification_id' => $result['verification_id'],
                 'session_created' => $isPendingVerification && $result['status'] === 'verified',
+                'analysis' => $result['analysis'] ?? null,
             ], $result['message']);
             break;
 
