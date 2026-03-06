@@ -189,12 +189,54 @@ jobs:
             "${{ env.VPS_USER }}@${{ env.VPS_HOST }}:/tmp/tripsalama.conf"
 
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} 'bash -s' << 'ENDSSH'
+            set -e
+
+            # Deploy snippet
             sudo mkdir -p /etc/nginx/snippets
             sudo cp /tmp/tripsalama.conf /etc/nginx/snippets/tripsalama.conf
             sudo chown root:root /etc/nginx/snippets/tripsalama.conf
             sudo chmod 644 /etc/nginx/snippets/tripsalama.conf
+            echo "✅ Deployed /etc/nginx/snippets/tripsalama.conf"
+
+            # Check and add include to main nginx config if missing
+            NGINX_CONFIG="/etc/nginx/sites-enabled/helios"
+            INCLUDE_LINE="include /etc/nginx/snippets/tripsalama.conf;"
+
+            if [ -f "$NGINX_CONFIG" ]; then
+              if grep -q "include /etc/nginx/snippets/tripsalama.conf" "$NGINX_CONFIG"; then
+                echo "✅ Main nginx config already includes TripSalama snippet"
+              else
+                echo "⚠️ Adding TripSalama include to main nginx config..."
+                sudo cp "$NGINX_CONFIG" "$NGINX_CONFIG.backup"
+                # Add include before the last closing brace
+                sudo sed -i '/^}$/i\    # TripSalama Application\n    '"$INCLUDE_LINE"'' "$NGINX_CONFIG"
+                echo "✅ Added include to $NGINX_CONFIG"
+              fi
+            else
+              # Create standalone config
+              echo "⚠️ Main nginx config not found, creating standalone..."
+              sudo tee /etc/nginx/sites-available/tripsalama > /dev/null << 'NGINX_STANDALONE'
+server {
+    listen 80;
+    server_name stabilis-it.ch;
+    include /etc/nginx/snippets/tripsalama.conf;
+}
+NGINX_STANDALONE
+              sudo ln -sf /etc/nginx/sites-available/tripsalama /etc/nginx/sites-enabled/tripsalama 2>/dev/null || true
+            fi
+
+            # Test and reload nginx
             if sudo nginx -t 2>&1; then
+              echo "✅ Nginx syntax OK - reloading..."
               sudo systemctl reload nginx
+              echo "✅ Nginx reloaded"
+            else
+              echo "❌ Nginx error - restoring backup..."
+              if [ -f "$NGINX_CONFIG.backup" ]; then
+                sudo cp "$NGINX_CONFIG.backup" "$NGINX_CONFIG"
+                sudo systemctl reload nginx
+              fi
+              exit 1
             fi
           ENDSSH
 
