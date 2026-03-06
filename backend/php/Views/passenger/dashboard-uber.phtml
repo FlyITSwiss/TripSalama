@@ -463,7 +463,8 @@
     </section>
 </div>
 
-<!-- SOS Button - CRITICAL SAFETY FEATURE -->
+<?php if (!empty($activeRide)): ?>
+<!-- SOS Button - Only visible during active ride -->
 <button type="button" class="sos-fab" id="sosButton" aria-label="<?= __('sos.button') ?>" title="<?= __('sos.title') ?>">
     SOS
 </button>
@@ -592,3 +593,4 @@
     });
 })();
 </script>
+<?php endif; ?>

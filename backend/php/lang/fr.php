@@ -407,6 +407,7 @@ return [
     // Vérification d'identité
     'verification' => [
         'title' => 'Vérification d\'identité',
+        'step_label' => 'Étape 2/3',
         'subtitle' => 'Pour votre sécurité, nous vérifions que vous êtes bien une femme',
         'camera_permission' => 'Autoriser l\'accès à la caméra',
         'camera_denied' => 'Accès à la caméra refusé',

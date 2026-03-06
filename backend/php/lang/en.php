@@ -402,6 +402,7 @@ return [
     // Identity verification
     'verification' => [
         'title' => 'Identity Verification',
+        'step_label' => 'Step 2/3',
         'subtitle' => 'For your safety, we verify that you are a woman',
         'camera_permission' => 'Allow camera access',
         'camera_denied' => 'Camera access denied',
