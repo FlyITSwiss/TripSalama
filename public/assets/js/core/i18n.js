@@ -37,7 +37,9 @@
             initPromise = (async () => {
                 try {
                     const basePath = (typeof AppConfig !== 'undefined' && AppConfig.basePath) || '';
-                    const url = basePath + '/assets/lang/' + currentLang + '.json';
+                    // Add cache bust to avoid stale translations
+                    const cacheBust = Date.now();
+                    const url = basePath + '/assets/lang/' + currentLang + '.json?v=' + cacheBust;
                     const response = await fetch(url);
 
                     if (!response.ok) {
