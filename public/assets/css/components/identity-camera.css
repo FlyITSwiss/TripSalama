@@ -154,30 +154,59 @@
    STEP 1: INTRODUCTION
    ========================================== */
 
+/* ==========================================
+   INTRO SECTION - PREMIUM DESIGN
+   ========================================== */
+
 .identity-intro {
     background: linear-gradient(180deg, #FFFFFF 0%, #FAFAFA 100%);
-    border-radius: 24px;
-    padding: 32px 24px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+    border-radius: 28px;
+    padding: 36px 28px 32px;
+    box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.04),
+        0 4px 16px rgba(0, 0, 0, 0.06),
+        0 12px 40px rgba(0, 0, 0, 0.04);
     border: 1px solid rgba(0, 0, 0, 0.04);
+    position: relative;
+    overflow: hidden;
+}
+
+.identity-intro::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #06C167 0%, #04D370 50%, #06C167 100%);
+    background-size: 200% 100%;
+    animation: gradientShift 3s ease infinite;
+}
+
+@keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
 }
 
 .identity-header {
     text-align: center;
-    margin-bottom: var(--space-5);
+    margin-bottom: 28px;
 }
 
 .identity-icon {
-    width: 88px;
-    height: 88px;
-    margin: 0 auto 24px;
-    background: linear-gradient(145deg, #06C167 0%, #049F54 50%, #038847 100%);
-    border-radius: 22px;
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 28px;
+    background: linear-gradient(145deg, #06C167 0%, #04A857 50%, #038847 100%);
+    border-radius: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #FFFFFF;
-    box-shadow: 0 8px 32px rgba(6, 193, 103, 0.35), 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow:
+        0 8px 32px rgba(6, 193, 103, 0.4),
+        0 4px 12px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
     position: relative;
     overflow: hidden;
 }
@@ -189,179 +218,256 @@
     left: 0;
     right: 0;
     height: 50%;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%);
-    border-radius: 22px 22px 0 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 100%);
+    border-radius: 28px 28px 0 0;
+}
+
+.identity-icon::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent 40%,
+        rgba(255, 255, 255, 0.15) 50%,
+        transparent 60%
+    );
+    animation: iconShine 3s ease-in-out infinite;
+}
+
+@keyframes iconShine {
+    0%, 100% { transform: translateX(-100%) rotate(45deg); }
+    50% { transform: translateX(100%) rotate(45deg); }
 }
 
 .identity-icon.pulse-animation {
-    animation: iconPulse 2s ease-in-out infinite;
+    animation: iconPulse 2.5s ease-in-out infinite;
 }
 
 @keyframes iconPulse {
     0%, 100% {
         transform: scale(1);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+        box-shadow:
+            0 8px 32px rgba(6, 193, 103, 0.4),
+            0 4px 12px rgba(0, 0, 0, 0.1);
     }
     50% {
         transform: scale(1.05);
-        box-shadow: 0 16px 50px rgba(0, 0, 0, 0.35);
+        box-shadow:
+            0 12px 48px rgba(6, 193, 103, 0.5),
+            0 6px 20px rgba(0, 0, 0, 0.12);
     }
 }
 
 .identity-icon svg {
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
+    position: relative;
+    z-index: 1;
 }
 
 .identity-title {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 26px;
-    font-weight: 700;
+    font-size: 28px;
+    font-weight: 800;
     color: #000000;
-    margin-bottom: 8px;
-    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
 }
 
 .identity-subtitle {
     font-size: 15px;
-    color: #6B6B6B;
-    margin: 0;
-    line-height: 1.6;
-    max-width: 320px;
+    color: #6B7280;
+    margin: 0 auto;
+    line-height: 1.65;
+    max-width: 300px;
 }
 
-/* Glass Card */
-.glass-card {
-    background: #FFFFFF;
-    border: 1px solid #F0F0F0;
-}
+/* ==========================================
+   TIPS CARD - PREMIUM DESIGN
+   ========================================== */
 
-.identity-card {
-    border-radius: 16px;
-    padding: 20px;
+.identity-intro .identity-card,
+.identity-intro .glass-card:not(.identity-privacy) {
+    background: linear-gradient(135deg, #FAFAFA 0%, #FFFFFF 100%);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 20px;
+    padding: 24px;
     margin-bottom: 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease;
 }
 
-.tips-title {
+.identity-intro .identity-card:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.identity-intro .tips-title {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 16px;
+    font-weight: 700;
     color: #000000;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
+    letter-spacing: -0.01em;
 }
 
-.tips-title svg {
-    width: 20px;
-    height: 20px;
+.identity-intro .tips-title svg {
+    width: 22px;
+    height: 22px;
     color: #06C167;
+    flex-shrink: 0;
 }
 
-.tips-list {
+.identity-intro .tips-list {
     list-style: none;
     padding: 0;
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
 }
 
-.tip-item {
+.identity-intro .tip-item {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
+    gap: 14px;
     font-size: 14px;
     color: #333333;
-    line-height: 1.5;
+    line-height: 1.55;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    transition: all 0.25s ease;
 }
 
-.tip-icon {
-    width: 22px;
-    height: 22px;
-    min-width: 22px;
-    border-radius: 50%;
+.identity-intro .tip-item:hover {
+    background: #FFFFFF;
+    border-color: rgba(6, 193, 103, 0.15);
+    transform: translateX(4px);
+}
+
+.identity-intro .tip-icon {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    margin-top: 1px;
-}
-
-.tip-icon svg {
-    width: 12px;
-    height: 12px;
-}
-
-.tip-icon.success {
-    background: linear-gradient(135deg, rgba(6, 193, 103, 0.12) 0%, rgba(6, 193, 103, 0.08) 100%);
-    color: #06C167;
-}
-
-.tip-icon.warning {
-    background: linear-gradient(135deg, rgba(225, 25, 0, 0.12) 0%, rgba(225, 25, 0, 0.08) 100%);
-    color: #E11900;
-}
-
-/* Privacy notice */
-.identity-privacy {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    padding: 16px 18px;
-    border-radius: 14px;
-    margin-bottom: 20px;
-    background: linear-gradient(135deg, #F8F8F8 0%, #F3F3F3 100%);
-    border: 1px solid #EBEBEB;
-}
-
-.identity-privacy svg {
-    flex-shrink: 0;
-    width: 20px;
-    height: 20px;
-    color: #000000;
-    margin-top: 2px;
-}
-
-.privacy-text {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.privacy-text strong {
     font-size: 14px;
     font-weight: 600;
-    color: #000000;
+    transition: all 0.25s ease;
+}
+
+.identity-intro .tip-icon.success {
+    background: linear-gradient(135deg, #06C167 0%, #04A857 100%);
+    color: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(6, 193, 103, 0.3);
+}
+
+.identity-intro .tip-item:hover .tip-icon.success {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(6, 193, 103, 0.4);
+}
+
+.identity-intro .tip-icon.warning {
+    background: linear-gradient(135deg, #FF6B6B 0%, #E11900 100%);
+    color: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(225, 25, 0, 0.25);
+}
+
+/* ==========================================
+   PRIVACY NOTICE - PREMIUM DESIGN
+   ========================================== */
+
+.identity-intro .identity-privacy,
+.identity-intro .identity-privacy.glass-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    background: linear-gradient(145deg, #F0FDF4 0%, #DCFCE7 100%);
+    border: 1px solid rgba(6, 193, 103, 0.15);
+    box-shadow: 0 2px 8px rgba(6, 193, 103, 0.08);
+    transition: all 0.3s ease;
+}
+
+.identity-intro .identity-privacy:hover {
+    box-shadow: 0 4px 16px rgba(6, 193, 103, 0.15);
+    border-color: rgba(6, 193, 103, 0.25);
+}
+
+.identity-intro .identity-privacy > svg {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    background: linear-gradient(135deg, #06C167 0%, #04A857 100%);
+    color: #FFFFFF;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(6, 193, 103, 0.3);
+}
+
+.identity-intro .privacy-text {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.identity-intro .privacy-text strong {
+    font-size: 15px;
+    font-weight: 700;
+    color: #166534;
     letter-spacing: -0.01em;
 }
 
-.privacy-text span {
+.identity-intro .privacy-text span {
     font-size: 13px;
-    color: #6B6B6B;
-    line-height: 1.55;
+    color: #15803D;
+    line-height: 1.6;
+    opacity: 0.9;
 }
 
-/* Consent checkbox - Custom (FIXED) */
+/* ==========================================
+   CONSENT CHECKBOX - PREMIUM DESIGN
+   ========================================== */
+
 .identity-consent {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: 16px;
+    margin-bottom: 24px;
     cursor: pointer;
     user-select: none;
-    padding: 16px;
-    border-radius: 12px;
-    transition: all 0.2s ease;
-    background: linear-gradient(135deg, rgba(6, 193, 103, 0.03) 0%, rgba(6, 193, 103, 0.08) 100%);
-    border: 1px solid rgba(6, 193, 103, 0.15);
+    padding: 20px;
+    border-radius: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #FFFFFF;
+    border: 2px solid #E8E8E8;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .identity-consent:hover {
-    background: linear-gradient(135deg, rgba(6, 193, 103, 0.06) 0%, rgba(6, 193, 103, 0.12) 100%);
-    border-color: rgba(6, 193, 103, 0.25);
-    transform: translateY(-1px);
+    border-color: #06C167;
+    box-shadow: 0 4px 16px rgba(6, 193, 103, 0.12);
+    transform: translateY(-2px);
+}
+
+.identity-consent.checked {
+    background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+    border-color: #06C167;
 }
 
 .identity-consent input[type="checkbox"] {
@@ -372,50 +478,65 @@
 }
 
 .identity-consent .checkbox-custom {
-    width: 22px;
-    height: 22px;
-    min-width: 22px;
-    border: 2px solid #CBCBCB !important;
-    border-radius: 6px;
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    border: 2px solid #D1D5DB !important;
+    border-radius: 8px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     background: #FFFFFF;
-    margin-top: 2px;
+    margin-top: 0;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .identity-consent:hover .checkbox-custom {
     border-color: #06C167 !important;
+    box-shadow: 0 0 0 4px rgba(6, 193, 103, 0.1);
 }
 
 .identity-consent input:checked + .checkbox-custom {
-    background: #06C167 !important;
+    background: linear-gradient(135deg, #06C167 0%, #04A857 100%) !important;
     border-color: #06C167 !important;
-    transform: scale(1.05);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(6, 193, 103, 0.35);
 }
 
 .identity-consent input:checked + .checkbox-custom::after {
     content: '';
-    width: 5px;
-    height: 10px;
-    border: 2px solid white;
+    width: 6px;
+    height: 12px;
+    border: 2.5px solid white;
     border-top: none;
     border-left: none;
     transform: rotate(45deg);
-    margin-bottom: 2px;
+    margin-bottom: 3px;
+    animation: checkmark 0.25s ease-out;
+}
+
+@keyframes checkmark {
+    from {
+        transform: rotate(45deg) scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: rotate(45deg) scale(1);
+        opacity: 1;
+    }
 }
 
 .identity-consent input:focus + .checkbox-custom {
-    box-shadow: 0 0 0 3px rgba(6, 193, 103, 0.2);
+    box-shadow: 0 0 0 4px rgba(6, 193, 103, 0.25);
 }
 
 .consent-text {
     flex: 1;
     font-size: 14px;
-    color: #2A2A2A;
-    line-height: 1.55;
+    color: #1F2937;
+    line-height: 1.6;
     font-weight: 500;
 }
 
@@ -423,25 +544,31 @@
     color: #06C167;
     text-decoration: none;
     font-weight: 600;
-    transition: color 0.2s ease;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid transparent;
 }
 
 .consent-text a:hover {
-    color: #049F54;
-    text-decoration: underline;
+    color: #04A857;
+    border-bottom-color: #04A857;
 }
 
 /* ==========================================
    BUTTONS - UBER STYLE
    ========================================== */
 
+/* ==========================================
+   BUTTONS - PREMIUM UBER STYLE
+   ========================================== */
+
 /* Base button styles for identity camera */
-.identity-camera-container .btn {
+.identity-camera-container .btn,
+.identity-intro .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    padding: 16px 28px;
+    gap: 12px;
+    padding: 18px 32px;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 16px;
     font-weight: 600;
@@ -450,46 +577,83 @@
     border: none;
     border-radius: 14px;
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     -webkit-tap-highlight-color: transparent;
+    position: relative;
+    overflow: hidden;
 }
 
 /* Primary Button - Black (Uber style) */
-.identity-camera-container .btn-primary {
-    background: #000000;
+.identity-camera-container .btn-primary,
+.identity-intro .btn-primary {
+    background: linear-gradient(180deg, #1A1A1A 0%, #000000 100%);
     color: #FFFFFF;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.identity-camera-container .btn-primary:hover:not(:disabled) {
-    background: #1A1A1A;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+.identity-camera-container .btn-primary::before,
+.identity-intro .btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
 }
 
-.identity-camera-container .btn-primary:active:not(:disabled) {
+.identity-camera-container .btn-primary:hover:not(:disabled),
+.identity-intro .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(180deg, #2A2A2A 0%, #1A1A1A 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.identity-camera-container .btn-primary:active:not(:disabled),
+.identity-intro .btn-primary:active:not(:disabled) {
     transform: scale(0.98) translateY(0);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.identity-camera-container .btn-primary:disabled {
-    background: #E8E8E8;
-    color: #9E9E9E;
+.identity-camera-container .btn-primary:disabled,
+.identity-intro .btn-primary:disabled {
+    background: linear-gradient(180deg, #E5E5E5 0%, #D4D4D4 100%);
+    color: #9CA3AF;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
 }
 
+.identity-camera-container .btn-primary:disabled::before,
+.identity-intro .btn-primary:disabled::before {
+    display: none;
+}
+
 /* Large button */
-.identity-camera-container .btn-lg {
-    padding: 18px 32px;
+.identity-camera-container .btn-lg,
+.identity-intro .btn-lg {
+    padding: 20px 36px;
     font-size: 17px;
     border-radius: 16px;
+    letter-spacing: -0.01em;
 }
 
 /* Block button (full width) */
-.identity-camera-container .btn-block {
+.identity-camera-container .btn-block,
+.identity-intro .btn-block {
     width: 100%;
+}
+
+/* Button icon animation */
+.identity-camera-container .btn svg,
+.identity-intro .btn svg {
+    transition: transform 0.3s ease;
+}
+
+.identity-camera-container .btn:hover:not(:disabled) svg,
+.identity-intro .btn:hover:not(:disabled) svg {
+    transform: translateX(4px);
 }
 
 /* Continue button specific */
