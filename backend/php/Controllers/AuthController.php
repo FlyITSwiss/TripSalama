@@ -49,7 +49,8 @@ class AuthController
             $this->redirectToDashboard();
             return;
         }
-        $this->render('auth/register-passenger', ['pageTitle' => __('auth.register_passenger')]);
+        // Rediriger vers le nouveau flux women-only
+        $this->showRegisterWomenOnly('passenger');
     }
 
     public function showRegisterDriver(): void
@@ -58,7 +59,44 @@ class AuthController
             $this->redirectToDashboard();
             return;
         }
-        $this->render('auth/register-driver', ['pageTitle' => __('auth.register_driver')]);
+        // Rediriger vers le nouveau flux women-only
+        $this->showRegisterWomenOnly('driver');
+    }
+
+    /**
+     * Nouveau flux d'inscription réservé aux femmes
+     * Étape 1: Vérification du genre (IA)
+     * Étape 2: Scan de la carte d'identité (OCR)
+     * Étape 3: Formulaire pré-rempli
+     */
+    public function showRegisterWomenOnly(string $role = 'passenger'): void
+    {
+        if (is_authenticated()) {
+            $this->redirectToDashboard();
+            return;
+        }
+
+        // Vérifier le statut de vérification en session
+        $genderVerified = $_SESSION['registration_gender_verified'] ?? false;
+        $idVerified = $_SESSION['registration_id_verified'] ?? false;
+        $prefillData = $_SESSION['registration_id_data'] ?? [];
+
+        // Déterminer l'étape actuelle
+        $currentStep = 1;
+        if ($genderVerified && !$idVerified) {
+            $currentStep = 2;
+        } elseif ($genderVerified && $idVerified) {
+            $currentStep = 3;
+        }
+
+        $this->render('auth/register-women-only', [
+            'pageTitle' => __('auth.register'),
+            'role' => $role,
+            'currentStep' => $currentStep,
+            'genderVerified' => $genderVerified,
+            'idVerified' => $idVerified,
+            'prefillData' => $prefillData
+        ]);
     }
 
     public function processLogin(): void
@@ -129,6 +167,17 @@ class AuthController
             redirect_to('register/' . $role);
         }
 
+        // Vérifier si l'utilisateur a passé par le flux de vérification (women-only)
+        $verifiedRegistration = isset($_POST['verified_registration']) && $_POST['verified_registration'] === '1';
+        $genderVerified = $_SESSION['registration_gender_verified'] ?? false;
+        $idVerified = $_SESSION['registration_id_verified'] ?? false;
+
+        // Si le formulaire vient du flux vérifié mais les sessions ne sont pas valides, rejeter
+        if ($verifiedRegistration && (!$genderVerified || !$idVerified)) {
+            flash('error', __('verification.verification_failed'));
+            redirect_to('register/' . $role);
+        }
+
         $email = trim($_POST['email'] ?? '');
 
         // Rate Limiting
@@ -171,8 +220,26 @@ class AuthController
 
         $this->rateLimitService->clear($rateLimitKey, 'register');
 
-        // NE PAS créer de session complète - stocker uniquement l'ID pour la vérification
-        // La session complète sera créée APRÈS la vérification d'identité
+        // Si l'utilisateur a passé par le flux de vérification women-only, créer directement la session
+        if ($verifiedRegistration && $genderVerified && $idVerified) {
+            // Nettoyer les données de vérification
+            unset($_SESSION['registration_gender_verified']);
+            unset($_SESSION['registration_gender_result']);
+            unset($_SESSION['registration_id_verified']);
+            unset($_SESSION['registration_id_data']);
+            unset($_SESSION['registration_id_result']);
+
+            // Créer la session complète directement (déjà vérifiée)
+            $loginResult = $this->authService->login($email, $data['password']);
+            if ($loginResult['success']) {
+                $_SESSION['user'] = $loginResult['user'];
+                flash('success', __('msg.register_success'));
+                $this->redirectToDashboard();
+                return;
+            }
+        }
+
+        // Flux classique: stocker l'ID pour la vérification
         $_SESSION['pending_verification_user_id'] = $result['user_id'];
         $_SESSION['pending_verification_email'] = $data['email'];
 
