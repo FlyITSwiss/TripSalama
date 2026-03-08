@@ -1,0 +1,410 @@
+<?php
+/**
+ * TripSalama - Inscription femmes uniquement
+ * Flux en 3 étapes: Vérification genre → Scan carte ID → Formulaire
+ */
+
+$pageTitle = $pageTitle ?? __('auth.register');
+$role = $role ?? 'passenger';
+$prefillData = $prefillData ?? [];
+$currentStep = $currentStep ?? 1;
+$genderVerified = $genderVerified ?? false;
+$idVerified = $idVerified ?? false;
+?>
+<!DOCTYPE html>
+<html lang="<?= $_SESSION['lang'] ?? 'fr' ?>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="csrf-token" content="<?= csrf_token() ?>">
+    <title><?= htmlspecialchars($pageTitle) ?> - TripSalama</title>
+
+    <link rel="icon" type="image/svg+xml" href="<?= asset_url('../favicon.svg') ?>">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= asset_url('images/icons/favicon-32x32.png') ?>">
+    <link rel="icon" type="image/png" sizes="16x16" href="<?= asset_url('images/icons/favicon-16x16.png') ?>">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="<?= asset_url('css/uber-design-system.css') ?>">
+    <link rel="stylesheet" href="<?= asset_url('css/tripsalama-core.css') ?>">
+    <link rel="stylesheet" href="<?= asset_url('css/tripsalama-responsive.css') ?>">
+    <link rel="stylesheet" href="<?= asset_url('css/components/identity-camera.css') ?>">
+    <link rel="stylesheet" href="<?= asset_url('css/registration-wizard.css') ?>">
+</head>
+<body class="auth-page registration-wizard-page">
+    <div class="auth-container">
+        <!-- Header avec logo -->
+        <header class="auth-header">
+            <a href="<?= base_url() ?>" class="auth-logo">
+                <img src="<?= asset_url('images/icons/variants/logo-light.svg') ?>" alt="TripSalama" width="140">
+            </a>
+        </header>
+
+        <!-- Barre de progression globale -->
+        <div class="wizard-progress" role="progressbar" aria-valuenow="<?= $currentStep ?>" aria-valuemin="1" aria-valuemax="3">
+            <div class="wizard-progress-track">
+                <div class="wizard-progress-fill" style="width: <?= (($currentStep - 1) / 2) * 100 ?>%"></div>
+            </div>
+            <div class="wizard-steps">
+                <div class="wizard-step <?= $currentStep >= 1 ? 'active' : '' ?> <?= $genderVerified ? 'completed' : '' ?>" data-step="1">
+                    <span class="wizard-step-number">1</span>
+                    <span class="wizard-step-label"><?= __('verification.progress_gender') ?></span>
+                </div>
+                <div class="wizard-step <?= $currentStep >= 2 ? 'active' : '' ?> <?= $idVerified ? 'completed' : '' ?>" data-step="2">
+                    <span class="wizard-step-number">2</span>
+                    <span class="wizard-step-label"><?= __('verification.progress_id') ?></span>
+                </div>
+                <div class="wizard-step <?= $currentStep >= 3 ? 'active' : '' ?>" data-step="3">
+                    <span class="wizard-step-number">3</span>
+                    <span class="wizard-step-label"><?= __('verification.progress_form') ?></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenu principal -->
+        <main class="wizard-content">
+            <!-- Étape 1: Vérification du genre -->
+            <section class="wizard-panel" id="step-gender" data-step="1" <?= $currentStep !== 1 ? 'hidden' : '' ?>>
+                <div class="wizard-panel-header">
+                    <span class="wizard-step-indicator"><?= __('verification.step_1_of_3') ?></span>
+                    <h1 class="wizard-title"><?= __('verification.gender_step_title') ?></h1>
+                    <p class="wizard-subtitle"><?= __('verification.gender_step_subtitle') ?></p>
+                </div>
+
+                <div class="wizard-panel-body">
+                    <!-- Container pour IdentityCamera -->
+                    <div id="gender-camera-container" class="camera-container"></div>
+                </div>
+            </section>
+
+            <!-- Étape 2: Scan carte d'identité -->
+            <section class="wizard-panel" id="step-id" data-step="2" hidden>
+                <div class="wizard-panel-header">
+                    <span class="wizard-step-indicator"><?= __('verification.step_2_of_3') ?></span>
+                    <h1 class="wizard-title"><?= __('verification.id_step_title') ?></h1>
+                    <p class="wizard-subtitle"><?= __('verification.id_step_subtitle') ?></p>
+                </div>
+
+                <div class="wizard-panel-body">
+                    <!-- Container pour le scan de carte -->
+                    <div id="id-scan-container" class="camera-container">
+                        <!-- Interface de scan de carte -->
+                        <div class="id-scan-interface" data-scan-step="intro">
+                            <!-- Intro -->
+                            <div class="id-scan-step" data-content="intro">
+                                <div class="id-scan-icon">
+                                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <rect x="2" y="4" width="20" height="16" rx="2"/>
+                                        <circle cx="8" cy="10" r="2"/>
+                                        <path d="M14 9h4"/>
+                                        <path d="M14 13h4"/>
+                                        <path d="M6 16h12"/>
+                                    </svg>
+                                </div>
+
+                                <div class="id-tips glass-card">
+                                    <h3 class="tips-title">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <path d="M12 16v-4"/>
+                                            <path d="M12 8h.01"/>
+                                        </svg>
+                                        <?= __('verification.id_tips_title') ?>
+                                    </h3>
+                                    <ul class="tips-list">
+                                        <li class="tip-item">
+                                            <span class="tip-icon success">✓</span>
+                                            <span><?= __('verification.id_tip_flat') ?></span>
+                                        </li>
+                                        <li class="tip-item">
+                                            <span class="tip-icon success">✓</span>
+                                            <span><?= __('verification.id_tip_lighting') ?></span>
+                                        </li>
+                                        <li class="tip-item">
+                                            <span class="tip-icon success">✓</span>
+                                            <span><?= __('verification.id_tip_complete') ?></span>
+                                        </li>
+                                        <li class="tip-item">
+                                            <span class="tip-icon success">✓</span>
+                                            <span><?= __('verification.id_tip_focus') ?></span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <button class="btn btn-primary btn-lg btn-block" id="btn-start-id-scan">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                        <circle cx="12" cy="13" r="4"/>
+                                    </svg>
+                                    <span><?= __('verification.scan_id_card') ?></span>
+                                </button>
+                            </div>
+
+                            <!-- Camera view -->
+                            <div class="id-scan-step hidden" data-content="camera">
+                                <div class="id-video-wrapper">
+                                    <video autoplay playsinline muted class="id-video" id="id-video"></video>
+                                    <div class="id-guide">
+                                        <div class="id-guide-frame">
+                                            <span class="corner top-left"></span>
+                                            <span class="corner top-right"></span>
+                                            <span class="corner bottom-left"></span>
+                                            <span class="corner bottom-right"></span>
+                                        </div>
+                                        <p class="id-guide-text"><?= __('verification.id_step_description') ?></p>
+                                    </div>
+                                </div>
+                                <div class="id-camera-actions">
+                                    <button class="id-capture-btn" id="btn-capture-id">
+                                        <span class="capture-ring"></span>
+                                        <span class="capture-dot"></span>
+                                    </button>
+                                    <p class="capture-hint"><?= __('verification.capture_id') ?></p>
+                                </div>
+                            </div>
+
+                            <!-- Preview -->
+                            <div class="id-scan-step hidden" data-content="preview">
+                                <div class="id-preview-container">
+                                    <img src="" alt="ID Preview" class="id-preview-image" id="id-preview-img">
+                                </div>
+                                <div class="id-preview-actions">
+                                    <button class="btn btn-secondary" id="btn-retake-id">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="1 4 1 10 7 10"/>
+                                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                                        </svg>
+                                        <span><?= __('verification.retake') ?></span>
+                                    </button>
+                                    <button class="btn btn-accent" id="btn-submit-id">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M22 2L11 13"/>
+                                            <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
+                                        </svg>
+                                        <span><?= __('verification.submit') ?></span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Analyzing -->
+                            <div class="id-scan-step hidden" data-content="analyzing">
+                                <div class="analyzing-visual">
+                                    <div class="analyzing-spinner"></div>
+                                    <p class="analyzing-text"><?= __('verification.analyzing_id') ?></p>
+                                </div>
+                            </div>
+
+                            <!-- Result -->
+                            <div class="id-scan-step hidden" data-content="result">
+                                <div class="id-result-content">
+                                    <div class="id-result-icon"></div>
+                                    <h2 class="id-result-title"></h2>
+                                    <p class="id-result-message"></p>
+                                    <button class="btn btn-lg btn-block id-result-action"></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Étape 3: Formulaire d'inscription -->
+            <section class="wizard-panel" id="step-form" data-step="3" hidden>
+                <div class="wizard-panel-header">
+                    <span class="wizard-step-indicator"><?= __('verification.step_3_of_3') ?></span>
+                    <h1 class="wizard-title"><?= __('verification.form_step_title') ?></h1>
+                    <p class="wizard-subtitle"><?= __('verification.form_step_subtitle') ?></p>
+                </div>
+
+                <div class="wizard-panel-body">
+                    <?php if (!empty($prefillData)): ?>
+                    <div class="prefill-notice glass-card">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 16v-4"/>
+                            <path d="M12 8h.01"/>
+                        </svg>
+                        <span><?= __('verification.form_prefilled_notice') ?></span>
+                    </div>
+                    <?php endif; ?>
+
+                    <form action="<?= base_url('register/' . $role) ?>" method="POST" class="registration-form" id="registration-form">
+                        <input type="hidden" name="_csrf_token" value="<?= csrf_token() ?>">
+                        <input type="hidden" name="verified_registration" value="1">
+
+                        <!-- Informations personnelles -->
+                        <div class="form-section">
+                            <h3 class="form-section-title"><?= __('profile.personal_info') ?></h3>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="first_name" class="form-label"><?= __('form.first_name') ?> *</label>
+                                    <input type="text" id="first_name" name="first_name" class="form-input"
+                                           value="<?= htmlspecialchars($prefillData['first_name'] ?? '') ?>"
+                                           required autocomplete="given-name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="last_name" class="form-label"><?= __('form.last_name') ?> *</label>
+                                    <input type="text" id="last_name" name="last_name" class="form-input"
+                                           value="<?= htmlspecialchars($prefillData['last_name'] ?? '') ?>"
+                                           required autocomplete="family-name">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="email" class="form-label"><?= __('auth.email') ?> *</label>
+                                <input type="email" id="email" name="email" class="form-input"
+                                       required autocomplete="email">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="phone" class="form-label"><?= __('form.phone') ?></label>
+                                <input type="tel" id="phone" name="phone" class="form-input"
+                                       autocomplete="tel">
+                            </div>
+                        </div>
+
+                        <!-- Mot de passe -->
+                        <div class="form-section">
+                            <h3 class="form-section-title"><?= __('profile.security') ?></h3>
+
+                            <div class="form-group">
+                                <label for="password" class="form-label"><?= __('auth.password') ?> *</label>
+                                <div class="password-input-wrapper">
+                                    <input type="password" id="password" name="password" class="form-input"
+                                           required minlength="8" autocomplete="new-password">
+                                    <button type="button" class="password-toggle" aria-label="<?= __('auth.toggle_password') ?>">
+                                        <svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                        <svg class="eye-closed hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                                            <line x1="1" y1="1" x2="23" y2="23"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="password-requirements">
+                                    <span class="requirement" data-req="length">8+ caractères</span>
+                                    <span class="requirement" data-req="uppercase">Majuscule</span>
+                                    <span class="requirement" data-req="number">Chiffre</span>
+                                    <span class="requirement" data-req="special">Caractère spécial</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="password_confirm" class="form-label"><?= __('auth.password_confirm') ?> *</label>
+                                <input type="password" id="password_confirm" name="password_confirm" class="form-input"
+                                       required autocomplete="new-password">
+                            </div>
+                        </div>
+
+                        <?php if ($role === 'driver'): ?>
+                        <!-- Véhicule (conductrice uniquement) -->
+                        <div class="form-section">
+                            <h3 class="form-section-title"><?= __('vehicle.title') ?></h3>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="vehicle_brand" class="form-label"><?= __('vehicle.brand') ?> *</label>
+                                    <input type="text" id="vehicle_brand" name="vehicle_brand" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="vehicle_model" class="form-label"><?= __('vehicle.model') ?> *</label>
+                                    <input type="text" id="vehicle_model" name="vehicle_model" class="form-input" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="vehicle_color" class="form-label"><?= __('vehicle.color') ?> *</label>
+                                    <input type="text" id="vehicle_color" name="vehicle_color" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="vehicle_year" class="form-label"><?= __('vehicle.year') ?></label>
+                                    <input type="number" id="vehicle_year" name="vehicle_year" class="form-input"
+                                           min="2000" max="<?= date('Y') + 1 ?>">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="vehicle_license_plate" class="form-label"><?= __('vehicle.license_plate') ?> *</label>
+                                <input type="text" id="vehicle_license_plate" name="vehicle_license_plate" class="form-input" required>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
+                        <!-- CGU -->
+                        <div class="form-section">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="accept_terms" required>
+                                <span class="checkbox-custom"></span>
+                                <span class="checkbox-text">
+                                    J'accepte les <a href="<?= base_url('terms') ?>" target="_blank">conditions d'utilisation</a>
+                                    et la <a href="<?= base_url('privacy') ?>" target="_blank">politique de confidentialité</a>
+                                </span>
+                            </label>
+                        </div>
+
+                        <!-- Bouton submit -->
+                        <button type="submit" class="btn btn-accent btn-lg btn-block" id="btn-submit-registration">
+                            <span><?= __('verification.complete_registration') ?></span>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14"/>
+                                <path d="m12 5 7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </form>
+
+                    <p class="auth-switch">
+                        <?= __('auth.have_account') ?>
+                        <a href="<?= base_url('login') ?>"><?= __('auth.login') ?></a>
+                    </p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Rejection Modal (si homme détecté) -->
+        <div class="modal-overlay hidden" id="rejection-modal">
+            <div class="modal-content rejection-modal">
+                <div class="rejection-icon">
+                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="15" y1="9" x2="9" y2="15"/>
+                        <line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                </div>
+                <h2 class="rejection-title"><?= __('verification.men_not_allowed') ?></h2>
+                <p class="rejection-message">
+                    TripSalama est une application de transport exclusivement réservée aux femmes,
+                    tant pour les passagères que pour les conductrices.
+                </p>
+                <a href="<?= base_url() ?>" class="btn btn-secondary btn-lg btn-block">
+                    Retour à l'accueil
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="<?= asset_url('js/core/app-config.js') ?>"></script>
+    <script src="<?= asset_url('js/core/api-service.js') ?>"></script>
+    <script src="<?= asset_url('js/core/i18n.js') ?>"></script>
+    <script src="<?= asset_url('js/modules/identity-camera.js') ?>"></script>
+    <script src="<?= asset_url('js/modules/registration-wizard.js') ?>"></script>
+    <script>
+        // Initialisation du wizard
+        document.addEventListener('DOMContentLoaded', function() {
+            RegistrationWizard.init({
+                role: <?= json_encode($role) ?>,
+                currentStep: <?= json_encode($currentStep) ?>,
+                genderVerified: <?= json_encode($genderVerified) ?>,
+                idVerified: <?= json_encode($idVerified) ?>,
+                prefillData: <?= json_encode($prefillData) ?>
+            });
+        });
+    </script>
+</body>
+</html>

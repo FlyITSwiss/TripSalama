@@ -232,7 +232,11 @@
         "manual_review": "Manual review",
         "no_face_detected": "No face detected. Please try again.",
         "multiple_faces": "Multiple faces detected. Make sure you are alone in the frame.",
-        "detection_failed": "Detection failed. Check lighting and try again."
+        "detection_failed": "Detection failed. Check lighting and try again.",
+        "analyzing_realtime": "Analyzing... Please stay still",
+        "men_not_allowed": "TripSalama is exclusively for women",
+        "gender_step_required": "Please complete the gender verification first",
+        "id_not_female": "This ID does not belong to a woman"
     },
     "country": {
         "title": "Country",

@@ -181,6 +181,166 @@ try {
             successResponse($stats);
             break;
 
+        case 'verify-gender':
+            // Étape 1: Vérifier le genre via photo du visage (AVANT inscription)
+            // Endpoint PUBLIC - pas besoin d'auth car utilisé avant inscription
+            if ($method !== 'POST') {
+                errorResponse(__('error.generic'), 405);
+            }
+
+            requireCsrf();
+
+            require_once BACKEND_PATH . '/Services/GenderVerificationService.php';
+
+            $data = getRequestData();
+            $image = $data['image'] ?? '';
+
+            if (empty($image)) {
+                errorResponse(__('validation.required_field'), 400);
+            }
+
+            $genderService = new \TripSalama\Services\GenderVerificationService();
+            $result = $genderService->analyzeGender($image);
+
+            if (!$result['success']) {
+                errorResponse($result['message'], 400);
+            }
+
+            // Stocker le résultat en session pour la suite du flux
+            if ($result['can_proceed']) {
+                $_SESSION['registration_gender_verified'] = true;
+                $_SESSION['registration_gender_result'] = [
+                    'is_female' => $result['is_female'],
+                    'confidence' => $result['confidence'],
+                    'verified_at' => time()
+                ];
+            }
+
+            successResponse([
+                'can_proceed' => $result['can_proceed'],
+                'is_female' => $result['is_female'],
+                'confidence' => $result['confidence'],
+                'reason' => $result['reason'] ?? ''
+            ], $result['message']);
+            break;
+
+        case 'scan-id':
+            // Étape 2: Scanner la carte d'identité (APRÈS vérification genre)
+            // Endpoint PUBLIC - pas besoin d'auth car utilisé avant inscription
+            if ($method !== 'POST') {
+                errorResponse(__('error.generic'), 405);
+            }
+
+            requireCsrf();
+
+            // Vérifier que l'étape 1 (vérification genre) a été passée
+            if (!isset($_SESSION['registration_gender_verified']) || $_SESSION['registration_gender_verified'] !== true) {
+                errorResponse(__('verification.gender_step_required'), 400);
+            }
+
+            require_once BACKEND_PATH . '/Services/IDCardOCRService.php';
+
+            $data = getRequestData();
+            $image = $data['image'] ?? '';
+
+            if (empty($image)) {
+                errorResponse(__('validation.required_field'), 400);
+            }
+
+            $ocrService = new \TripSalama\Services\IDCardOCRService();
+            $result = $ocrService->verifyFemaleID($image);
+
+            if (!$result['success']) {
+                errorResponse($result['message'], 400);
+            }
+
+            // Vérifier que la carte est bien celle d'une femme
+            if (!$result['is_female']) {
+                // Nettoyer la session et rejeter
+                unset($_SESSION['registration_gender_verified']);
+                unset($_SESSION['registration_gender_result']);
+                errorResponse(__('verification.id_not_female'), 403);
+            }
+
+            // Stocker les données extraites pour pré-remplir le formulaire
+            if ($result['can_proceed']) {
+                $_SESSION['registration_id_verified'] = true;
+                $_SESSION['registration_id_data'] = $result['data'];
+                $_SESSION['registration_id_result'] = [
+                    'document_type' => $result['document_type'],
+                    'country' => $result['country'],
+                    'confidence' => $result['confidence'],
+                    'verified_at' => time()
+                ];
+            }
+
+            successResponse([
+                'can_proceed' => $result['can_proceed'],
+                'is_female' => $result['is_female'],
+                'document_type' => $result['document_type'],
+                'country' => $result['country'],
+                'prefill_data' => $result['can_proceed'] ? $result['data'] : [],
+                'confidence' => $result['confidence']
+            ], $result['message']);
+            break;
+
+        case 'registration-status':
+            // Obtenir le statut actuel du processus d'inscription
+            if ($method !== 'GET') {
+                errorResponse(__('error.generic'), 405);
+            }
+
+            $genderVerified = $_SESSION['registration_gender_verified'] ?? false;
+            $idVerified = $_SESSION['registration_id_verified'] ?? false;
+            $prefillData = $_SESSION['registration_id_data'] ?? [];
+
+            successResponse([
+                'gender_verified' => $genderVerified,
+                'id_verified' => $idVerified,
+                'can_show_form' => $genderVerified && $idVerified,
+                'prefill_data' => $idVerified ? $prefillData : []
+            ]);
+            break;
+
+        case 'skip-gender-step':
+            // Permettre de passer l'étape genre manuellement (vérification manuelle plus tard)
+            // Appelé quand l'utilisateur clique "Continuer quand même"
+            if ($method !== 'POST') {
+                errorResponse(__('error.generic'), 405);
+            }
+
+            requireCsrf();
+
+            // Marquer l'étape comme passée (pour vérification manuelle ultérieure)
+            $_SESSION['registration_gender_verified'] = true;
+            $_SESSION['registration_gender_result'] = [
+                'is_female' => null, // Non déterminé automatiquement
+                'confidence' => 0,
+                'verified_at' => time(),
+                'manual_skip' => true // Indique que c'est un skip manuel
+            ];
+
+            successResponse([
+                'can_proceed' => true,
+                'manual_review_required' => true
+            ], __('verification.continue_for_manual_review'));
+            break;
+
+        case 'clear-registration':
+            // Nettoyer les données de vérification d'inscription
+            if ($method !== 'POST') {
+                errorResponse(__('error.generic'), 405);
+            }
+
+            unset($_SESSION['registration_gender_verified']);
+            unset($_SESSION['registration_gender_result']);
+            unset($_SESSION['registration_id_verified']);
+            unset($_SESSION['registration_id_data']);
+            unset($_SESSION['registration_id_result']);
+
+            successResponse(null, __('msg.success'));
+            break;
+
         default:
             errorResponse(__('error.not_found'), 404);
     }

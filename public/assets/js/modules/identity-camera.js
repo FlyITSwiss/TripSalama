@@ -24,7 +24,12 @@ const IdentityCamera = (function() {
         isAnalyzing: false,
         progressInterval: null,
         faceDetected: false,
-        lastFaceDetection: null
+        lastFaceDetection: null,
+        // Configuration API
+        apiAction: 'submit', // 'submit' pour utilisateurs connectés, 'verify-gender' pour inscription
+        realtimeDetection: false, // Activer la détection IA en temps réel
+        realtimeInterval: null,
+        realtimeAnalyzing: false
     };
 
     // Configuration
@@ -486,6 +491,7 @@ const IdentityCamera = (function() {
 
     /**
      * Détection simplifiée (active le bouton après un délai)
+     * Si realtimeDetection est activé, lance l'analyse IA périodique
      * @private
      */
     function _startSimpleDetection() {
@@ -508,7 +514,177 @@ const IdentityCamera = (function() {
                 instruction.classList.add('ready');
             }
             _state.faceDetected = true;
+
+            // Si détection en temps réel activée, démarrer l'analyse périodique
+            if (_state.realtimeDetection) {
+                _startRealtimeAnalysis();
+            }
         }, 1500);
+    }
+
+    /**
+     * Démarrer l'analyse IA en temps réel
+     * Capture et analyse une frame toutes les 2.5 secondes
+     * @private
+     */
+    function _startRealtimeAnalysis() {
+        if (_state.realtimeInterval) {
+            clearInterval(_state.realtimeInterval);
+        }
+
+        const instruction = _state.containerElement?.querySelector('#camera-instruction');
+        if (instruction) {
+            const instructionText = instruction.querySelector('.instruction-text');
+            if (instructionText) {
+                instructionText.textContent = __('verification.analyzing_realtime');
+            }
+        }
+
+        AppConfig.log('Démarrage analyse IA temps réel');
+
+        // Première analyse immédiate
+        _analyzeCurrentFrame();
+
+        // Puis toutes les 2.5 secondes
+        _state.realtimeInterval = setInterval(() => {
+            if (!_state.realtimeAnalyzing && _state.currentStep === 'camera') {
+                _analyzeCurrentFrame();
+            }
+        }, 2500);
+    }
+
+    /**
+     * Analyser la frame vidéo actuelle avec l'IA
+     * @private
+     */
+    async function _analyzeCurrentFrame() {
+        if (!_state.videoElement || _state.realtimeAnalyzing) return;
+
+        _state.realtimeAnalyzing = true;
+
+        const indicator = _state.containerElement?.querySelector('#detection-indicator');
+        const instruction = _state.containerElement?.querySelector('#camera-instruction');
+
+        try {
+            // Capturer la frame actuelle
+            const canvas = document.createElement('canvas');
+            canvas.width = _state.videoElement.videoWidth || CONFIG.canvasWidth;
+            canvas.height = _state.videoElement.videoHeight || CONFIG.canvasHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(_state.videoElement, 0, 0, canvas.width, canvas.height);
+            const frameImage = canvas.toDataURL('image/jpeg', 0.85);
+
+            // Afficher l'indicateur d'analyse
+            if (indicator) {
+                indicator.innerHTML = `
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin">
+                        <circle cx="12" cy="12" r="10" stroke-dasharray="60" stroke-dashoffset="20"/>
+                    </svg>
+                    <span>${__('verification.analyzing')}</span>
+                `;
+                indicator.classList.add('analyzing');
+            }
+
+            // Envoyer au serveur pour analyse
+            const formData = new FormData();
+            formData.append('image', frameImage);
+
+            const apiEndpoint = `verification?action=${_state.apiAction}`;
+            const response = await ApiService.upload(apiEndpoint, formData);
+
+            AppConfig.log('Analyse temps réel:', response);
+
+            // Extraire les données de la réponse (data contient is_female, confidence, etc.)
+            const data = response.data || response;
+
+            // Vérifier si c'est une femme avec confiance suffisante
+            const isVerified = response.success &&
+                (data.can_proceed === true || response.status === 'verified');
+            const confidence = data.confidence || 0;
+            const isFemale = data.is_female;
+            const reason = data.reason || response.reason;
+
+            AppConfig.log('Analyse data:', { isFemale, confidence, isVerified });
+
+            if (isVerified && confidence >= CONFIG.minConfidence) {
+                // Succès ! Arrêter l'analyse et passer à la suite
+                _stopRealtimeAnalysis();
+
+                // Stocker l'image capturée
+                _state.capturedImage = frameImage;
+                _state.analysisResult = { ...response, ...data };
+
+                // Flash de succès
+                const wrapper = _state.containerElement?.querySelector('.identity-video-wrapper');
+                if (wrapper) {
+                    wrapper.classList.add('flash', 'success');
+                    setTimeout(() => wrapper.classList.remove('flash', 'success'), 500);
+                }
+
+                // Afficher le résultat directement
+                AppConfig.log('Détection IA réussie !', { confidence });
+                _state.analysisResult.displayStatus = 'verified';
+                _showResult('verified', response.message, _state.analysisResult);
+
+            } else if (isFemale === false) {
+                // Homme détecté
+                _stopRealtimeAnalysis();
+                _state.analysisResult = { ...response, ...data };
+                _state.analysisResult.displayStatus = 'rejected';
+                _showResult('rejected', response.message || __('verification.men_not_allowed'), _state.analysisResult);
+
+            } else {
+                // Pas encore validé, continuer l'analyse
+                if (indicator) {
+                    indicator.innerHTML = `
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 8v4"/>
+                            <path d="M12 16h.01"/>
+                        </svg>
+                        <span>${__('verification.position_face')}</span>
+                    `;
+                    indicator.classList.remove('analyzing');
+                }
+
+                if (reason && instruction) {
+                    const instructionText = instruction.querySelector('.instruction-text');
+                    if (instructionText) {
+                        instructionText.textContent = reason;
+                    }
+                }
+            }
+
+        } catch (error) {
+            AppConfig.error('Erreur analyse temps réel:', error);
+
+            // En cas d'erreur API, afficher un message mais continuer
+            if (indicator) {
+                indicator.innerHTML = `
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 16v-4"/>
+                        <path d="M12 8h.01"/>
+                    </svg>
+                    <span>${__('verification.ready_to_capture')}</span>
+                `;
+                indicator.classList.remove('analyzing');
+            }
+        } finally {
+            _state.realtimeAnalyzing = false;
+        }
+    }
+
+    /**
+     * Arrêter l'analyse en temps réel
+     * @private
+     */
+    function _stopRealtimeAnalysis() {
+        if (_state.realtimeInterval) {
+            clearInterval(_state.realtimeInterval);
+            _state.realtimeInterval = null;
+        }
+        _state.realtimeAnalyzing = false;
     }
 
     /**
@@ -618,23 +794,43 @@ const IdentityCamera = (function() {
             const formData = new FormData();
             formData.append('image', _state.capturedImage);
 
-            const response = await ApiService.upload('verification?action=submit', formData);
+            // Utiliser l'action API configurée (verify-gender pour inscription, submit pour utilisateurs connectés)
+            const apiEndpoint = `verification?action=${_state.apiAction}`;
+            const response = await ApiService.upload(apiEndpoint, formData);
 
-            _state.analysisResult = response;
+            // Extraire les données de la réponse (data contient is_female, confidence, etc.)
+            const data = response.data || response;
+            _state.analysisResult = { ...response, ...data };
             _state.isAnalyzing = false;
 
-            // Afficher le résultat
-            if (response.success && response.status === 'verified') {
-                _showResult('verified', response.message, response.analysis);
-            } else if (response.status === 'rejected') {
-                _showResult('rejected', response.message, response.analysis);
+            AppConfig.log('Submit analysis data:', data);
+
+            // Normaliser la réponse (verify-gender utilise can_proceed, submit utilise status)
+            const isVerified = response.status === 'verified' ||
+                (data.can_proceed === true && data.is_female === true);
+            const isRejected = response.status === 'rejected' ||
+                (data.can_proceed === false && data.is_female === false);
+
+            // Déterminer et stocker le statut d'affichage
+            let displayStatus;
+            if (response.success && isVerified) {
+                displayStatus = 'verified';
+            } else if (isRejected) {
+                displayStatus = 'rejected';
             } else {
-                _showResult('pending', response.message, response.analysis);
+                displayStatus = 'pending';
             }
+
+            // Stocker le statut d'affichage dans le résultat pour le click handler
+            _state.analysisResult.displayStatus = displayStatus;
+
+            // Afficher le résultat
+            _showResult(displayStatus, response.message || data.reason, _state.analysisResult);
 
         } catch (error) {
             AppConfig.error('Analysis error:', error);
             _state.isAnalyzing = false;
+            _state.analysisResult = { displayStatus: 'error' };
             _showResult('error', error.message || __('verification.error_occurred'));
         }
     }
@@ -787,6 +983,9 @@ const IdentityCamera = (function() {
      * @private
      */
     function _cleanup() {
+        // Arrêter l'analyse temps réel
+        _stopRealtimeAnalysis();
+
         if (_state.stream) {
             _state.stream.getTracks().forEach(track => track.stop());
             _state.stream = null;
@@ -880,9 +1079,10 @@ const IdentityCamera = (function() {
         }
 
         // Bouton action résultat
-        _state.containerElement.addEventListener('click', (e) => {
+        _state.containerElement.addEventListener('click', async (e) => {
             if (e.target.classList.contains('result-action-btn')) {
-                const status = _state.analysisResult?.status;
+                // Utiliser displayStatus (calculé) et non status (de l'API)
+                const status = _state.analysisResult?.displayStatus;
 
                 if (status === 'rejected' || status === 'error') {
                     // Réessayer
@@ -898,6 +1098,18 @@ const IdentityCamera = (function() {
 
                     _showStep('camera');
                 } else {
+                    // Si statut "pending", notifier le serveur pour permettre la suite
+                    if (status === 'pending') {
+                        try {
+                            // Appeler l'API pour marquer l'étape comme "passée" (vérification manuelle)
+                            await ApiService.post('verification?action=skip-gender-step', {});
+                            AppConfig.log('Gender step skipped for manual review');
+                        } catch (error) {
+                            AppConfig.error('Error skipping gender step:', error);
+                            // Continuer quand même côté client
+                        }
+                    }
+
                     // Continuer - appeler le callback
                     if (_state.containerElement.dataset.onComplete) {
                         const callback = window[_state.containerElement.dataset.onComplete];
@@ -937,9 +1149,22 @@ const IdentityCamera = (function() {
                 container.dataset.onComplete = options.onComplete;
             }
 
+            // API action: 'verify-gender' pour inscription, 'submit' pour utilisateurs connectés
+            if (options.apiAction) {
+                _state.apiAction = options.apiAction;
+            }
+
+            // Détection IA en temps réel
+            if (options.realtimeDetection) {
+                _state.realtimeDetection = true;
+            }
+
             _attachEventListeners();
 
-            AppConfig.log('IdentityCamera v2.0 initialisé');
+            AppConfig.log('IdentityCamera v2.1 initialisé', {
+                apiAction: _state.apiAction,
+                realtimeDetection: _state.realtimeDetection
+            });
         },
 
         /**

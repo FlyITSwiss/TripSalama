@@ -236,7 +236,11 @@
         "manual_review": "Vérification manuelle",
         "no_face_detected": "Aucun visage détecté. Veuillez réessayer.",
         "multiple_faces": "Plusieurs visages détectés. Assurez-vous d'être seule dans le cadre.",
-        "detection_failed": "Échec de la détection. Vérifiez l'éclairage et réessayez."
+        "detection_failed": "Échec de la détection. Vérifiez l'éclairage et réessayez.",
+        "analyzing_realtime": "Analyse en cours... Restez immobile",
+        "men_not_allowed": "TripSalama est exclusivement réservé aux femmes",
+        "gender_step_required": "Veuillez d'abord compléter la vérification du genre",
+        "id_not_female": "Cette pièce d'identité n'appartient pas à une femme"
     },
     "country": {
         "title": "Pays",
