@@ -389,6 +389,16 @@ $idVerified = $idVerified ?? false;
     </div>
 
     <!-- Scripts -->
+    <script>
+        // Configuration injectée depuis PHP
+        window.AppConfig = {
+            basePath: <?= json_encode(config('base_path', '')) ?>,
+            apiPath: "/api",
+            lang: <?= json_encode($_SESSION['lang'] ?? 'fr') ?>,
+            csrfToken: <?= json_encode(csrf_token()) ?>,
+            debug: <?= json_encode(config('debug', false)) ?>
+        };
+    </script>
     <script src="<?= asset_url('js/core/app-config.js') ?>"></script>
     <script src="<?= asset_url('js/core/api-service.js') ?>"></script>
     <script src="<?= asset_url('js/core/i18n.js') ?>"></script>
