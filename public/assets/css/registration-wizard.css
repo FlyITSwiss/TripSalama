@@ -586,8 +586,8 @@
     flex-shrink: 0;
     width: 20px;
     height: 20px;
-    border: 2px solid var(--color-gray-300);
-    border-radius: var(--radius-4);
+    border: 2px solid #CBCBCB;
+    border-radius: 4px;
     position: relative;
     transition: all 0.2s ease;
 }

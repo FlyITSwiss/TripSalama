@@ -371,11 +371,11 @@
     height: 0;
 }
 
-.checkbox-custom {
+.identity-consent .checkbox-custom {
     width: 22px;
     height: 22px;
     min-width: 22px;
-    border: 2px solid #CBCBCB;
+    border: 2px solid #CBCBCB !important;
     border-radius: 6px;
     flex-shrink: 0;
     display: flex;
@@ -387,12 +387,12 @@
 }
 
 .identity-consent:hover .checkbox-custom {
-    border-color: #06C167;
+    border-color: #06C167 !important;
 }
 
 .identity-consent input:checked + .checkbox-custom {
-    background: #06C167;
-    border-color: #06C167;
+    background: #06C167 !important;
+    border-color: #06C167 !important;
     transform: scale(1.05);
 }
 

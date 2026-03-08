@@ -2,6 +2,25 @@
 
 ---
 
+## ⛔ RÈGLE CARDINALE - NE JAMAIS ALTÉRER D'AUTRES PROJETS
+
+**INTERDIT SOUS AUCUNE RAISON DE MODIFIER DES FICHIERS HORS DE CE PROJET.**
+
+Chaque projet sur le VPS stabilis-it.ch est **100% INDÉPENDANT**. Claude ne doit **JAMAIS** :
+- Modifier des fichiers dans `/var/www/helios`, `/var/www/stabilis-it`
+- Toucher à `/etc/nginx/sites-enabled/helios` (config principale)
+- Modifier des configs globales qui affecteraient d'autres projets
+- Ajouter des headers ou routes qui impacteraient Helios ou le site principal
+
+**TripSalama gère UNIQUEMENT :**
+- `/var/www/tripsalama/*`
+- `/etc/nginx/snippets/tripsalama.conf`
+- Base de données `tripsalama.*`
+
+**Violation = BLOCAGE IMMÉDIAT. Aucune exception.**
+
+---
+
 ## 🚨 RÈGLE ABSOLUE - ISOLATION DES PROJETS
 
 **TripSalama est un projet 100% INDÉPENDANT. Il ne doit JAMAIS interférer avec les autres projets du VPS stabilis-it.ch.**
