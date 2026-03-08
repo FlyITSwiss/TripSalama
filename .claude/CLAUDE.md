@@ -1778,6 +1778,113 @@ TEST_URL=https://stabilis-it.ch/internal/tripsalama npx playwright test demo-ver
 
 ---
 
+## 🚨 LEÇONS APPRISES - SESSION MARS 2026 (MEP DESIGN)
+
+### ERREURS CRITIQUES À NE PLUS REPRODUIRE
+
+#### 1. CSS Variables Non Définies (BLOQUANT)
+
+| ❌ ERREUR | ✅ SOLUTION |
+|-----------|-------------|
+| `border: 2px solid var(--color-gray-300)` | `border: 2px solid #CBCBCB` |
+| `background: var(--stone-100)` | `background: #EEEEEE` |
+| Utiliser une variable CSS non définie | **TOUJOURS hardcoder les valeurs critiques** |
+
+**Symptôme :** `border: 0px none` alors que le code dit `2px solid var(...)`.
+
+**Règle :** Dans les composants isolés (comme identity-camera.css), TOUJOURS utiliser des valeurs hardcodées pour les propriétés visuelles critiques (border, background, color).
+
+#### 2. Cascade CSS - Ordre de Chargement (BLOQUANT)
+
+```html
+<!-- L'ordre dans le HTML détermine la priorité -->
+<link rel="stylesheet" href="css/components/identity-camera.css">  <!-- Chargé EN PREMIER -->
+<link rel="stylesheet" href="css/registration-wizard.css">         <!-- ÉCRASE le précédent -->
+```
+
+| ❌ ERREUR | ✅ SOLUTION |
+|-----------|-------------|
+| `.checkbox-custom { border: 2px... }` dans identity-camera.css | `.identity-consent .checkbox-custom { border: 2px... !important }` |
+| Sélecteurs génériques écrasés par fichiers chargés après | Sélecteurs plus spécifiques avec contexte parent |
+
+**Règle :** Toujours préfixer les sélecteurs avec le contexte parent (`.identity-intro .tips-title` au lieu de `.tips-title`).
+
+#### 3. Éléments avec opacity:0 Non Cliquables (BLOQUANT)
+
+| ❌ ERREUR | ✅ SOLUTION |
+|-----------|-------------|
+| `await page.click('input[type="checkbox"]')` | `await page.click('.identity-consent')` (le label visible) |
+| Cliquer sur input avec `opacity: 0` | Cliquer sur le wrapper/label visible |
+
+**Symptôme :** Playwright timeout "element is not visible".
+
+**Règle :** Dans les tests, toujours cliquer sur l'élément VISIBLE, pas sur l'input caché.
+
+#### 4. i18n Keys Brutes Affichées (BLOQUANT)
+
+| ❌ ERREUR | ✅ SOLUTION |
+|-----------|-------------|
+| Charger i18n.js sans AppConfig | Injecter `window.AppConfig = {...}` AVANT i18n.js |
+| `fetch('/assets/lang/fr.json')` échoue en prod | AppConfig.basePath doit être défini pour `/internal/tripsalama` |
+
+**Symptôme :** Les clés i18n s'affichent brutes (`verification.title` au lieu de "Vérification d'identité").
+
+**Règle :** Toute page standalone DOIT avoir ce bloc AVANT les scripts :
+```html
+<script>
+    window.AppConfig = {
+        basePath: <?= json_encode(config('base_path', '')) ?>,
+        apiPath: "/api",
+        lang: <?= json_encode($_SESSION['lang'] ?? 'fr') ?>
+    };
+</script>
+```
+
+### CHECKLIST PRÉ-DÉPLOIEMENT CSS (OBLIGATOIRE)
+
+| # | Vérification | Si échec |
+|---|--------------|----------|
+| 1 | **Variables CSS hardcodées** pour border/background/color critiques | STOP, remplacer par valeurs hex |
+| 2 | **Sélecteurs spécifiques** avec préfixe parent | STOP, ajouter contexte `.parent .child` |
+| 3 | **Tests Playwright** avec `--headed` localement | STOP, corriger avant push |
+| 4 | **AppConfig injecté** dans toutes les vues standalone | STOP, ajouter le script block |
+| 5 | **Ordre CSS vérifié** dans le HTML | STOP, ajuster ordre ou spécificité |
+
+### WORKFLOW OBLIGATOIRE POST-DÉPLOIEMENT
+
+```bash
+# 1. Attendre le déploiement
+gh run list --workflow "Deploy TripSalama to VPS" --limit 2
+
+# 2. Tester en PROD avec Playwright
+node tests/playwright/test-design-prod.js
+
+# 3. Vérifier les critères BLOQUANTS :
+# - Checkbox visible (border != 0px)
+# - i18n fonctionne (pas de clés brutes)
+# - Boutons stylés (background != transparent quand enabled)
+# - Logo correct (TripSalama)
+```
+
+### MODÈLE DE TEST PLAYWRIGHT POUR DESIGN
+
+```javascript
+// tests/playwright/test-design-prod.js
+const checks = {
+    'checkbox_visible': border !== '0px',
+    'i18n_works': !title.includes('verification.'),
+    'button_styled': !disabled || background !== 'transparent',
+    'icon_gradient': background.includes('linear-gradient')
+};
+
+for (const [name, passed] of Object.entries(checks)) {
+    console.log(`${name}: ${passed ? 'OK' : 'ERREUR'}`);
+    if (!passed) process.exit(1);
+}
+```
+
+---
+
 ## COMMANDES UTILES
 
 ```bash
