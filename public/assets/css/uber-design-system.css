@@ -124,6 +124,46 @@
     --header-height: 56px;
     --nav-height: 64px;
     --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+
+    /* ============================================
+       COLOR ALIASES (for registration-wizard.css compatibility)
+       ============================================ */
+    --color-white: var(--uber-white);
+    --color-black: var(--uber-black);
+    --color-gray-50: var(--uber-gray-50);
+    --color-gray-100: var(--uber-gray-100);
+    --color-gray-200: var(--uber-gray-200);
+    --color-gray-300: var(--uber-gray-300);
+    --color-gray-400: var(--uber-gray-400);
+    --color-gray-500: var(--uber-gray-500);
+    --color-gray-600: var(--uber-gray-600);
+    --color-gray-700: var(--uber-gray-700);
+    --color-gray-800: var(--uber-gray-800);
+    --color-gray-900: var(--uber-gray-900);
+    --color-green: var(--uber-green);
+    --color-green-soft: var(--uber-green-soft);
+    --color-blue: var(--uber-blue);
+    --color-blue-soft: var(--uber-blue-soft);
+    --color-red: var(--uber-red);
+    --color-red-soft: var(--uber-red-soft);
+    --color-yellow: var(--uber-yellow);
+    --color-yellow-soft: var(--uber-yellow-soft);
+
+    /* Spacing aliases */
+    --spacing-4: var(--space-1);
+    --spacing-8: var(--space-2);
+    --spacing-12: var(--space-3);
+    --spacing-16: var(--space-4);
+    --spacing-20: var(--space-5);
+    --spacing-24: calc(var(--space-5) + var(--space-1));
+    --spacing-32: var(--space-6);
+
+    /* Radius aliases */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 9999px;
 }
 
 /* ============================================
