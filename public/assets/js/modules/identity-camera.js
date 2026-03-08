@@ -1134,11 +1134,16 @@ const IdentityCamera = (function() {
          * @param {string} containerSelector - Sélecteur CSS du conteneur
          * @param {Object} options - Options de configuration
          */
-        init: function(containerSelector, options = {}) {
+        init: async function(containerSelector, options = {}) {
             const container = document.querySelector(containerSelector);
             if (!container) {
                 AppConfig.error('IdentityCamera: Container not found:', containerSelector);
                 return;
+            }
+
+            // Attendre que i18n soit prêt avant de générer le HTML
+            if (typeof i18n !== 'undefined' && typeof i18n.ready === 'function') {
+                await i18n.ready();
             }
 
             _state.containerElement = container;
