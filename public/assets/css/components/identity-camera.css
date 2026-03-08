@@ -374,7 +374,67 @@
     line-height: var(--line-height-relaxed);
 }
 
-/* Continue button */
+/* ==========================================
+   BUTTONS - UBER STYLE
+   ========================================== */
+
+/* Base button styles for identity camera */
+.identity-camera-container .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-6);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1;
+    text-decoration: none;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Primary Button - Black (Uber style) */
+.identity-camera-container .btn-primary {
+    background: #000000;
+    color: #FFFFFF;
+}
+
+.identity-camera-container .btn-primary:hover:not(:disabled) {
+    background: #1F1F1F;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.identity-camera-container .btn-primary:active:not(:disabled) {
+    transform: scale(0.98);
+    box-shadow: none;
+}
+
+.identity-camera-container .btn-primary:disabled {
+    background: #E2E2E2;
+    color: #757575;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Large button */
+.identity-camera-container .btn-lg {
+    padding: var(--space-5) var(--space-8);
+    font-size: 1.125rem;
+    border-radius: 16px;
+}
+
+/* Block button (full width) */
+.identity-camera-container .btn-block {
+    width: 100%;
+}
+
+/* Continue button specific */
 .identity-btn-continue {
     display: flex;
     align-items: center;
