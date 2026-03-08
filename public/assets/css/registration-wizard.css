@@ -9,7 +9,7 @@
 
 .registration-wizard-page {
     min-height: 100vh;
-    background: linear-gradient(135deg, var(--color-gray-100) 0%, var(--color-white) 100%);
+    background: linear-gradient(180deg, #FAFAFA 0%, #F5F5F5 50%, #FFFFFF 100%);
 }
 
 .registration-wizard-page .auth-container {
@@ -32,11 +32,16 @@
 .registration-wizard-page .auth-logo-text {
     display: inline-block;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-size: 36px;
+    font-size: 32px;
     font-weight: 800;
     color: #000000;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.03em;
     text-decoration: none;
+    transition: opacity 0.2s ease;
+}
+
+.registration-wizard-page .auth-logo-text:hover {
+    opacity: 0.85;
 }
 
 .registration-wizard-page .auth-logo-text span {
