@@ -54,6 +54,12 @@ return [
         'register_driver' => 'I\'m a driver',
         'welcome_back' => 'Welcome back!',
         'create_account' => 'Create your account',
+        'create_account_desc' => 'Create your account in seconds',
+        'register_driver_desc' => 'Join our community of women drivers',
+        'password_requirements' => 'Requirements',
+        'create_driver_account' => 'Create my driver account',
+        'personal_info' => 'Personal information',
+        'vehicle_info' => 'Vehicle information',
     ],
 
     // Forms
@@ -68,6 +74,7 @@ return [
         'next' => 'Next',
         'required' => 'This field is required',
         'current_password' => 'Current password',
+        'optional' => 'optional',
     ],
 
     // Vehicle

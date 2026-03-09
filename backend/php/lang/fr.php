@@ -55,6 +55,12 @@ return [
         'register_driver' => 'Je suis conductrice',
         'welcome_back' => 'Bienvenue !',
         'create_account' => 'Créer votre compte',
+        'create_account_desc' => 'Créez votre compte en quelques secondes',
+        'register_driver_desc' => 'Rejoignez notre communauté de conductrices',
+        'password_requirements' => 'Exigences',
+        'create_driver_account' => 'Créer mon compte conductrice',
+        'personal_info' => 'Informations personnelles',
+        'vehicle_info' => 'Informations véhicule',
     ],
 
     // Formulaires
@@ -69,6 +75,7 @@ return [
         'next' => 'Suivant',
         'required' => 'Ce champ est obligatoire',
         'current_password' => 'Mot de passe actuel',
+        'optional' => 'optionnel',
     ],
 
     // Véhicule

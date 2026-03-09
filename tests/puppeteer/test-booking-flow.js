@@ -41,12 +41,12 @@ async function runBookingTests() {
             await page.goto(`${config.baseUrl}/passenger/dashboard`);
             await sleep(500);
 
-            const hasBookBtn = await waitForElement(page, 'a[href*="book-ride"], .book-ride-btn, .btn-book');
+            const hasBookBtn = await waitForElement(page, 'a[href*="passenger/book"], .where-to-input, .promo-card, .book-ride-btn');
 
             if (!hasBookBtn) {
                 // Chercher un lien vers la réservation
                 const hasBookLink = await page.evaluate(() => {
-                    return document.body.innerHTML.includes('book-ride') ||
+                    return document.body.innerHTML.includes('passenger/book') ||
                            document.body.innerHTML.includes('réserver');
                 });
 
@@ -60,10 +60,10 @@ async function runBookingTests() {
 
         // Test 2: Page de réservation charge la carte
         await reporter.test('Page réservation charge carte Leaflet', async () => {
-            await page.goto(`${config.baseUrl}/passenger/book-ride`);
+            await page.goto(`${config.baseUrl}/passenger/book`);
 
             // Attendre la carte
-            await waitForMap(page, '#bookingMap');
+            await waitForMap(page, '#map');
 
             // Vérifier que Leaflet est initialisé
             const hasLeaflet = await page.evaluate(() => {
@@ -77,11 +77,11 @@ async function runBookingTests() {
 
         // Test 3: Champs d'adresse présents
         await reporter.test('Champs adresse pickup et dropoff présents', async () => {
-            await page.goto(`${config.baseUrl}/passenger/book-ride`);
+            await page.goto(`${config.baseUrl}/passenger/book`);
             await sleep(500);
 
-            const hasPickup = await waitForElement(page, '#pickupAddress');
-            const hasDropoff = await waitForElement(page, '#dropoffAddress');
+            const hasPickup = await waitForElement(page, '#pickupInput, #pickupAddress');
+            const hasDropoff = await waitForElement(page, '#dropoffInput, #dropoffAddress');
 
             if (!hasPickup) {
                 throw new Error('Champ adresse de départ non trouvé');
@@ -94,11 +94,11 @@ async function runBookingTests() {
 
         // Test 4: Autocomplete déclenché à la saisie
         await reporter.test('Autocomplete se déclenche à la saisie', async () => {
-            await page.goto(`${config.baseUrl}/passenger/book-ride`);
-            await waitForMap(page, '#bookingMap');
+            await page.goto(`${config.baseUrl}/passenger/book`);
+            await waitForMap(page, '#map');
 
             // Taper une adresse
-            await fillInput(page, '#pickupAddress', 'Genève gare');
+            await fillInput(page, '#pickupInput', 'Genève gare');
 
             // Attendre le debounce (300ms) + requête
             await sleep(1000);
@@ -117,7 +117,7 @@ async function runBookingTests() {
 
         // Test 5: Bouton localisation présent
         await reporter.test('Bouton géolocalisation présent', async () => {
-            await page.goto(`${config.baseUrl}/passenger/book-ride`);
+            await page.goto(`${config.baseUrl}/passenger/book`);
             await sleep(500);
 
             const hasGeoBtn = await page.evaluate(() => {
@@ -140,8 +140,8 @@ async function runBookingTests() {
 
         // Test 6: Sélection adresse met à jour carte
         await reporter.test('Sélection adresse place marqueur sur carte', async () => {
-            await page.goto(`${config.baseUrl}/passenger/book-ride`);
-            await waitForMap(page, '#bookingMap');
+            await page.goto(`${config.baseUrl}/passenger/book`);
+            await waitForMap(page, '#map');
 
             // Simuler une sélection (via coordinates directes si pas d'autocomplete)
             await page.evaluate(() => {
@@ -170,13 +170,13 @@ async function runBookingTests() {
 
         // Test 7: Calcul de prix affiché
         await reporter.test('Prix estimé calculé et affiché', async () => {
-            await page.goto(`${config.baseUrl}/passenger/book-ride`);
-            await waitForMap(page, '#bookingMap');
+            await page.goto(`${config.baseUrl}/passenger/book`);
+            await waitForMap(page, '#map');
 
             // Simuler des adresses pour déclencher le calcul
             await page.evaluate(() => {
-                // Simuler pickup
-                const pickupInput = document.getElementById('pickupAddress');
+                // Simuler pickup (pickupInput est l'input visible)
+                const pickupInput = document.getElementById('pickupInput') || document.getElementById('pickupAddress');
                 if (pickupInput) {
                     pickupInput.value = 'Genève Gare';
                     pickupInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -186,8 +186,8 @@ async function runBookingTests() {
             await sleep(200);
 
             await page.evaluate(() => {
-                // Simuler dropoff
-                const dropoffInput = document.getElementById('dropoffAddress');
+                // Simuler dropoff (dropoffInput est l'input visible)
+                const dropoffInput = document.getElementById('dropoffInput') || document.getElementById('dropoffAddress');
                 if (dropoffInput) {
                     dropoffInput.value = 'Aéroport de Genève';
                     dropoffInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -209,10 +209,10 @@ async function runBookingTests() {
 
         // Test 8: Bouton confirmer présent
         await reporter.test('Bouton confirmer réservation présent', async () => {
-            await page.goto(`${config.baseUrl}/passenger/book-ride`);
+            await page.goto(`${config.baseUrl}/passenger/book`);
             await sleep(500);
 
-            const hasConfirmBtn = await waitForElement(page, '#confirmBooking, [type="submit"], .btn-confirm');
+            const hasConfirmBtn = await waitForElement(page, '#confirmBtn, .booking-confirm, [type="submit"], .btn-confirm');
 
             if (!hasConfirmBtn) {
                 throw new Error('Bouton de confirmation non trouvé');
@@ -221,17 +221,17 @@ async function runBookingTests() {
 
         // Test 9: Validation formulaire
         await reporter.test('Validation bloque soumission incomplète', async () => {
-            await page.goto(`${config.baseUrl}/passenger/book-ride`);
+            await page.goto(`${config.baseUrl}/passenger/book`);
             await sleep(500);
 
             // Cliquer sur confirmer sans remplir
-            const confirmBtn = await page.$('#confirmBooking, [type="submit"], .btn-confirm');
+            const confirmBtn = await page.$('#confirmBtn, .booking-confirm, [type="submit"], .btn-confirm');
             if (confirmBtn) {
                 await confirmBtn.click();
                 await sleep(500);
 
                 // Devrait rester sur la page
-                if (!checkUrl(page, 'book-ride')) {
+                if (!checkUrl(page, 'passenger/book')) {
                     throw new Error('Formulaire soumis malgré validation');
                 }
             }
@@ -261,12 +261,13 @@ async function runBookingTests() {
 
             // Vérifier liste ou message "aucune course"
             const hasContent = await page.evaluate(() => {
-                const hasList = document.querySelector('.history-list, .ride-list, .rides-container');
-                const hasEmpty = document.body.textContent.includes('aucune') ||
-                                document.body.textContent.includes('Aucune') ||
-                                document.body.textContent.includes('No rides') ||
-                                document.querySelector('.empty-state');
-                return hasList !== null || hasEmpty;
+                // Classes réelles de la page history.phtml
+                const hasList = document.querySelector('.history-list, .history-ride');
+                const hasEmpty = document.querySelector('.history-empty, .history-empty-title') ||
+                                document.body.textContent.toLowerCase().includes('aucune') ||
+                                document.body.textContent.toLowerCase().includes('no rides') ||
+                                document.body.textContent.toLowerCase().includes('pas encore');
+                return hasList !== null || hasEmpty !== null;
             });
 
             if (!hasContent) {
