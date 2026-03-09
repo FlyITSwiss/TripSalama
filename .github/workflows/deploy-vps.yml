@@ -208,6 +208,8 @@ jobs:
         env:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         run: |
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
             # Ensure debian can write to the directory
@@ -224,6 +226,10 @@ jobs:
           DB_USERNAME=tripsalama
           DB_PASSWORD=${DB_PASSWORD}
           ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+          MAIL_HOST=mail.infomaniak.com
+          MAIL_PORT=587
+          SMTP_USERNAME=${SMTP_USERNAME}
+          SMTP_PASSWORD=${SMTP_PASSWORD}
           ENVEOF
 
             # Fix indentation in .env
