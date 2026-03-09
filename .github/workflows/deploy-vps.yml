@@ -214,22 +214,20 @@ jobs:
           # Ensure debian can write to the directory
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "sudo chown -R debian:debian ${{ env.REMOTE_PATH }}"
 
-          # Create .env for production with secrets from GitHub (use printf for proper escaping)
-          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "cat > ${{ env.REMOTE_PATH }}/.env << EOF
-APP_ENV=production
-APP_DEBUG=false
-BASE_PATH=/internal/tripsalama
-DB_HOST=localhost
-DB_PORT=3306
-DB_DATABASE=tripsalama
-DB_USERNAME=tripsalama
-DB_PASSWORD=$DB_PASSWORD
-ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY
-MAIL_HOST=mail.infomaniak.com
-MAIL_PORT=587
-SMTP_USERNAME=$SMTP_USERNAME
-SMTP_PASSWORD=$SMTP_PASSWORD
-EOF"
+          # Create .env for production with secrets from GitHub
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "echo 'APP_ENV=production' > ${{ env.REMOTE_PATH }}/.env"
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "echo 'APP_DEBUG=false' >> ${{ env.REMOTE_PATH }}/.env"
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "echo 'BASE_PATH=/internal/tripsalama' >> ${{ env.REMOTE_PATH }}/.env"
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "echo 'DB_HOST=localhost' >> ${{ env.REMOTE_PATH }}/.env"
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "echo 'DB_PORT=3306' >> ${{ env.REMOTE_PATH }}/.env"
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "echo 'DB_DATABASE=tripsalama' >> ${{ env.REMOTE_PATH }}/.env"
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "echo 'DB_USERNAME=tripsalama' >> ${{ env.REMOTE_PATH }}/.env"
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "echo 'DB_PASSWORD=$DB_PASSWORD' >> ${{ env.REMOTE_PATH }}/.env"
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "echo 'ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY' >> ${{ env.REMOTE_PATH }}/.env"
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "echo 'MAIL_HOST=mail.infomaniak.com' >> ${{ env.REMOTE_PATH }}/.env"
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "echo 'MAIL_PORT=587' >> ${{ env.REMOTE_PATH }}/.env"
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "echo 'SMTP_USERNAME=$SMTP_USERNAME' >> ${{ env.REMOTE_PATH }}/.env"
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "echo 'SMTP_PASSWORD=$SMTP_PASSWORD' >> ${{ env.REMOTE_PATH }}/.env"
 
           # Create .production marker
           ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "touch ${{ env.REMOTE_PATH }}/.production"
