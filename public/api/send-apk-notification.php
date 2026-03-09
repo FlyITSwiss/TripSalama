@@ -32,12 +32,12 @@ $version = $_GET['version'] ?? 'v1.0.0';
 $size = $_GET['size'] ?? '47 MB';
 $downloadUrl = 'https://github.com/FlyITSwiss/TripSalama/releases/tag/v1.0.0-debug';
 
-// Config SMTP depuis env ou valeurs par défaut Infomaniak
-$smtpHost = getenv('MAIL_HOST') ?: 'mail.infomaniak.com';
-$smtpPort = (int)(getenv('MAIL_PORT') ?: 587);
+// Config SMTP Office365
+$smtpHost = getenv('SMTP_HOST') ?: 'smtp.office365.com';
+$smtpPort = (int)(getenv('SMTP_PORT') ?: 587);
 $smtpUser = getenv('SMTP_USERNAME') ?: '';
 $smtpPass = getenv('SMTP_PASSWORD') ?: '';
-$fromEmail = 'noreply@stabilis-it.ch';
+$fromEmail = $smtpUser ?: 'tarik.gilani@stabilis-it.ch';
 $fromName = 'TripSalama';
 
 // Debug mode pour diagnostic

@@ -220,8 +220,8 @@ jobs:
           DB_USERNAME=tripsalama
           DB_PASSWORD=${{ secrets.DB_PASSWORD }}
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
-          MAIL_HOST=mail.infomaniak.com
-          MAIL_PORT=587
+          SMTP_HOST=smtp.office365.com
+          SMTP_PORT=587
           SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
           SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
           EOF
