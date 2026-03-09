@@ -4,6 +4,9 @@
  * Utilise PHPMailer avec config SMTP Infomaniak
  */
 
+// Charger le bootstrap pour avoir les variables d'environnement
+require_once __DIR__ . '/../../backend/php/bootstrap.php';
+
 header('Content-Type: application/json');
 
 // Token de sécurité
