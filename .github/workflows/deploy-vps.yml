@@ -211,33 +211,28 @@ jobs:
           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         run: |
-          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "
-            # Ensure debian can write to the directory
-            sudo chown -R debian:debian ${{ env.REMOTE_PATH }}
+          # Ensure debian can write to the directory
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "sudo chown -R debian:debian ${{ env.REMOTE_PATH }}"
 
-            # Create .env for production with secrets from GitHub
-            cat > ${{ env.REMOTE_PATH }}/.env << 'ENVEOF'
-          APP_ENV=production
-          APP_DEBUG=false
-          BASE_PATH=/internal/tripsalama
-          DB_HOST=localhost
-          DB_PORT=3306
-          DB_DATABASE=tripsalama
-          DB_USERNAME=tripsalama
-          DB_PASSWORD=${DB_PASSWORD}
-          ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-          MAIL_HOST=mail.infomaniak.com
-          MAIL_PORT=587
-          SMTP_USERNAME=${SMTP_USERNAME}
-          SMTP_PASSWORD=${SMTP_PASSWORD}
-          ENVEOF
+          # Create .env for production with secrets from GitHub (use printf for proper escaping)
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "cat > ${{ env.REMOTE_PATH }}/.env << EOF
+APP_ENV=production
+APP_DEBUG=false
+BASE_PATH=/internal/tripsalama
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=tripsalama
+DB_USERNAME=tripsalama
+DB_PASSWORD=$DB_PASSWORD
+ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY
+MAIL_HOST=mail.infomaniak.com
+MAIL_PORT=587
+SMTP_USERNAME=$SMTP_USERNAME
+SMTP_PASSWORD=$SMTP_PASSWORD
+EOF"
 
-            # Fix indentation in .env
-            sed -i 's/^          //' ${{ env.REMOTE_PATH }}/.env
-
-            # Create .production marker
-            touch ${{ env.REMOTE_PATH }}/.production
-          "
+          # Create .production marker
+          ssh ${{ env.VPS_USER }}@${{ env.VPS_HOST }} "touch ${{ env.REMOTE_PATH }}/.production"
 
       - name: Fix permissions
         run: |
